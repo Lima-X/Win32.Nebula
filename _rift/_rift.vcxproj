@@ -94,6 +94,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="_rift.h" />
     <ClInclude Include="_rift_shared.h" />
   </ItemGroup>
@@ -106,6 +107,9 @@
     <ClCompile Include="main.c" />
     <ClCompile Include="Resource.c" />
     <ClCompile Include="XorCrypt32.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="_rift.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

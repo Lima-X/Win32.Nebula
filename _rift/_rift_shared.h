@@ -6,6 +6,6 @@ typedef struct {
 	VOID(*pfnXorDecrypt)(PVOID pData, UINT32 nDataLen, PVOID pKey, UINT16 nKeyLen);
 	PWCHAR g_wcsMFN;
 	PWCHAR g_wcsCD;
-} sEpTDll;
+} sEpTDll, * pEpTDll;
 
 #endif // !_shared_HIG

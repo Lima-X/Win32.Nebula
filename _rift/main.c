@@ -4,6 +4,8 @@
 WCHAR g_wcsMFN[MAX_PATH];
 WCHAR g_wcsCD[MAX_PATH];
 
+typedef BOOL (*pfnDllInit)(pEpTDll pData);
+
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -19,8 +21,14 @@ INT WINAPI wWinMain(
 	sData.pfnXorEncrypt = fnXorEncrypt;
 	sData.pfnXorEncrypt = fnXorDecrypt;
 
+	HMODULE hDll = LoadLibraryExW(L"_riftdll.dll", 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+	if (!hDll)
+		return 1;
+
+	pfnDllInit fnDllInit = (pfnDllInit)GetProcAddress(hDll, "fnDllInit");
+	fnDllInit(&sData);
 
 
-
+	FreeLibrary(hDll);
 	return 0;
 }

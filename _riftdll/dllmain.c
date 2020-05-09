@@ -8,7 +8,6 @@ BOOL WINAPI DllMain(
 ) {
 	switch (fdwReason) {
 	case DLL_PROCESS_ATTACH:
-		return TRUE;
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
 	case DLL_PROCESS_DETACH:
@@ -16,6 +15,6 @@ BOOL WINAPI DllMain(
 	}
 }
 
-BOOL DLL DllInit() {
-
+DLLEXPORT BOOL fnDllInit(pEpTDll pData) {
+	return pData->g_wcsCD[0];
 }
