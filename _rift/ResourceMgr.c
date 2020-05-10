@@ -1,25 +1,21 @@
 #include "pch.h"
 #include "_rift.h"
 
-LPVOID fnLoadResourceW(_In_ WORD wResID, _In_ PCWSTR lpResType, _Out_ PDWORD dwBufferSize);
-
 BOOL fnExtractResourceW(
-	_In_ WORD	wResID,
+	_In_ WORD   wResID,
 	_In_ PCWSTR lpResType,
 	_In_ PCWSTR lpFileName
 ) {
 	DWORD dwBuffersize;
-	LPVOID lpBuffer = fnLoadResourceW(wResID, lpResType, &dwBuffersize);
-	if (lpBuffer && dwBuffersize) {
-		if (fnSaveResourceW(lpFileName, lpBuffer, dwBuffersize)) {
+	PVOID lpBuffer = fnLoadResourceW(wResID, lpResType, &dwBuffersize);
+	if (lpBuffer && dwBuffersize)
+		if (fnSaveResourceW(lpFileName, lpBuffer, dwBuffersize))
 			return TRUE;
-		}
-	}
 
 	return FALSE;
 }
 
-LPVOID fnLoadResourceW(
+PVOID fnLoadResourceW(
 	_In_  WORD   wResID,
 	_In_  PCWSTR lpResType,
 	_Out_ PDWORD dwBufferSize
@@ -28,7 +24,7 @@ LPVOID fnLoadResourceW(
 	if (hResInfo) {
 		HGLOBAL hResData = LoadResource(0, hResInfo);
 		if (hResData) {
-			LPVOID lpBuffer = LockResource(hResData);
+			PVOID lpBuffer = LockResource(hResData);
 			if (!lpBuffer)
 				return 0;
 

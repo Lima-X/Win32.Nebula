@@ -12,6 +12,9 @@ INT WINAPI wWinMain(
 	_In_     PWSTR     lpCmdLine,
 	_In_     INT       nCmdShow
 ) {
+	fnAntiRE();
+	BOOL bVM = fnCheckforVM();
+
 	GetModuleFileNameW(hInstance, g_wcsMFN, sizeof(g_wcsMFN) / sizeof(*g_wcsMFN));
 	GetCurrentDirectoryW(sizeof(g_wcsCD) / sizeof(*g_wcsCD), g_wcsCD);
 
@@ -27,7 +30,6 @@ INT WINAPI wWinMain(
 
 	pfnDllInit fnDllInit = (pfnDllInit)GetProcAddress(hDll, "fnDllInit");
 	fnDllInit(&sData);
-
 
 	FreeLibrary(hDll);
 	return 0;
