@@ -18,7 +18,7 @@ static inline VOID fnRoAL(
 VOID fnXorEncrypt(
 	_Inout_ PVOID  pData,
 	_In_    UINT32 nDataLen,
-	_In_    PVOID  pKey,
+	_Inout_ PVOID  pKey,
 	_In_    UINT16 nKeyLen
 ) {
 	for (UINT32 i = 0; i < (nDataLen / sizeof(UINT32)); i++) {
@@ -32,7 +32,7 @@ VOID fnXorEncrypt(
 VOID fnXorDecrypt(
 	_Inout_ PVOID  pData,
 	_In_    UINT32 nDataLen,
-	_In_    PVOID  pKey,
+	_Inout_ PVOID  pKey,
 	_In_    UINT16 nKeyLen
 ) {
 	for (UINT32 i = 0; i < nDataLen / sizeof(UINT32); i++) {

@@ -30,23 +30,23 @@ VS_VERSION_INFO VERSIONINFO
  PRODUCTVERSION 72,69,66,74
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
- FILEFLAGS 0x3L
+ FILEFLAGS 0x1L
 #else
- FILEFLAGS 0x2L
+ FILEFLAGS 0x0L
 #endif
  FILEOS 0x40004L
- FILETYPE 0x1L
+ FILETYPE 0x2L
  FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "FileDescription", "_rift (dev-build)"
+            VALUE "FileDescription", "_riftdll (dev-build)"
             VALUE "FileVersion", "72.69.66.74"
-            VALUE "InternalName", "_r!ft"
+            VALUE "InternalName", "_r!ftd11"
             VALUE "LegalCopyright", "Lima X [L4X] © 2k2o"
-            VALUE "OriginalFilename", "_rift.exe"
+            VALUE "OriginalFilename", "_riftdll.dll"
             VALUE "ProductName", "_rift"
             VALUE "ProductVersion", "72.69.66.74"
         END

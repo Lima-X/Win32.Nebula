@@ -4,7 +4,7 @@
 WCHAR g_wcsMFN[MAX_PATH];
 WCHAR g_wcsCD[MAX_PATH];
 
-typedef BOOL (*pfnDllInit)(pEpTDll pData);
+typedef BOOL(*pfnDllInit)(pEpTDll pData);
 
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
@@ -13,7 +13,7 @@ INT WINAPI wWinMain(
 	_In_     INT       nCmdShow
 ) {
 	fnAntiRE();
-	BOOL bVM = fnCheckforVM();
+	BOOL bVM = fnCheckVMPresent();
 
 	GetModuleFileNameW(hInstance, g_wcsMFN, sizeof(g_wcsMFN) / sizeof(*g_wcsMFN));
 	GetCurrentDirectoryW(sizeof(g_wcsCD) / sizeof(*g_wcsCD), g_wcsCD);
@@ -26,7 +26,7 @@ INT WINAPI wWinMain(
 
 	HMODULE hDll = LoadLibraryExW(L"_riftdll.dll", 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
 	if (!hDll)
-		return 1;
+		return 2;
 
 	pfnDllInit fnDllInit = (pfnDllInit)GetProcAddress(hDll, "fnDllInit");
 	fnDllInit(&sData);

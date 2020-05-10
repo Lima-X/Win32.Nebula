@@ -116,6 +116,7 @@
     <ClCompile Include="ResourceMgr.c" />
     <ClCompile Include="VMDetect.c" />
     <ClCompile Include="XorCrypt32.c" />
+    <ClCompile Include="Xoshiro128.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="_rift.rc" />
