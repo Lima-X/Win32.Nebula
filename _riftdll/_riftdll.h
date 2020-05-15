@@ -3,9 +3,11 @@
 
 #ifdef _WINDLL
 #include "..\_rift\_rift_shared.h"
-#define DLLEXPORT __declspec(dllexport)
+#define DLLAPI __declspec(dllexport)
+#else
+#define DLLAPI __declspec(dllimport)
 #endif // _WINDLL
 
-DLLEXPORT BOOL fnDllInit(pEpTDll pData);
+BOOL DLLAPI fnDllInit(pEpTDll pData);
 
 #endif // !_riftdll_HIG

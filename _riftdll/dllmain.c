@@ -15,6 +15,9 @@ BOOL WINAPI DllMain(
 	}
 }
 
-DLLEXPORT BOOL fnDllInit(pEpTDll pData) {
-	return pData->g_wcsCD[0];
+DLLAPI BOOL fnDllInit(pEpTDll pData) {
+	if (!pData)
+		return 1;
+
+
 }

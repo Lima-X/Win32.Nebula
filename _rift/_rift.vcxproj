@@ -100,6 +100,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="config.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="_rift.h" />
@@ -107,13 +108,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AntiRE.c" />
+    <ClCompile Include="Console.c" />
     <ClCompile Include="CRC32.c" />
     <ClCompile Include="pch.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="main.c" />
-    <ClCompile Include="ResourceMgr.c" />
+    <ClCompile Include="Process.c" />
+    <ClCompile Include="BCrypt.c" />
+    <ClCompile Include="Registry.c" />
+    <ClCompile Include="Resource.c" />
     <ClCompile Include="VMDetect.c" />
     <ClCompile Include="XorCrypt32.c" />
     <ClCompile Include="Xoshiro128.c" />

@@ -34,6 +34,7 @@ UINT32 fnNext128p(
 	return ui32T;
 }
 
+#if _DISABLE_JUMPS == 0
 static inline VOID fnJump128(
 	_In_    PVOID ui32a4,
 	_Inout_ PVOID pS
@@ -75,6 +76,7 @@ VOID fnSJump128(
 
 	fnJump128(ui32a4J, pS);
 }
+#endif
 
 UINT32 fnURID32(
 	_In_    UINT32 ui32Max,
@@ -102,91 +104,92 @@ float fnURRD24(
 	// return (pS->fnP(pS->pS) >> 9) * (1.f / 0x800000p0f);
 }
 
-static UINT64 fnNextSM64(
-	_Inout_ PUINT64 pui64SM
+static inline VOID fnInitParam(
+	_In_    BCRYPT_ALG_HANDLE cah,
+	_Inout_ pXSRP             pXSR,
+	_Inout_ pSMP              pSM
 ) {
-	UINT64 ui64X = (*pui64SM += 0x9e3779b97f4a7c15);
-	ui64X = (ui64X ^ (ui64X >> 30)) * 0xbf58476d1ce4e5b9;
-	ui64X = (ui64X ^ (ui64X >> 27)) * 0x94d049bb133111eb;
-	return ui64X ^ (ui64X >> 31);
+#if _DISABLE_JUMPS == 0
+	if ((pXSR->ran >> 2) & 0b1) {
+		UINT8 ui8T;
+		BCryptGenRandom(cah, &ui8T, sizeof(INT8), 0);
+		pXSR->lj |= ui8T;
+	} if ((pXSR->ran >> 1) & 0b1) {
+		UINT8 ui8T;
+		BCryptGenRandom(cah, &ui8T, sizeof(INT8), 0);
+		pXSR->sj |= ui8T;
+	}
+#endif
+	if (pXSR->ran & 0b1) {
+		UINT16 ui16T;
+		BCryptGenRandom(cah, &ui16T, sizeof(INT16), 0);
+		pXSR->ns |= ui16T >> 3;
+	}
 }
-static inline VOID fnSMPInit(
-	_Inout_ PUINT64 pui64Seed,
-	_Inout_ pXSRP   pXSR,
-	_Inout_ pSMP    pSM
+static inline PVOID fnAllocState(
+	_In_ BCRYPT_ALG_HANDLE cah
 ) {
-	/* SM64 Init */
-	if (pSM->ran)
-		pSM->ns |= fnNextSM64(pui64Seed) >> 57;
-	for (UINT16 i = 0; i < pSM->ns; i++)
-		fnNextSM64(pui64Seed);
-
-	/* XSR Init */
-	if (pXSR->ran & 0b100)
-		pXSR->lj |= fnNextSM64(pui64Seed) >> 56;
-	if (pXSR->ran & 0b10)
-		pXSR->sj |= fnNextSM64(pui64Seed) >> 56;
-	if (pXSR->ran & 0b1)
-		pXSR->ns |= fnNextSM64(pui64Seed) >> 51;
-}
-static inline PVOID fnSInit(
-	_Inout_ PUINT64 pui64Seed
-) {
-	PVOID pS = malloc(sizeof(UINT32) * 4);
+	PVOID pS = HeapAlloc(g_hPH, 0, sizeof(INT32) * 4);
 	if (pS)
-		for (UINT8 i = 0; i < 4; i++)
-			((PUINT32)pS)[i] = fnNextSM64(pui64Seed) >> 32;
+		BCryptGenRandom(cah, pS, sizeof(INT32) * 4, 0);
 	else
 		return 0;
 
 	return pS;
 }
-static inline VOID fnXSRInit(
+static inline VOID fnInitState(
 	_Inout_ PVOID pS,
-	_In_    sXSRP sXSR
+	_In_    pXSRP sXSR
 ) {
-	for (UINT8 i = 0; i < sXSR.lj; i++)
+#if _DISABLE_JUMPS == 0
+	for (UINT8 i = 0; i < sXSR->lj; i++)
 		fnLJump128(pS);
-	for (UINT8 i = 0; i < sXSR.sj; i++)
+	for (UINT8 i = 0; i < sXSR->sj; i++)
 		fnSJump128(pS);
-	for (UINT16 i = 0; i < sXSR.ns; i++)
+#endif
+	for (UINT16 i = 0; i < sXSR->ns; i++)
 		fnNext128(pS);
 }
 
 PVOID fnAllocXSR(
-	_In_ UINT64 ui64Seed,
-	_In_ sXSRP  sParamA,
-	_In_ sSMP   sParamB
+	_In_ pXSRP  sParamA,
+	_In_ pSMP   sParamB
 ) {
-	fnSMPInit(&ui64Seed, &sParamA, &sParamB);
+	BCRYPT_ALG_HANDLE cah;
+	NTSTATUS ntS = BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, 0, 0);
+	if (!ntS) {
+		fnInitParam(cah, sParamA, sParamB);
 
-	PVOID pS = fnSInit(&ui64Seed);
-	if (pS) {
-		for (UINT8 i = 0; i < 4; i++)
-			((PUINT32)pS)[i] = fnNextSM64(&ui64Seed) >> 32;
+		PVOID pS = fnAllocState(cah);
+		if (pS)
+			fnInitState(pS, sParamA);
 
-		fnXSRInit(pS, sParamA);
+		ntS = BCryptCloseAlgorithmProvider(cah, 0);
+		return pS;
 	} else
-		return 0;
+		SetLastError(ntS);
 
-	return pS;
+	return 0;
 }
-PVOID fnRelocXSR(
+BOOL fnRelocXSR(
 	_Inout_ PVOID  pS,
-	_In_    UINT64 ui64Seed,
-	_In_    sXSRP  sParamA,
-	_In_    sSMP   sParamB
+	_In_    pXSRP  sParamA,
+	_In_    pSMP   sParamB
 ) {
 	if (!pS)
-		return 0;
+		return 1;
 
-	fnSMPInit(&ui64Seed, &sParamA, &sParamB);
+	BCRYPT_ALG_HANDLE cah;
+	NTSTATUS ntS = BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, 0, 0);
+	if (!ntS) {
+		fnInitParam(cah, sParamA, sParamB);
+		BCryptGenRandom(cah, pS, sizeof(INT32) * 4, 0);
+		fnInitState(pS, sParamA);
+		BCryptCloseAlgorithmProvider(cah, 0);
+	} else
+		return ntS;
 
-	for (UINT8 i = 0; i < 4; i++)
-		((PUINT32)pS)[i] = fnNextSM64(&ui64Seed) >> 32;
-
-	fnXSRInit(pS, sParamA);
-	return pS;
+	return 0;
 }
 PVOID fnCopyXSR(
 	_In_ PVOID pS
@@ -194,13 +197,13 @@ PVOID fnCopyXSR(
 	if (!pS)
 		return 0;
 
-	PVOID pui32SC = malloc(sizeof(UINT32) * 4);
-	if (!pui32SC)
+	PVOID pSC = HeapAlloc(g_hPH, 0, sizeof(UINT32) * 4);
+	if (!pSC)
 		return 0;
 
-	memcpy(pui32SC, pS, sizeof(UINT32) * 4);
+	CopyMemory(pSC, pS, sizeof(UINT32) * 4);
 
-	return pui32SC;
+	return pSC;
 }
 VOID fnDelocXSR(
 	_Inout_ PVOID pS
