@@ -8,7 +8,6 @@ WCHAR g_wcsCD[MAX_PATH];
 HMODULE g_hmCM;
 HANDLE g_hPH;
 
-
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -21,7 +20,6 @@ INT WINAPI wWinMain(
 	g_hPH = GetProcessHeap();
 
 	fnAntiRE();
-	fnBCryptOpenRNGH();
 	BOOL bVM = fnCheckVMPresent();
 
 
