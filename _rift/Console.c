@@ -1,14 +1,20 @@
 #include "pch.h"
 #include "_rift.h"
 
-const static WCHAR szConsoleTitle[] = L"[_rift-Loader] by Lima X [L4X]";
-const static UINT8 nConsoleTitleLen = sizeof(szConsoleTitle) / sizeof(WCHAR);
+#define CON_SUCCESS (FOREGROUND_GREEN)                                           // 0b0010
+#define CON_NORMAL  ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_BLUE)      // 0b0111
+#define CON_WARNING ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY) // 0b1101
+#define CON_ERROR   (FOREGROUND_RED | FOREGROUND_INTENSITY)                      // 0b1100
+
 static DWORD WINAPI thConsoleTitle(_In_ PVOID pParam);
+static HANDLE t_hCon;
 
 BOOL fnAllocConsole() {
 	BOOL bT = AllocConsole();
-    if (bT)
+	if (bT) {
 		CreateThread(0, 0, thConsoleTitle, 0, 0, 0);
+		t_hCon = GetStdHandle(STD_OUTPUT_HANDLE);
+	}
 
 	return bT;
 }
@@ -54,4 +60,20 @@ VOID fnCLS(
 
 	// Put the cursor at its home coordinates.
 	SetConsoleCursorPosition(hConsole, coordScreen);
+}
+
+BOOL fnPrintF(PCWSTR pText, WORD wAttribute, ...) {
+	va_list vaArg;
+	va_start(vaArg, wAttribute);
+
+	PVOID hBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, (1 << 12));
+	DWORD nBufLen;
+	StringCchVPrintfW((STRSAFE_LPWSTR)hBuf, (1 << 12) / sizeof(WCHAR), pText, vaArg);
+	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, (1 << 12) / sizeof(WCHAR), (PUINT32)&nBufLen);
+	SetConsoleTextAttribute(t_hCon, wAttribute);
+	WriteConsoleW(t_hCon, hBuf, nBufLen, &nBufLen, 0);
+	HeapFree(g_hPH, 0, hBuf);
+
+	va_end(vaArg);
+	return nBufLen;
 }

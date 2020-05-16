@@ -7,14 +7,17 @@ static BOOL fnCheckVirtualPC();
 
 BOOL fnCheckVMPresent() {
 	BOOL bT = fnCheckVMware();
-	bT |= fnCheckVirtualBox();
-	bT |= fnCheckVirtualPC();
-
+	if (bT)
+		return TRUE;
+	bT = fnCheckVirtualBox();
+	if (bT)
+		return TRUE;
+	bT = fnCheckVirtualPC();
 	return bT;
 }
 
 static BOOL fnCheckVMware() {
-	BOOL bRC = FALSE;
+	BOOL bRC = TRUE;
 
 	__try {
 		__asm {
@@ -25,13 +28,11 @@ static BOOL fnCheckVMware() {
 			mov    ecx, 10     // get VMWare version
 			mov    edx, 'VX'   // port number
 			in     eax, dx     // read port
-			                   // on return EAX returns the VERSION
-			cmp    ebx, 'VMXh' // is it a reply from VMWare?
-			setz   [bRC]       // set return value
 
 			popad
 		}
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
+		bRC = FALSE;
 	}
 
 	return bRC;
@@ -48,17 +49,17 @@ static BOOL fnCheckVirtualBox() {
 		return FALSE;
 }
 
-static inline DWORD fnCVPCExceptionFilter(
+static DWORD fnCVPCExceptionFilter(
 	_In_ PEXCEPTION_POINTERS ep
 ) {
 	PCONTEXT pCt = ep->ContextRecord;
 	pCt->Ebx = (DWORD)-1; // Not running VPC
 	pCt->Eip += 4; // skip past the "call VPC" opcodes
 
-	return EXCEPTION_CONTINUE_EXECUTION; // we can safely resume execution since we skipped faulty instruction
+	return EXCEPTION_EXECUTE_HANDLER; // we can safely resume execution since we skipped faulty instruction
 }
 static BOOL fnCheckVirtualPC() {
-	BOOL bRC = FALSE;
+	BOOL bRC = TRUE;
 
 	__try {
 		__asm {
@@ -72,11 +73,12 @@ static BOOL fnCheckVirtualPC() {
 			__emit 07h
 			__emit 0Bh
 
-			test   ebx, ebx
-			setz   [bRC] // set return value
+//			test   ebx, ebx
+//			setz   [bRC] // set return value
 			popad
 		}
 	} __except (fnCVPCExceptionFilter(GetExceptionInformation())) {
+		bRC = FALSE;
 	}
 
 	return bRC;

@@ -2,7 +2,6 @@
 // Microsoft Visual C++ generated include file.
 // Used by _rift.rc
 //
-#define IDS_CONSOLETITLE                101
 
 // Next default values for new objects
 // 

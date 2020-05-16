@@ -14,12 +14,12 @@ VOID fnAllocTable() {
 }
 
 UINT32 fnCRC32(
-	_In_ PBYTE   pData,
-	_In_ UINT32  ui32DataLen
+	_In_ PUCHAR pData,
+	_In_ UINT32 ui32DataLen
 ) {
 	UINT32 ui32Crc = 0;
 	while (ui32DataLen--) {
-		ui32Crc = (ui32Crc << 8) ^ ui32a256Table[((ui32Crc >> 24) ^ *pData) & 255];
+		ui32Crc = (ui32Crc << 8) ^ ui32a256Table[((ui32Crc >> 24) ^ *(PBYTE)pData) & 255];
 		pData++;
 	}
 

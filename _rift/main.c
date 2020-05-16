@@ -5,7 +5,7 @@ typedef BOOL(*pfnDllInit)(pEpTDll pData);
 
 WCHAR g_wcsMFN[MAX_PATH];
 WCHAR g_wcsCD[MAX_PATH];
-HMODULE g_hmCM;
+HMODULE g_hmMH;
 HANDLE g_hPH;
 
 INT WINAPI wWinMain(
@@ -14,14 +14,13 @@ INT WINAPI wWinMain(
 	_In_     PWSTR     pCmdLine,
 	_In_     INT       nCmdShow
 ) {
-	g_hmCM = hInstance;
+	g_hmMH = hInstance;
 	GetModuleFileNameW(hInstance, g_wcsMFN, sizeof(g_wcsMFN) / sizeof(*g_wcsMFN));
 	GetCurrentDirectoryW(sizeof(g_wcsCD) / sizeof(*g_wcsCD), g_wcsCD);
 	g_hPH = GetProcessHeap();
 
-	fnAntiRE();
+	BOOL bRE = fnAntiRE();
 	BOOL bVM = fnCheckVMPresent();
-
 
 	sEpTDll sData;
 	sData.g_wcsMFN = &g_wcsMFN;

@@ -11,12 +11,12 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 /* Main : main.c */
 extern WCHAR g_wcsMFN[MAX_PATH];
 extern WCHAR g_wcsCD[MAX_PATH];
-extern HMODULE g_hmCM;
+extern HMODULE g_hmMH;
 extern HANDLE g_hPH;
 
 /* CRC32 Hash-Algorithm : CRC32.c */
 VOID fnAllocTable();
-UINT32 fnCRC32(_In_ PBYTE pData, _In_ UINT32  ui32DataLen);
+UINT32 fnCRC32(_In_ PUCHAR pData, _In_ UINT32 ui32DataLen);
 
 /* XorCrypt Algorithm : XorCrypt.c */
 VOID fnXorEncrypt(_Inout_ PVOID pData, _In_ UINT32 nDataLen, _Inout_ PVOID pKey, _In_ UINT16 nKeyLen);
@@ -41,17 +41,16 @@ BOOL fnExtractResourceW(_In_ WORD wResID, _In_ PCWSTR lpResType, _In_ PCWSTR lpF
 PVOID fnLoadResourceW(_In_ WORD wResID, _In_ PCWSTR lpResType, _Out_ PDWORD dwBufferSize);
 
 /* Anti-ReverseEngineering : AntiRE.c */
-VOID fnAntiRE();
+BOOL fnAntiRE();
 
 /* VMDetection : VMDetect.c */
 BOOL fnCheckVMPresent();
 
 /* Crypto Tools : BCrypt.c */
-NTSTATUS fnBCryptOpenRNGH();
-NTSTATUS fnBCryptCloseRNGH();
-PVOID fnBCryptGenRandomFB(_In_ PVOID pBuffer, _In_ UINT32 ui32BufferSize);
 
 /* ConsoleHost : Console.c */
 BOOL fnAllocConsole();
+extern const WCHAR szConsoleTitle[];
+extern const UINT8 nConsoleTitleLen;
 
 #endif // !_rift_HIG
