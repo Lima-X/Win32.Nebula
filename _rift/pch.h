@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _PCH_HIG
 #define _PCH_HIG
 

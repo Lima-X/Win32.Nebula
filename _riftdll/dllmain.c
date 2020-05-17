@@ -15,9 +15,6 @@ BOOL WINAPI DllMain(
 	}
 }
 
-DLLAPI BOOL fnDllInit(pEpTDll pData) {
-	if (!pData)
-		return 1;
-
+DLLAPI BOOL fnDllInit() {
 
 }

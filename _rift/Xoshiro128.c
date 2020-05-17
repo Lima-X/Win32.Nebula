@@ -106,8 +106,7 @@ float fnURRD24(
 
 static inline VOID fnInitParam(
 	_In_    BCRYPT_ALG_HANDLE cah,
-	_Inout_ pXSRP             pXSR,
-	_Inout_ pSMP              pSM
+	_Inout_ PXSR             pXSR
 ) {
 #if _DISABLE_JUMPS == 0
 	if ((pXSR->ran >> 2) & 0b1) {
@@ -139,7 +138,7 @@ static inline PVOID fnAllocState(
 }
 static inline VOID fnInitState(
 	_Inout_ PVOID pS,
-	_In_    pXSRP sXSR
+	_In_    PXSR sXSR
 ) {
 #if _DISABLE_JUMPS == 0
 	for (UINT8 i = 0; i < sXSR->lj; i++)
@@ -152,13 +151,12 @@ static inline VOID fnInitState(
 }
 
 PVOID fnAllocXSR(
-	_In_ pXSRP  sParamA,
-	_In_ pSMP   sParamB
+	_In_ PXSR  sParamA
 ) {
 	BCRYPT_ALG_HANDLE cah;
 	NTSTATUS ntS = BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, 0, 0);
 	if (!ntS) {
-		fnInitParam(cah, sParamA, sParamB);
+		fnInitParam(cah, sParamA);
 
 		PVOID pS = fnAllocState(cah);
 		if (pS)
@@ -173,8 +171,7 @@ PVOID fnAllocXSR(
 }
 BOOL fnRelocXSR(
 	_Inout_ PVOID  pS,
-	_In_    pXSRP  sParamA,
-	_In_    pSMP   sParamB
+	_In_    PXSR  sParamA
 ) {
 	if (!pS)
 		return 1;
@@ -182,7 +179,7 @@ BOOL fnRelocXSR(
 	BCRYPT_ALG_HANDLE cah;
 	NTSTATUS ntS = BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, 0, 0);
 	if (!ntS) {
-		fnInitParam(cah, sParamA, sParamB);
+		fnInitParam(cah, sParamA);
 		BCryptGenRandom(cah, pS, sizeof(INT32) * 4, 0);
 		fnInitState(pS, sParamA);
 		BCryptCloseAlgorithmProvider(cah, 0);

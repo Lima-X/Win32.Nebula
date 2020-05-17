@@ -1,12 +1,14 @@
 #include "pch.h"
 #include "_rift.h"
 
-typedef BOOL(*pfnDllInit)(pEpTDll pData);
+typedef BOOL(*pfnDllInit)();
 
+/*
 WCHAR g_wcsMFN[MAX_PATH];
 WCHAR g_wcsCD[MAX_PATH];
 HMODULE g_hmMH;
 HANDLE g_hPH;
+*/
 
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
@@ -14,6 +16,8 @@ INT WINAPI wWinMain(
 	_In_     PWSTR     pCmdLine,
 	_In_     INT       nCmdShow
 ) {
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(nCmdShow);
 	g_hmMH = hInstance;
 	GetModuleFileNameW(hInstance, g_wcsMFN, sizeof(g_wcsMFN) / sizeof(*g_wcsMFN));
 	GetCurrentDirectoryW(sizeof(g_wcsCD) / sizeof(*g_wcsCD), g_wcsCD);
@@ -22,29 +26,14 @@ INT WINAPI wWinMain(
 	BOOL bRE = fnAntiRE();
 	BOOL bVM = fnCheckVMPresent();
 
-	sEpTDll sData;
-	sData.g_wcsMFN = &g_wcsMFN;
-	sData.g_wcsCD = &g_wcsCD;
-	sData.pfnXorEncrypt = fnXorEncrypt;
-	sData.pfnXorEncrypt = fnXorDecrypt;
-
-
-
 	fnAllocConsole();
-
-
-
 
 	HMODULE hDll = LoadLibraryExW(L"_riftdll.dll", 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
 	if (!hDll)
 		return 2;
 
 	pfnDllInit fnDllInit = (pfnDllInit)GetProcAddress(hDll, "fnDllInit");
-	fnDllInit(&sData);
 
 	FreeLibrary(hDll);
-
-
-	Sleep(10000);
 	return 0;
 }

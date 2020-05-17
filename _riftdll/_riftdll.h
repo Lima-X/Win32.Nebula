@@ -8,6 +8,6 @@
 #define DLLAPI __declspec(dllimport)
 #endif // _WINDLL
 
-BOOL DLLAPI fnDllInit(pEpTDll pData);
+BOOL DLLAPI fnDllInit();
 
 #endif // !_riftdll_HIG

@@ -47,9 +47,6 @@
     <ClCompile Include="XorCrypt32.c">
       <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="CRC32.c">
-      <Filter>Source Files\Algorithms</Filter>
-    </ClCompile>
     <ClCompile Include="VMDetect.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
@@ -76,6 +73,9 @@
     </ClCompile>
     <ClCompile Include="Data.c">
       <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CRC32.c">
+      <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

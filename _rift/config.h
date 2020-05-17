@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _config_HIG
 #define _config_HIG
 
