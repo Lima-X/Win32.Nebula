@@ -19,6 +19,9 @@
     <Filter Include="Source Files\Algorithms">
       <UniqueIdentifier>{e72389f3-a674-48be-890e-6ea82c78feb4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\UnPack">
+      <UniqueIdentifier>{a3d92a61-801d-4a55-9a27-696b24c96576}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_rift.h">
@@ -44,9 +47,6 @@
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="XorCrypt32.c">
-      <Filter>Source Files\Algorithms</Filter>
-    </ClCompile>
     <ClCompile Include="VMDetect.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
@@ -68,14 +68,17 @@
     <ClCompile Include="Console.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="BCrypt.c">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="Data.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
     <ClCompile Include="CRC32.c">
       <Filter>Source Files\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="BCrypt.c">
+      <Filter>Source Files\UnPack</Filter>
+    </ClCompile>
+    <ClCompile Include="Compress.c">
+      <Filter>Source Files\UnPack</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

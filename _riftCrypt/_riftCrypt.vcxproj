@@ -14,8 +14,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{708DC70C-D97D-4E1F-B214-5259D3E2C669}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>riftdllCrypt</RootNamespace>
+    <RootNamespace>riftCrypt</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>_riftCrypt</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -92,7 +93,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\_rift\CRC32.c" />
-    <ClCompile Include="_riftdllCrypt.cpp" />
+    <ClCompile Include="_riftCrypt.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\_rift\_rift_shared.h" />

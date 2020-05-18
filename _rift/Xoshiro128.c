@@ -208,6 +208,6 @@ VOID fnDelocXSR(
 	if (!pS)
 		return;
 
-	free(pS);
+	HeapFree(g_hPH, 0, pS);
 	pS = 0;
 }

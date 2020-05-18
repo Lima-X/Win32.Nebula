@@ -3,13 +3,6 @@
 
 typedef BOOL(*pfnDllInit)();
 
-/*
-WCHAR g_wcsMFN[MAX_PATH];
-WCHAR g_wcsCD[MAX_PATH];
-HMODULE g_hmMH;
-HANDLE g_hPH;
-*/
-
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,

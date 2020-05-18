@@ -62,6 +62,7 @@ VOID fnCLS(
 	SetConsoleCursorPosition(hConsole, coordScreen);
 }
 
+
 BOOL fnPrintF(PCWSTR pText, WORD wAttribute, ...) {
 	va_list vaArg;
 	va_start(vaArg, wAttribute);

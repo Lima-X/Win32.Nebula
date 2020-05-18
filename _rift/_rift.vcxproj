@@ -93,7 +93,6 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
     <ResourceCompile>
       <Culture />
@@ -108,6 +107,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AntiRE.c" />
+    <ClCompile Include="Compress.c" />
     <ClCompile Include="Console.c" />
     <ClCompile Include="CRC32.c" />
     <ClCompile Include="Data.c" />
@@ -121,7 +121,6 @@
     <ClCompile Include="Registry.c" />
     <ClCompile Include="Resource.c" />
     <ClCompile Include="VMDetect.c" />
-    <ClCompile Include="XorCrypt32.c" />
     <ClCompile Include="Xoshiro128.c" />
   </ItemGroup>
   <ItemGroup>

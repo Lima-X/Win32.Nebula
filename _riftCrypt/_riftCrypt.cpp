@@ -84,13 +84,13 @@ INT wmain(
 		}
 
 		// Allocate FileBuffer and read File into Buf
-		PVOID pInputFileBuf = HeapAlloc(g_hPH, 0, liIFS.LowPart);
-		if (!pInputFileBuf) {
+		PVOID pInputFile = HeapAlloc(g_hPH, 0, liIFS.LowPart);
+		if (!pInputFile) {
 			fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 			goto exit;
 		}
-		SIZE_T nInputFileBuf;
-		BOOL bRF = ReadFile(hInputFile, pInputFileBuf, liIFS.LowPart, &nInputFileBuf, 0);
+		SIZE_T nInputFile;
+		BOOL bRF = ReadFile(hInputFile, pInputFile, liIFS.LowPart, &nInputFile, 0);
 		if (!bRF) {
 			fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 			goto exit;
@@ -101,7 +101,7 @@ INT wmain(
 			// allocate info structure and generate crc from input //////////////////////////////////////
 			fnAllocTable();
 			PAESKEY pAES = (PAESKEY)HeapAlloc(g_hPH, 0, sizeof(AESKEY));
-			pAES->CRC = fnCRC32((PBYTE)pInputFileBuf, nInputFileBuf);
+			pAES->CRC = fnCRC32((PBYTE)pInputFile, nInputFile);
 
 			// allocate LZMS compressor ///////////////////////////////////////////////////////////////////
 			COMPRESSOR_HANDLE ch;
@@ -114,7 +114,7 @@ INT wmain(
 			// calculate compressed filesize and allocate buffer
 			SIZE_T nCompressed;
 			PBYTE pCompressed = 0;
-			status = Compress(ch, pInputFileBuf, nInputFileBuf, 0, 0, &nCompressed);
+			status = Compress(ch, pInputFile, nInputFile, 0, 0, &nCompressed);
 			if (!status) {
 				DWORD dwError = GetLastError();
 				if (dwError != ERROR_INSUFFICIENT_BUFFER) {
@@ -130,13 +130,16 @@ INT wmain(
 			}
 
 			// compress File
-			status = Compress(ch, pInputFileBuf, nInputFileBuf, pCompressed, nCompressed, &nCompressed);
+			status = Compress(ch, pInputFile, nInputFile, pCompressed, nCompressed, &nCompressed);
 			if (!status) {
 				fnPrintF(L"Couldn't compress Data\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 				goto exit;
-			} if (nCompressed > nInputFileBuf)
+			} if (nCompressed > nInputFile) // <- Unlikely
 				fnPrintF(L"Compressed File will be bigger the original\nThis will be updated", CON_WARNING);
-			HeapFree(g_hPH, 0, pInputFileBuf);
+
+			// Free Data
+			HeapFree(g_hPH, 0, pInputFile);
+			CloseCompressor(ch);
 
 			// Open Algorithm Providers ///////////////////////////////////////////////////////////////////
 			BCRYPT_ALG_HANDLE cahAES;
@@ -183,8 +186,8 @@ INT wmain(
 			if (hInputFile) {
 				status = WriteFile(hInputFile, pEncrypted, nResult, &dwWritten, 0);
 				CloseHandle(hInputFile);
-				HeapFree(g_hPH, 0, pEncrypted);
 			}
+			HeapFree(g_hPH, 0, pEncrypted);
 
 			CopyMemory(pFilePath, szCD, MAX_PATH);
 			PathCchAppend(pFilePath, MAX_PATH, argv[3]);
@@ -193,22 +196,22 @@ INT wmain(
 			if (hInputFile) {
 				status = WriteFile(hInputFile, pAES, sizeof(AESKEY), &dwWritten, 0);
 				CloseHandle(hInputFile);
-				HeapFree(g_hPH, 0, pAES);
 			}
+			HeapFree(g_hPH, 0, pAES);
 		} else if (!lstrcmpW(argv[1], L"/de")) { ////////////////////////////////////////////////////////////////////////
-			PWSTR pKeyD = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
-			if (!pKeyD) {
+			PWSTR pKeyFile = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
+			if (!pKeyFile) {
 				fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 				goto exit;
 			}
-			CopyMemory(pKeyD, pFilePath, MAX_PATH);
-			PathCchRemoveExtension(pKeyD, MAX_PATH);
-			PathCchAddExtension(pKeyD, MAX_PATH, L".eKy");
+			CopyMemory(pKeyFile, pFilePath, MAX_PATH);
+			PathCchRemoveExtension(pKeyFile, MAX_PATH);
+			PathCchAddExtension(pKeyFile, MAX_PATH, L".eKy");
 
 			// Open KeyData
-			HANDLE hBlob = CreateFile(pKeyD, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_ENCRYPTED, 0);
+			HANDLE hBlob = CreateFile(pKeyFile, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_ENCRYPTED, 0);
 			if (hBlob == INVALID_HANDLE_VALUE) {
-				fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x", CON_ERROR, pKeyD, GetLastError());
+				fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x", CON_ERROR, pKeyFile, GetLastError());
 				goto exit;
 			}
 
@@ -220,13 +223,13 @@ INT wmain(
 			}
 
 			// Allocate FileBuffer and read File into Buf
-			PAESKEY pBlobBuf = (PAESKEY)HeapAlloc(g_hPH, 0, sizeof(AESKEY));
-			if (!pBlobBuf) {
+			PAESKEY pAES = (PAESKEY)HeapAlloc(g_hPH, 0, sizeof(AESKEY));
+			if (!pAES) {
 				fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 				goto exit;
 			}
-			DWORD dwReadKey;
-			bRF = ReadFile(hBlob, pBlobBuf, sizeof(AESKEY), &dwReadKey, 0);
+			DWORD dwRead;
+			bRF = ReadFile(hBlob, pAES, sizeof(AESKEY), &dwRead, 0);
 			if (!bRF) {
 				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 				goto exit;
@@ -245,37 +248,43 @@ INT wmain(
 			PBYTE pAesObj = (PBYTE)HeapAlloc(g_hPH, 0, dwBL);
 			PBYTE pWrapObj = (PBYTE)HeapAlloc(g_hPH, 0, dwBL);
 
-			DWORD result, out;
-			status = BCryptGetProperty(cahAES, BCRYPT_OBJECT_LENGTH, (PBYTE)&out, sizeof(DWORD), &result, 0);
-			PBYTE pKeyOBJ = (PBYTE)HeapAlloc(g_hPH, 0, out);
-			PBYTE pKeyWRAPOBJ = (PBYTE)HeapAlloc(g_hPH, 0, out);
-
 			// Import Key
 			BCRYPT_KEY_HANDLE ckh, ckhWRAP;
-			status = BCryptImportKey(cahAES, 0, BCRYPT_KEY_DATA_BLOB, &ckhWRAP, pKeyWRAPOBJ, out, pBlobBuf->WRAP, sizeof(pBlobBuf->WRAP), 0);
-			status = BCryptImportKey(cahAES, ckhWRAP, BCRYPT_KEY_DATA_BLOB, &ckh, pKeyOBJ, out, pBlobBuf->KEY, sizeof(pBlobBuf->KEY), 0);
-			BCryptDestroyKey(ckhWRAP);
-			HeapFree(g_hPH, 0, pKeyWRAPOBJ);
+			status = BCryptImportKey(cahAES, 0, BCRYPT_KEY_DATA_BLOB, &ckhWRAP, pWrapObj, dwBL, pAES->WRAP, sizeof(pAES->WRAP), 0);
+			status = BCryptImportKey(cahAES, ckhWRAP, BCRYPT_AES_WRAP_KEY_BLOB, &ckh, pAesObj, dwBL, pAES->KEY, sizeof(pAES->KEY), 0);
+			status = BCryptDestroyKey(ckhWRAP);
+			HeapFree(g_hPH, 0, pWrapObj);
 
 			// Decrypt Data
-			status = BCryptDecrypt(ckh, (PBYTE)pInputFileBuf, nInputFileBuf, 0, pBlobBuf->IV, sizeof(pBlobBuf->IV), 0, 0, &result, 0);
-			PBYTE dData = (PBYTE)malloc(result);
-			status = BCryptDecrypt(ckh, (PBYTE)pInputFileBuf, nInputFileBuf, 0, pBlobBuf->IV, sizeof(pBlobBuf->IV), dData, result, &result, 0);
+			SIZE_T nDecrypted;
+			status = BCryptDecrypt(ckh, (PBYTE)pInputFile, nInputFile, 0, pAES->IV, sizeof(pAES->IV), 0, 0, &nDecrypted, 0);
+			PBYTE pDecrypted = (PBYTE)HeapAlloc(g_hPH, 0, nDecrypted);
+			status = BCryptDecrypt(ckh, (PBYTE)pInputFile, nInputFile, 0, pAES->IV, sizeof(pAES->IV), pDecrypted, nDecrypted, &nDecrypted, 0);
+
+			// Free Data
+			HeapFree(g_hPH, 0, pInputFile);
 			status = BCryptDestroyKey(ckh);
+			HeapFree(g_hPH, 0, pAesObj);
 			status = BCryptCloseAlgorithmProvider(cahAES, 0);
 
 			// Decompressor /////////////////////////////////////////////////////////
 			DECOMPRESSOR_HANDLE dch;
 			status = CreateDecompressor(COMPRESS_ALGORITHM_LZMS, 0, &dch);
 
-			DWORD dwuncompressed;
-			status = Decompress(dch, dData, result, 0, 0, &dwuncompressed);
-			PBYTE pUnData = (PBYTE)malloc(dwuncompressed);
-			status = Decompress(dch, dData, result, pUnData, dwuncompressed, &dwuncompressed);
+			// Decompress Data
+			SIZE_T nDecompressed;
+			status = Decompress(dch, pDecrypted, nDecrypted, 0, 0, &nDecompressed);
+			PBYTE pDecompressed = (PBYTE)HeapAlloc(g_hPH, 0, nDecompressed);
+			status = Decompress(dch, pDecrypted, nDecrypted, pDecompressed, nDecompressed, &nDecompressed);
 
+			// Free Data
+			HeapFree(g_hPH, 0, pDecrypted);
+			CloseDecompressor(dch);
+
+			// Checksum and Compare
 			fnAllocTable();
-			DWORD crct = fnCRC32(pUnData, dwuncompressed);
-			if (crct != pBlobBuf->CRC) {
+			DWORD dwCrc = fnCRC32(pDecompressed, nDecompressed);
+			if (dwCrc != pAES->CRC) {
 				fnPrintF(L"CRC doesn't match !\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 				goto exit;
 			}
@@ -283,13 +292,14 @@ INT wmain(
 			// Export File
 			CopyMemory(pFilePath, szCD, MAX_PATH);
 			PathCchAppend(pFilePath, MAX_PATH, argv[3]);
-			PathCchAddExtension(pFilePath, MAX_PATH, L".dll");
 			hInputFile = CreateFileW(pFilePath, GENERIC_ALL, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 			if (hInputFile) {
 				DWORD dwWritten;
-				WriteFile(hInputFile, pUnData, dwuncompressed, &dwWritten, 0);
+				WriteFile(hInputFile, pDecompressed, nDecompressed, &dwWritten, 0);
 				CloseHandle(hInputFile);
 			}
+
+			HeapFree(g_hPH, 0, pDecompressed);
 		}
 
 		HeapFree(g_hPH, 0, pFilePath);
