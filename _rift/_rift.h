@@ -1,9 +1,6 @@
 #pragma once
-#ifndef _rift_HIG
-#define _rift_HIG
-
 /* Compiler / Headers */
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
+#pragma comment(linker, "\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma warning(disable : 4214)
@@ -11,13 +8,16 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include "resource.h"
 
 /* WinMain : main.c */
-WCHAR g_wcsMFN[MAX_PATH];
-WCHAR g_wcsCD[MAX_PATH];
+WCHAR g_szMFN[MAX_PATH];
+WCHAR g_szCD[MAX_PATH];
 HMODULE g_hmMH;
 
-/* XorCrypt Algorithm : XorCrypt.c */
-VOID fnXorEncrypt(_Inout_ PVOID pData, _In_ UINT32 nDataLen, _Inout_ PVOID pKey, _In_ UINT16 nKeyLen);
-VOID fnXorDecrypt(_Inout_ PVOID pData, _In_ UINT32 nDataLen, _Inout_ PVOID pKey, _In_ UINT16 nKeyLen);
+/* Unpack Resource / Copressor and Crypto / UnpackRes.c */
+BOOL fnUnpackResource(
+	_In_ PCWSTR szInFN,
+	_In_ PCWSTR szOutFN,
+	_In_ WORD   wResID
+);
 
 /* Xoshiro PRNG Algorithm : Xoshiro.c */
 UINT32 fnNext128ss(_Inout_ PVOID pui32S);
@@ -49,5 +49,3 @@ BOOL fnCheckVMPresent();
 BOOL fnAllocConsole();
 extern const WCHAR szConsoleTitle[];
 extern const UINT8 nConsoleTitleLen;
-
-#endif // !_rift_HIG

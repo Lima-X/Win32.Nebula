@@ -107,7 +107,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AntiRE.c" />
-    <ClCompile Include="Compress.c" />
     <ClCompile Include="Console.c" />
     <ClCompile Include="CRC32.c" />
     <ClCompile Include="Data.c" />
@@ -117,14 +116,16 @@
     </ClCompile>
     <ClCompile Include="main.c" />
     <ClCompile Include="Process.c" />
-    <ClCompile Include="BCrypt.c" />
     <ClCompile Include="Registry.c" />
-    <ClCompile Include="Resource.c" />
+    <ClCompile Include="UnPackRes.c" />
     <ClCompile Include="VMDetect.c" />
     <ClCompile Include="Xoshiro128.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="_rift.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\out\Debug\DATA.CRY" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

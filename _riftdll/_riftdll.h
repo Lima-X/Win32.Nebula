@@ -1,5 +1,4 @@
-#ifndef _riftdll_HIG
-#define _riftdll_HIG
+#pragma once
 
 #ifdef _WINDLL
 #include "..\_rift\_rift_shared.h"
@@ -9,5 +8,3 @@
 #endif // _WINDLL
 
 BOOL DLLAPI fnDllInit();
-
-#endif // !_riftdll_HIG

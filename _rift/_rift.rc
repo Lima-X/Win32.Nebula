@@ -83,6 +83,14 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RT_RCDATA
+//
+
+IDR_RIFTDLL             RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\Debug\\DATA.CRY"
+
 #endif    // Neutral (Default) (unknown sub-lang: 0x8) resources
 /////////////////////////////////////////////////////////////////////////////
 

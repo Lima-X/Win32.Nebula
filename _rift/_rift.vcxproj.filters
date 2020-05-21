@@ -19,9 +19,6 @@
     <Filter Include="Source Files\Algorithms">
       <UniqueIdentifier>{e72389f3-a674-48be-890e-6ea82c78feb4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\UnPack">
-      <UniqueIdentifier>{a3d92a61-801d-4a55-9a27-696b24c96576}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_rift.h">
@@ -56,9 +53,6 @@
     <ClCompile Include="Xoshiro128.c">
       <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="Resource.c">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="Registry.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
@@ -74,16 +68,16 @@
     <ClCompile Include="CRC32.c">
       <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="BCrypt.c">
-      <Filter>Source Files\UnPack</Filter>
-    </ClCompile>
-    <ClCompile Include="Compress.c">
-      <Filter>Source Files\UnPack</Filter>
+    <ClCompile Include="UnPackRes.c">
+      <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="_rift.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\out\Debug\DATA.CRY" />
   </ItemGroup>
 </Project>

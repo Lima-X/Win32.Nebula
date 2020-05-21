@@ -1,3 +1,9 @@
+// This project tbh is just a mess
+// most of the sizes are not calculated dynamically and are hard coded
+// also there're no actual sanity checks as i didn't car for them
+// this is just a support tool after all
+// and only serves the purpose to prepare files for the loader
+
 #include <Windows.h>
 #pragma comment(lib, "bcrypt.lib")
 #include <bcrypt.h>
@@ -10,16 +16,11 @@ EXTERN_C {
 	#include "..\_rift\_rift_shared.h"
 }
 
-#define CON_SUCCESS (FOREGROUND_GREEN)                                           // 0b0010
-#define CON_INFO  ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_BLUE)      // 0b0111
-#define CON_WARNING ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY) // 0b1101
-#define CON_ERROR   (FOREGROUND_RED  | FOREGROUND_INTENSITY)                     // 0b1100
-
-HANDLE g_hCon;
-PVOID g_hBuf;
+static HANDLE g_hCon;
+static PVOID  g_hBuf;
 
 // shitty debug/info print function
-BOOL fnPrintF(PCWSTR pText, WORD wAttribute,  ...) {
+BOOL fnPrintF(PCWSTR pText, WORD wAttribute, ...) {
 	va_list vaArg;
 	va_start(vaArg, wAttribute);
 
@@ -44,63 +45,111 @@ INT wmain(
 	g_hBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, (1 << 12));
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(g_hCon, &csbi);
+	WCHAR szCD[MAX_PATH];
+	GetCurrentDirectoryW(MAX_PATH, szCD);
 
-	if (argc != 4) {
-		fnPrintF(L"Usage: [en/de] [InputFile] [OutputName]\n\n"
+	if ((argc != 4) && (argc != 2)) {
+		fnPrintF(L"Usage: [gw]/([en/de] [InputFile] [OutputName/File])\n\n"
 		         L"\t[/en] : Encrypts the specified file with AES256 in CBC mode (random KEY, pIV),\n"
 		         L"\t        the encrypted file is then written to the the current directory.\n"
 		         L"\t        The Application will also export the KEY, pIV, a CRC Checksum of the original\n"
 		         L"\t        and internal data (for the decryption part).\n\n"
-		         L"\t[/de] : Decrypts and decompresses the specified file,"
-		         L"\t        it also validates that the decrypted content is not corrupted.", CON_WARNING);
-		goto exit;
-	} else {
-		// Get Current Directory
-		WCHAR szCD[MAX_PATH];
-		GetCurrentDirectoryW(MAX_PATH, szCD);
+		         L"\t[/de] : Decrypts and decompresses the specified file,\n"
+		         L"\t        it also validates that the decrypted content is not corrupted.\n\n"
+		         L"\t[/gw] : Generates the wrap Key used to encrypt the key,\n"
+		         L"\t        that is packed into the encryped data package.\n", CON_WARNING);
+	} else if (argc == 2) {
+		if (!lstrcmpW(argv[1], L"/gw")) {
+			BCRYPT_ALG_HANDLE cahAES, cahRNG;
+			NTSTATUS status = BCryptOpenAlgorithmProvider(&cahAES, BCRYPT_AES_ALGORITHM, 0, 0);
+			status = BCryptOpenAlgorithmProvider(&cahRNG, BCRYPT_RNG_ALGORITHM, 0, 0);
 
-		// Get Full Path of InputFile Parameter
-		PWSTR pFilePath = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
-		if (!pFilePath) {
-			fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+			PBYTE pWrap = (PBYTE)HeapAlloc(g_hPH, 0, AES_KEY_SIZE);
+			status = BCryptGenRandom(cahRNG, pWrap, AES_KEY_SIZE, 0);
+			status = BCryptCloseAlgorithmProvider(cahRNG, 0);
+
+			BCRYPT_KEY_HANDLE ckhWrap;
+			status = BCryptGenerateSymmetricKey(cahAES, &ckhWrap, 0, 0, pWrap, AES_KEY_SIZE, 0);
+			HeapFree(g_hPH, 0, pWrap);
+
+			SIZE_T nResult;
+			pWrap = (PBYTE)HeapAlloc(g_hPH, 0, WRAP_BLOB_SIZE);
+			status = BCryptExportKey(ckhWrap, 0, BCRYPT_KEY_DATA_BLOB, pWrap, WRAP_BLOB_SIZE, &nResult, 0);
+			status = BCryptDestroyKey(ckhWrap);
+			BCryptCloseAlgorithmProvider(cahAES, 0);
+
+			PWSTR pFilePath = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
+			CopyMemory(pFilePath, szCD, MAX_PATH);
+			PathCchAppend(pFilePath, MAX_PATH, L"_rift.KEY");
+			HANDLE hInputFile = CreateFileW(pFilePath, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+			if (hInputFile) {
+				DWORD dwWritten;
+				status = WriteFile(hInputFile, pWrap, WRAP_BLOB_SIZE, &dwWritten, 0);
+				CloseHandle(hInputFile);
+			}
+
+			HeapFree(g_hPH, 0, pWrap);
+		} else
+			fnPrintF(L"Unknown Command", CON_ERROR);
+	} else if (argc == 4) {
+		// Get Full Path of Wrap Key / Import it ///////////////////////////////////////////
+		PWSTR szFilePath = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
+		CopyMemory(szFilePath, szCD, MAX_PATH);
+		PathCchAppend(szFilePath, MAX_PATH, L"_rift.KEY");
+		HANDLE hWrapBlob = CreateFileW(szFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+		if (hWrapBlob == INVALID_HANDLE_VALUE) {
+			fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x", CON_ERROR, szFilePath, GetLastError());
 			goto exit;
 		}
-		CopyMemory(pFilePath, szCD, MAX_PATH);
-		PathCchAppend(pFilePath, MAX_PATH, argv[2]);
-
-		// Open InputFile
-		HANDLE hInputFile = CreateFile(pFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-		if (hInputFile == INVALID_HANDLE_VALUE) {
-			fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x", CON_ERROR, pFilePath, GetLastError());
-			goto exit;
-		}
-
-		// Get FileSize of InputFile
-		LARGE_INTEGER liIFS;
-		BOOL status = GetFileSizeEx(hInputFile, &liIFS);
-		if ((liIFS.HighPart || !liIFS.LowPart) || !status) {
+		LARGE_INTEGER liFS;
+		BOOL status = GetFileSizeEx(hWrapBlob, &liFS);
+		if (!status || ((liFS.HighPart || !liFS.LowPart) && (liFS.LowPart != WRAP_BLOB_SIZE))) {
 			fnPrintF(L"Invalid FileSize\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 			goto exit;
 		}
-
-		// Allocate FileBuffer and read File into Buf
-		PVOID pInputFile = HeapAlloc(g_hPH, 0, liIFS.LowPart);
-		if (!pInputFile) {
+		PVOID pWrapBlob = HeapAlloc(g_hPH, 0, liFS.LowPart);
+		if (!pWrapBlob) {
 			fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 			goto exit;
 		}
-		SIZE_T nInputFile;
-		BOOL bRF = ReadFile(hInputFile, pInputFile, liIFS.LowPart, &nInputFile, 0);
-		if (!bRF) {
+		DWORD dwRead;
+		status = ReadFile(hWrapBlob, pWrapBlob, liFS.LowPart, &dwRead, 0);
+		if (!status) {
 			fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 			goto exit;
 		}
-		CloseHandle(hInputFile);
+		CloseHandle(hWrapBlob);
 
 		if (!lstrcmpW(argv[1], L"/en")) {
+			// Get Full Path of InputFile Parameter / Import it ////////////////////////////////////
+			CopyMemory(szFilePath, szCD, MAX_PATH);
+			PathCchAppend(szFilePath, MAX_PATH, argv[2]);
+			HANDLE hInputFile = CreateFileW(szFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+			if (hInputFile == INVALID_HANDLE_VALUE) {
+				fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x", CON_ERROR, szFilePath, GetLastError());
+				goto exit;
+			}
+			status = GetFileSizeEx(hInputFile, &liFS);
+			if ((liFS.HighPart || !liFS.LowPart) || !status) {
+				fnPrintF(L"Invalid FileSize\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				goto exit;
+			}
+			PVOID pInputFile = HeapAlloc(g_hPH, 0, liFS.LowPart);
+			if (!pInputFile) {
+				fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				goto exit;
+			}
+			SIZE_T nInputFile;
+			status = ReadFile(hInputFile, pInputFile, liFS.LowPart, &nInputFile, 0);
+			if (!status) {
+				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				goto exit;
+			}
+			CloseHandle(hInputFile);
+
 			// allocate info structure and generate crc from input //////////////////////////////////////
 			fnAllocTable();
-			PAESKEY pAES = (PAESKEY)HeapAlloc(g_hPH, 0, sizeof(AESKEY));
+			PAESBLOB pAES = (PAESBLOB)HeapAlloc(g_hPH, 0, sizeof(AESBLOB));
 			pAES->CRC = fnCRC32((PBYTE)pInputFile, nInputFile);
 
 			// allocate LZMS compressor ///////////////////////////////////////////////////////////////////
@@ -142,23 +191,22 @@ INT wmain(
 			CloseCompressor(ch);
 
 			// Open Algorithm Providers ///////////////////////////////////////////////////////////////////
-			BCRYPT_ALG_HANDLE cahAES;
-			BCRYPT_ALG_HANDLE cahRNG;
+			BCRYPT_ALG_HANDLE cahAES, cahRNG;
 			status = BCryptOpenAlgorithmProvider(&cahAES, BCRYPT_AES_ALGORITHM, 0, 0);
 			status = BCryptOpenAlgorithmProvider(&cahRNG, BCRYPT_RNG_ALGORITHM, 0, 0);
 
 			// Generate Key From Data
-			PBYTE pKey = (PBYTE)HeapAlloc(g_hPH, 0, 32);
-			status = BCryptGenRandom(cahRNG, pKey, 32, 0);
-			PBYTE pWrap = (PBYTE)HeapAlloc(g_hPH, 0, 32);
-			status = BCryptGenRandom(cahRNG, pWrap, 32, 0);
+			PBYTE pKey = (PBYTE)HeapAlloc(g_hPH, 0, AES_KEY_SIZE);
+			status = BCryptGenRandom(cahRNG, pKey, AES_KEY_SIZE, 0);
 
 			// Allocate key objects, generate AES key's and export them
 			SIZE_T nResult;
-			BCRYPT_KEY_HANDLE ckhAES, ckhWrap = 0;
-			status = BCryptGenerateSymmetricKey(cahAES, &ckhWrap, 0, 0, pKey, 32, 0);
-			status = BCryptExportKey(ckhWrap, 0, BCRYPT_KEY_DATA_BLOB, pAES->WRAP, sizeof(pAES->WRAP), &nResult, 0);
-			status = BCryptGenerateSymmetricKey(cahAES, &ckhAES, 0, 0, pKey, 32, 0);
+			DWORD dwBL;
+			BCRYPT_KEY_HANDLE ckhAES, ckhWrap;
+			status = BCryptGetProperty(cahAES, BCRYPT_OBJECT_LENGTH, (PUCHAR)&dwBL, sizeof(DWORD), &nResult, 0);
+			PBYTE pAesObj = (PBYTE)HeapAlloc(g_hPH, 0, dwBL);
+			status = BCryptImportKey(cahAES, 0, BCRYPT_KEY_DATA_BLOB, &ckhWrap, pAesObj, dwBL, (PUCHAR)pWrapBlob, WRAP_BLOB_SIZE, 0);
+			status = BCryptGenerateSymmetricKey(cahAES, &ckhAES, 0, 0, pKey, AES_KEY_SIZE, 0);
 			status = BCryptExportKey(ckhAES, ckhWrap, BCRYPT_AES_WRAP_KEY_BLOB, pAES->KEY, sizeof(pAES->KEY), &nResult, 0);
 			status = BCryptDestroyKey(ckhWrap);
 
@@ -179,91 +227,72 @@ INT wmain(
 
 			// Export Data ///////////////////////////////////////////////////////////////////////////
 			DWORD dwWritten;
-			CopyMemory(pFilePath, szCD, MAX_PATH);
-			PathCchAppend(pFilePath, MAX_PATH, argv[3]);
-			PathCchAddExtension(pFilePath, MAX_PATH, L".cRy");
-			hInputFile = CreateFileW(pFilePath, GENERIC_ALL, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ENCRYPTED, 0);
+			CopyMemory(szFilePath, szCD, MAX_PATH);
+			PathCchAppend(szFilePath, MAX_PATH, argv[3]);
+			PathCchAddExtension(szFilePath, MAX_PATH, L".CRY");
+			hInputFile = CreateFileW(szFilePath, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS, (FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ENCRYPTED), 0);
 			if (hInputFile) {
+				status = WriteFile(hInputFile, pAES, sizeof(AESBLOB), &dwWritten, 0);
 				status = WriteFile(hInputFile, pEncrypted, nResult, &dwWritten, 0);
 				CloseHandle(hInputFile);
 			}
 			HeapFree(g_hPH, 0, pEncrypted);
-
-			CopyMemory(pFilePath, szCD, MAX_PATH);
-			PathCchAppend(pFilePath, MAX_PATH, argv[3]);
-			PathCchAddExtension(pFilePath, MAX_PATH, L".eKy");
-			hInputFile = CreateFileW(pFilePath, GENERIC_ALL, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_ENCRYPTED, 0);
-			if (hInputFile) {
-				status = WriteFile(hInputFile, pAES, sizeof(AESKEY), &dwWritten, 0);
-				CloseHandle(hInputFile);
-			}
 			HeapFree(g_hPH, 0, pAES);
 		} else if (!lstrcmpW(argv[1], L"/de")) { ////////////////////////////////////////////////////////////////////////
-			PWSTR pKeyFile = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
-			if (!pKeyFile) {
-				fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+			// Get Full Path of InputFile Parameter / Import it ////////////////////////////////////
+			CopyMemory(szFilePath, szCD, MAX_PATH);
+			PathCchAppend(szFilePath, MAX_PATH, argv[2]);
+			HANDLE hInputFile = CreateFileW(szFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+			if (hInputFile == INVALID_HANDLE_VALUE) {
+				fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x", CON_ERROR, szFilePath, GetLastError());
 				goto exit;
 			}
-			CopyMemory(pKeyFile, pFilePath, MAX_PATH);
-			PathCchRemoveExtension(pKeyFile, MAX_PATH);
-			PathCchAddExtension(pKeyFile, MAX_PATH, L".eKy");
-
-			// Open KeyData
-			HANDLE hBlob = CreateFile(pKeyFile, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_ENCRYPTED, 0);
-			if (hBlob == INVALID_HANDLE_VALUE) {
-				fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x", CON_ERROR, pKeyFile, GetLastError());
-				goto exit;
-			}
-
-			// Get FileSize of InputFile
-			status = GetFileSizeEx(hBlob, &liIFS);
-			if (((liIFS.HighPart || !liIFS.LowPart) || !status) && (liIFS.LowPart != sizeof(AESKEY))) {
+			status = GetFileSizeEx(hInputFile, &liFS);
+			if ((liFS.HighPart || !liFS.LowPart) || !status) {
 				fnPrintF(L"Invalid FileSize\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 				goto exit;
 			}
 
-			// Allocate FileBuffer and read File into Buf
-			PAESKEY pAES = (PAESKEY)HeapAlloc(g_hPH, 0, sizeof(AESKEY));
-			if (!pAES) {
-				fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
-				goto exit;
-			}
-			DWORD dwRead;
-			bRF = ReadFile(hBlob, pAES, sizeof(AESKEY), &dwRead, 0);
-			if (!bRF) {
+			PAESBLOB pAES = (PAESBLOB)HeapAlloc(g_hPH, 0, sizeof(AESBLOB));
+			PVOID pInputFile = HeapAlloc(g_hPH, 0, liFS.LowPart - sizeof(AESBLOB));
+			SIZE_T nInputFile;
+			status = ReadFile(hInputFile, pAES, sizeof(AESBLOB), &nInputFile, 0);
+			if (!status) {
 				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 				goto exit;
 			}
-			CloseHandle(hBlob);
+			status = ReadFile(hInputFile, pInputFile, liFS.LowPart - sizeof(AESBLOB), &nInputFile, 0);
+			if (!status) {
+				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				goto exit;
+			}
+			CloseHandle(hInputFile);
 
 			// Decryption // Open Provider //////////////////////////////////////////////////////////////////
 			BCRYPT_ALG_HANDLE cahAES;
 			status = BCryptOpenAlgorithmProvider(&cahAES, BCRYPT_AES_ALGORITHM, 0, 0);
 
-			// Create KeyOBJ
+			// Create KeyOBJ / Import KeySet
 			DWORD dwBL;
 			SIZE_T nResult;
-			BCRYPT_KEY_HANDLE ckhAES, ckhWrap = 0;
+			BCRYPT_KEY_HANDLE ckhAES, ckhWrap;
 			status = BCryptGetProperty(cahAES, BCRYPT_OBJECT_LENGTH, (PUCHAR)&dwBL, sizeof(DWORD), &nResult, 0);
 			PBYTE pAesObj = (PBYTE)HeapAlloc(g_hPH, 0, dwBL);
 			PBYTE pWrapObj = (PBYTE)HeapAlloc(g_hPH, 0, dwBL);
-
-			// Import Key
-			BCRYPT_KEY_HANDLE ckh, ckhWRAP;
-			status = BCryptImportKey(cahAES, 0, BCRYPT_KEY_DATA_BLOB, &ckhWRAP, pWrapObj, dwBL, pAES->WRAP, sizeof(pAES->WRAP), 0);
-			status = BCryptImportKey(cahAES, ckhWRAP, BCRYPT_AES_WRAP_KEY_BLOB, &ckh, pAesObj, dwBL, pAES->KEY, sizeof(pAES->KEY), 0);
-			status = BCryptDestroyKey(ckhWRAP);
+			status = BCryptImportKey(cahAES, 0, BCRYPT_KEY_DATA_BLOB, &ckhWrap, pWrapObj, dwBL, (PUCHAR)pWrapBlob, WRAP_BLOB_SIZE, 0);
+			status = BCryptImportKey(cahAES, ckhWrap, BCRYPT_AES_WRAP_KEY_BLOB, &ckhAES, pAesObj, dwBL, pAES->KEY, sizeof(pAES->KEY), 0);
+			status = BCryptDestroyKey(ckhWrap);
 			HeapFree(g_hPH, 0, pWrapObj);
 
 			// Decrypt Data
 			SIZE_T nDecrypted;
-			status = BCryptDecrypt(ckh, (PBYTE)pInputFile, nInputFile, 0, pAES->IV, sizeof(pAES->IV), 0, 0, &nDecrypted, 0);
+			status = BCryptDecrypt(ckhAES, (PBYTE)pInputFile, nInputFile, 0, pAES->IV, sizeof(pAES->IV), 0, 0, &nDecrypted, 0);
 			PBYTE pDecrypted = (PBYTE)HeapAlloc(g_hPH, 0, nDecrypted);
-			status = BCryptDecrypt(ckh, (PBYTE)pInputFile, nInputFile, 0, pAES->IV, sizeof(pAES->IV), pDecrypted, nDecrypted, &nDecrypted, 0);
+			status = BCryptDecrypt(ckhAES, (PBYTE)pInputFile, nInputFile, 0, pAES->IV, sizeof(pAES->IV), pDecrypted, nDecrypted, &nDecrypted, 0);
 
 			// Free Data
 			HeapFree(g_hPH, 0, pInputFile);
-			status = BCryptDestroyKey(ckh);
+			status = BCryptDestroyKey(ckhAES);
 			HeapFree(g_hPH, 0, pAesObj);
 			status = BCryptCloseAlgorithmProvider(cahAES, 0);
 
@@ -290,9 +319,9 @@ INT wmain(
 			}
 
 			// Export File
-			CopyMemory(pFilePath, szCD, MAX_PATH);
-			PathCchAppend(pFilePath, MAX_PATH, argv[3]);
-			hInputFile = CreateFileW(pFilePath, GENERIC_ALL, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+			CopyMemory(szFilePath, szCD, MAX_PATH);
+			PathCchAppend(szFilePath, MAX_PATH, argv[3]);
+			hInputFile = CreateFileW(szFilePath, GENERIC_ALL, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 			if (hInputFile) {
 				DWORD dwWritten;
 				WriteFile(hInputFile, pDecompressed, nDecompressed, &dwWritten, 0);
@@ -300,9 +329,10 @@ INT wmain(
 			}
 
 			HeapFree(g_hPH, 0, pDecompressed);
-		}
+		} else
+			fnPrintF(L"Unknown Command", CON_ERROR);
 
-		HeapFree(g_hPH, 0, pFilePath);
+		HeapFree(g_hPH, 0, szFilePath);
 	}
 
 exit:

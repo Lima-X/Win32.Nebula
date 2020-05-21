@@ -1,21 +1,30 @@
 #pragma once
-#ifndef _shared_HIG
-#define _shared_HIG
 #include "config.h"
 
+HANDLE g_hPH;
+
+/* Console */
+#define CON_SUCCESS FOREGROUND_GREEN                                             // 0b0010
+#define CON_INFO    ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_BLUE)      // 0b0111
+#define CON_WARNING ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY) // 0b1101
+#define CON_ERROR   (FOREGROUND_RED  | FOREGROUND_INTENSITY)                     // 0b1100
+
 /* BCrypt */
+#define AES_KEY_SIZE 0x20                                                   // 256-Bits
+#define AES_IV_SIZE 0x10                                                    // 128-Bits
+#define WRAP_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 44-Bytes (Dynamic)
+#define GENERIC_RW (GENERIC_READ | GENERIC_WRITE)
+
 typedef struct {
 	BYTE  KEY[(sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) - 4) + 32];
-	BYTE  WRAP[sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + 32];
 	BYTE  IV[16];
 	DWORD CRC;
-} AESKEY, * PAESKEY;
+} AESBLOB, * PAESBLOB;
 
 /* CRC32 Hash-Algorithm : CRC32.c */
 DWORD fnCRC32(_In_ PBYTE pBuffer, _In_ SIZE_T nBufferLen);
 VOID fnAllocTable();
 VOID fnFreeTable();
-HANDLE g_hPH;
 
 /* Xoshiro PRNG Algorithm : Xoshiro.c */
 typedef struct {
@@ -29,5 +38,3 @@ typedef struct {
 	WORD ns : 13;
 #endif
 } XSR, * PXSR;
-
-#endif // !_shared_HIG
