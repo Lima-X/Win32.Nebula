@@ -1,4 +1,9 @@
 #pragma once
+/* Compiler / Headers */
+#pragma comment(linker, "\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#pragma warning(disable : 4214)
 #include "config.h"
 
 HANDLE g_hPH;
@@ -38,3 +43,7 @@ typedef struct {
 	WORD ns : 13;
 #endif
 } XSR, * PXSR;
+
+/* Data : Data.c*/
+extern const WCHAR szSelfDelBat[];
+extern const WCHAR szCharSetBASE82[];

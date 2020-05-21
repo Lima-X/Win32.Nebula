@@ -1,8 +1,10 @@
-// This project tbh is just a mess
-// most of the sizes are not calculated dynamically and are hard coded
-// also there're no actual sanity checks as i didn't car for them
+// This project is just a mess,
+// most of the sizes are not calculated dynamically and are hard coded,
+// also there're no actual sanity checks as i didn't care for them.
 // this is just a support tool after all
-// and only serves the purpose to prepare files for the loader
+// and only serves the purpose to prepare files for the loader.
+// tbh i just wanted to be done with this as it is already 300+ lines
+// for just a support tool (why do i do this to myself)
 
 #include <Windows.h>
 #pragma comment(lib, "bcrypt.lib")
@@ -17,7 +19,7 @@ EXTERN_C {
 }
 
 static HANDLE g_hCon;
-static PVOID  g_hBuf;
+static PVOID  g_pBuf;
 
 // shitty debug/info print function
 BOOL fnPrintF(PCWSTR pText, WORD wAttribute, ...) {
@@ -25,10 +27,10 @@ BOOL fnPrintF(PCWSTR pText, WORD wAttribute, ...) {
 	va_start(vaArg, wAttribute);
 
 	DWORD nBufLen;
-	StringCchVPrintfW((STRSAFE_LPWSTR)g_hBuf, (1 << 12) / sizeof(WCHAR), pText, vaArg);
-	StringCchLengthW((STRSAFE_PCNZWCH)g_hBuf, (1 << 12) / sizeof(WCHAR), (PUINT32)&nBufLen);
+	StringCchVPrintfW((STRSAFE_LPWSTR)g_pBuf, (1 << 12) / sizeof(WCHAR), pText, vaArg);
+	StringCchLengthW((STRSAFE_PCNZWCH)g_pBuf, (1 << 12) / sizeof(WCHAR), (PUINT32)&nBufLen);
 	SetConsoleTextAttribute(g_hCon, wAttribute);
-	WriteConsoleW(g_hCon, g_hBuf, nBufLen, &nBufLen, 0);
+	WriteConsoleW(g_hCon, g_pBuf, nBufLen, &nBufLen, 0);
 
 	va_end(vaArg);
 	return nBufLen;
@@ -42,7 +44,7 @@ INT wmain(
 	UNREFERENCED_PARAMETER(envp);
 	g_hPH = GetProcessHeap();
 	g_hCon = GetStdHandle(STD_OUTPUT_HANDLE);
-	g_hBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, (1 << 12));
+	g_pBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, (1 << 12));
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(g_hCon, &csbi);
 	WCHAR szCD[MAX_PATH];
@@ -337,7 +339,7 @@ INT wmain(
 
 exit:
 	SetConsoleTextAttribute(g_hCon, csbi.wAttributes);
-	HeapFree(g_hPH, 0, g_hBuf);
+	HeapFree(g_hPH, 0, g_pBuf);
 
 	return 0;
 }

