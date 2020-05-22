@@ -15,31 +15,27 @@ typedef BOOL(*pfnDllInit)(int);
 PVOID fnUnpackResource(_In_ PCWSTR szInFN, _In_ WORD wResID, _Out_ PSIZE_T nData);
 
 /* Xoshiro PRNG Algorithm : Xoshiro.c */
-UINT32 fnNext128ss(_Inout_ PVOID pui32S);
-UINT32 fnNext128p(_Inout_ PVOID pui32S);
-#if _DISABLE_JUMPS == 0
-VOID fnLJump128(_Inout_ PVOID pui32S);
-VOID fnSJump128(_Inout_ PVOID pui32S);
-#endif
-UINT32 fnURID32(_In_ UINT32 ui32Max, _In_ UINT32 ui32Min, _Inout_ PVOID pui32S);
-float fnURRD24(_Inout_ PVOID pui32S);
-PVOID fnAllocXSR(_In_ PXSR sParamA);
-BOOL fnRelocXSR(_Inout_ PVOID pS, _In_ PXSR sParamA);
-PVOID fnCopyXSR(_In_ PVOID pui32S);
-VOID fnDelocXSR(_Inout_ PVOID pui32S);
+BOOL fnInitializeXSR();
+VOID fnDeleteXSR();
 
-/* Anti-ReverseEngineering : AntiRE.c */
+DWORD fnNext128ss();
+DWORD fnNext128p();
+UINT  fnURID(_In_ UINT uiMin, _In_ UINT uiMax);
+FLOAT fnURRD();
+
+/* Anti-ReverseEngineering : AntiDebug.c, AnitDllInject.c, AntiRE.c */
 BOOL fnAntiRE();
+BOOL fnAntiDebug();
+BOOL HideThread(_In_opt_ HANDLE hThread);
 
 /* VMDetection : VMDetect.c */
 BOOL fnCheckVMPresent();
 
-/* Crypto Tools : BCrypt.c */
-
 /* ConsoleHost : Console.c */
-BOOL fnAllocConsole();
-extern const WCHAR szConsoleTitle[];
-extern const UINT8 nConsoleTitleLen;
+BOOL fnOpenConsole();
 
 /* NT Functions : NT.c */
 BOOL fnAdjustPrivilege(_In_ PCTSTR lpszPrivilege, _In_ BOOL bEnablePrivilege);
+
+/* FileSystem Tools : FileSytsem.c */
+BOOL fnWriteFileW(_In_ PCWSTR pFileName, _In_ PVOID pBuffer, _In_ SIZE_T nBuffer);

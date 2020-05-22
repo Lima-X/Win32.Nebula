@@ -35,7 +35,6 @@
 #include <stddef.h>
 #include <tchar.h>
 
-#if _MSC_VER
 // Disable warning about data -> function pointer conversion
 #pragma warning(disable : 4055)
 // Disable unsafe CRT waring
@@ -44,9 +43,6 @@
 #pragma warning(error: 4244)
 // C4267: conversion from 'size_t' to 'int', possible loss of data.
 #pragma warning(error: 4267)
-
-#define inline __inline
-#endif
 
 #ifndef IMAGE_SIZEOF_BASE_RELOCATION
 // Vista SDKs no longer define IMAGE_SIZEOF_BASE_RELOCATION!?
@@ -94,22 +90,22 @@ typedef struct {
 
 #define GET_HEADER_DICTIONARY(module, idx)  &(module)->headers->OptionalHeader.DataDirectory[idx]
 
-static inline uintptr_t
+static __inline uintptr_t
 AlignValueDown(uintptr_t value, uintptr_t alignment) {
 	return value & ~(alignment - 1);
 }
 
-static inline LPVOID
+static __inline LPVOID
 AlignAddressDown(LPVOID address, uintptr_t alignment) {
 	return (LPVOID)AlignValueDown((uintptr_t)address, alignment);
 }
 
-static inline size_t
+static __inline size_t
 AlignValueUp(size_t value, size_t alignment) {
 	return (value + alignment - 1) & ~(alignment - 1);
 }
 
-static inline void*
+static __inline void*
 OffsetPointer(void* data, ptrdiff_t offset) {
 	return (void*)((uintptr_t)data + offset);
 }

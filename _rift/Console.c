@@ -1,15 +1,15 @@
 #include "pch.h"
 #include "_rift.h"
 
-#define CON_SUCCESS (FOREGROUND_GREEN)                                           // 0b0010
-#define CON_INFO  ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_BLUE)      // 0b0111
+#define CON_SUCCESS (FOREGROUND_GREEN | FOREGROUND_INTENSITY)                    // 0b0010
+#define CON_INFO    ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_BLUE)      // 0b0111
 #define CON_WARNING ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY) // 0b1101
 #define CON_ERROR   (FOREGROUND_RED | FOREGROUND_INTENSITY)                      // 0b1100
 
 static DWORD WINAPI thConsoleTitle(_In_ PVOID pParam);
 static HANDLE t_hCon;
 
-BOOL fnAllocConsole() {
+BOOL fnOpenConsole() {
 	BOOL bT = AllocConsole();
 	if (bT) {
 		CreateThread(0, 0, thConsoleTitle, 0, 0, 0);
@@ -19,13 +19,14 @@ BOOL fnAllocConsole() {
 	return bT;
 }
 
+const WCHAR szConsoleTitle[] = L"[_rift-Loader] by Lima X [L4X] | (debug/dev-build)";
 static DWORD WINAPI thConsoleTitle(
 	_In_ PVOID pParam
 ) {
 	PVOID pBuffer = 0;
-	PWCHAR pTitleBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, nConsoleTitleLen * sizeof(WCHAR));
+	PWCHAR pTitleBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, sizeof(szConsoleTitle));
 	if (pTitleBuf)
-		for (UINT8 i = 0; i < nConsoleTitleLen; i++) {
+		for (UINT8 i = 0; i < sizeof(szConsoleTitle) / sizeof(*szConsoleTitle); i++) {
 			pTitleBuf[i] = szConsoleTitle[i];
 			SetConsoleTitleW(pTitleBuf);
 			Sleep(50);
@@ -46,19 +47,11 @@ VOID fnCLS(
 	DWORD cCharsWritten;
 	if (!FillConsoleOutputCharacterW(hConsole, L' ', dwConSize, coordScreen, &cCharsWritten))
 		return;
-
 	if (!GetConsoleScreenBufferInfo(hConsole, &csbi))
 		return;
-
-	if (!FillConsoleOutputAttribute(hConsole, csbi.wAttributes, // Character attributes to use
-		dwConSize,        // Number of cells to set attribute
-		coordScreen,      // Coordinates of first cell
-		&cCharsWritten)) // Receive number of characters written
-	{
+	if (!FillConsoleOutputAttribute(hConsole, csbi.wAttributes, dwConSize, coordScreen, &cCharsWritten))
 		return;
-	}
 
-	// Put the cursor at its home coordinates.
 	SetConsoleCursorPosition(hConsole, coordScreen);
 }
 

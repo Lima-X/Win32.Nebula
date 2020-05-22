@@ -25,26 +25,6 @@ PVOID fnLoadResourceW(
 	return 0;
 }
 
-// Unused
-BOOL fnSaveResourceW(
-	_In_ PCWSTR lpFileName,
-	_In_ PVOID  lpBuffer,
-	_In_ DWORD  dwBufferSize
-) {
-	HANDLE hFile = CreateFileW(lpFileName, GENERIC_ALL, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN, 0);
-	if (hFile) {
-		DWORD dwT;
-		BOOL bT = WriteFile(hFile, lpBuffer, dwBufferSize, &dwT, 0);
-		CloseHandle(hFile);
-
-		if (bT)
-			return TRUE;
-		else
-			return FALSE;
-	} else
-		return FALSE;
-}
-
 PVOID fnLoadFileW(
 	_In_  PCWSTR szFileName,
 	_Out_ PDWORD nFileSize

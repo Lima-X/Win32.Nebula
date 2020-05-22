@@ -2,6 +2,7 @@
 #pragma comment(lib, "ntdll.lib")
 
 #include <Windows.h>
+#include <psapi.h>
 #include <strsafe.h>
 
 #pragma comment(lib, "bcrypt.lib")
@@ -10,3 +11,5 @@
 #include <compressapi.h>
 #pragma comment(lib, "pathcch.lib")
 #include <PathCch.h>
+
+#include "detours.h"
