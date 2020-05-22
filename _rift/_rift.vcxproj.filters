@@ -42,7 +42,7 @@
     <ClInclude Include="MemoryModule.h">
       <Filter>Header Files\Library Files</Filter>
     </ClInclude>
-    <ClInclude Include="detours.h">
+    <ClInclude Include="..\Detours-4.0.1\include\detours.h">
       <Filter>Header Files\Library Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -104,7 +104,7 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="detours.lib">
+    <Library Include="..\Detours-4.0.1\lib.X86\detours.lib">
       <Filter>Header Files\Library Files</Filter>
     </Library>
   </ItemGroup>

@@ -12,4 +12,4 @@
 #pragma comment(lib, "pathcch.lib")
 #include <PathCch.h>
 
-#include "detours.h"
+#include "..\Detours-4.0.1\include\detours.h"

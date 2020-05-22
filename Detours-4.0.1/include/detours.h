@@ -780,7 +780,7 @@ typedef PIMAGEHLP_MODULE PIMAGEHLP_MODULE64;
 typedef IMAGEHLP_SYMBOL SYMBOL_INFO;
 typedef PIMAGEHLP_SYMBOL PSYMBOL_INFO;
 
-static __inline
+static inline
 LONG InterlockedCompareExchange(_Inout_ LONG *ptr, _In_ LONG nval, _In_ LONG oval)
 {
     return (LONG)::InterlockedCompareExchange((PVOID*)ptr, (PVOID)nval, (PVOID)oval);

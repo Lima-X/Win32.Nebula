@@ -99,7 +99,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="detours.h" />
+    <ClInclude Include="..\Detours-4.0.1\include\detours.h" />
     <ClInclude Include="MemoryModule.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
@@ -136,7 +136,7 @@
     <Image Include="..\_riftIcon\_rift.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="detours.lib" />
+    <Library Include="..\Detours-4.0.1\lib.X86\detours.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

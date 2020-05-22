@@ -10,6 +10,12 @@
 
 # _rift specific directories
 .in/
+Detours-4.0.1/bin.X86/
+Detours-4.0.1/lib.X86/
+Detours-4.0.1/samples/
+Detours-4.0.1/src
+Detours-4.0.1/Makefile
+Detours-4.0.1/system.mak
 
 # User-specific files
 *.rsuser

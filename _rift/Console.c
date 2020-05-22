@@ -7,13 +7,18 @@
 #define CON_ERROR   (FOREGROUND_RED | FOREGROUND_INTENSITY)                      // 0b1100
 
 static DWORD WINAPI thConsoleTitle(_In_ PVOID pParam);
+static DWORD WINAPI thBootScreen(_In_ PVOID pParam);
 static HANDLE t_hCon;
 
 BOOL fnOpenConsole() {
 	BOOL bT = AllocConsole();
 	if (bT) {
-		CreateThread(0, 0, thConsoleTitle, 0, 0, 0);
 		t_hCon = GetStdHandle(STD_OUTPUT_HANDLE);
+		HANDLE hTH[2];
+		hTH[0] = CreateThread(0, 0, thConsoleTitle, 0, 0, 0);
+		hTH[1] = CreateThread(0, 0, thBootScreen, 0, 0, 0);
+
+		WaitForMultipleObjects(2, hTH, TRUE, INFINITE);
 	}
 
 	return bT;
@@ -34,6 +39,48 @@ static DWORD WINAPI thConsoleTitle(
 
 	return 0;
 }
+
+
+const static PCWSTR szRiftLogo[] = {
+	L"             __  _____  __      ____       __________   ____ ",
+	L"     _______|__|/ ____\\/  |_   |   _|      \\______   \\ |_   |",
+	L"     \\_  __ \\  \\   __\\\\   __\\  |  |         |       _/   |  |",
+	L"      |  | \\/  ||  |   |  |    |  |         |    |   \\   |  |",
+	L" _____|__|  |__||__|   |__|    |  |_   _____|____|_  /  _|  |",
+	L"/_____/                        |____| /_____/      \\/  |____|",
+};
+static DWORD WINAPI thBootScreen(
+	_In_ PVOID pParam
+) {
+	BOOL bDone = 0b111111;
+	UINT8 ui8I[6] = { 0 };
+	DWORD dwWritten;
+
+	while (bDone) {
+		UINT8 ui8R = fnURID(0, 5);
+
+		if ((bDone >> ui8R) & 0b1) {
+			SetConsoleCursorPosition(t_hCon, (COORD){ ui8I[ui8R], ui8R });
+			WriteConsoleW(t_hCon, &szRiftLogo[ui8R][ui8I[ui8R]], 1, &dwWritten, 0);
+
+			if (ui8I[ui8R] == 61)
+				bDone &= ~(0b1 << ui8R);
+			else
+				ui8I[ui8R]++;
+
+			Sleep(10);
+		}
+	}
+
+	SetConsoleCursorPosition(t_hCon, (COORD) { 0, 6 });
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(t_hCon, &csbi);
+	for (UINT16 i = 0; i < csbi.dwSize.X; i++) {
+		WriteConsoleW(t_hCon, L"=", 1, &dwWritten, 0);
+		Sleep(10);
+	}
+}
+
 
 VOID fnCLS(
 	_In_ HANDLE hConsole
