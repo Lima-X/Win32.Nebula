@@ -6,8 +6,6 @@ static DWORD WINAPI thAntiDebug(_In_ PVOID pParam);
 BOOL fnAntiDebug() {
 	HideThread(0);
 	CreateThread(0, 0, thAntiDebug, 0, 0, 0);
-	// Erase_PE_Header();
-	fnBasicDebuggerCheck();
 }
 
 static DWORD WINAPI thAntiDebug(
@@ -16,11 +14,21 @@ static DWORD WINAPI thAntiDebug(
 	// HideThread(0);
 
 	while (TRUE) {
-		BOOL bT = fnBasicDebuggerCheck(); if (bT) break;
-		bT = CheckProcessDebugFlags(); if (bT) break;
-		bT = DebugObjectCheck(); if (bT) break;
-		bT = CheckOutputDebugString(); if (bT) break;
-		bT = Int2DCheck(); if (bT) break;
+		BOOL bT = fnBasicDebuggerCheck();
+		if (bT)
+			break;
+		bT = CheckProcessDebugFlags();
+		if (bT)
+			break;
+		bT = DebugObjectCheck();
+		if (bT)
+			break;
+		bT = CheckOutputDebugString();
+		if (bT)
+			break;
+		bT = Int2DCheck();
+		if (bT)
+			break;
 
 		Sleep(1000);
 	}
@@ -48,22 +56,20 @@ BOOL fnBasicDebuggerCheck() {
 // inverse of EPROCESS->NoDebugInherit so (!TRUE == FALSE)
 BOOL CheckProcessDebugFlags() {
 	// Much easier in ASM but C/C++ looks so much better
-	typedef NTSTATUS(WINAPI* pNtQueryInformationProcess)
-		(HANDLE, UINT, PVOID, ULONG, PULONG);
+	typedef NTSTATUS(WINAPI* pNtQueryInformationProcess)(HANDLE, UINT, PVOID, ULONG, PULONG);
 
 	DWORD NoDebugInherit = 0;
-	NTSTATUS Status;
 
 	// Get NtQueryInformationProcess
 	pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)
 		GetProcAddress(GetModuleHandle(TEXT("ntdll.dll")),
 			"NtQueryInformationProcess");
 
-	Status = NtQIP(GetCurrentProcess(),
+	NTSTATUS nts = NtQIP(GetCurrentProcess(),
 		0x1f, // ProcessDebugFlags
 		&NoDebugInherit, 4, NULL);
 
-	if (Status != 0x00000000)
+	if (nts != 0x00000000)
 		return FALSE;
 
 	if (NoDebugInherit == FALSE)
@@ -80,22 +86,20 @@ BOOL CheckProcessDebugFlags() {
 // or the process isn't being debugged
 BOOL DebugObjectCheck() {
 	// Much easier in ASM but C/C++ looks so much better
-	typedef NTSTATUS(WINAPI* pNtQueryInformationProcess)
-		(HANDLE, UINT, PVOID, ULONG, PULONG);
+	typedef NTSTATUS(WINAPI* pNtQueryInformationProcess)(HANDLE, UINT, PVOID, ULONG, PULONG);
 
 	HANDLE hDebugObject = NULL;
-	NTSTATUS Status;
 
 	// Get NtQueryInformationProcess
 	pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)
 		GetProcAddress(GetModuleHandle(TEXT("ntdll.dll")),
 			"NtQueryInformationProcess");
 
-	Status = NtQIP(GetCurrentProcess(),
+	NTSTATUS nts = NtQIP(GetCurrentProcess(),
 		0x1e, // ProcessDebugObjectHandle
 		&hDebugObject, 4, NULL);
 
-	if (Status != 0x00000000)
+	if (nts != 0x00000000)
 		return FALSE;
 
 	if (hDebugObject)
@@ -111,28 +115,26 @@ BOOL DebugObjectCheck() {
 // the function is running in. Also, the function returns
 // false on failure and true on success
 BOOL HideThread(HANDLE hThread) {
-	typedef NTSTATUS(NTAPI* pNtSetInformationThread)
-		(HANDLE, UINT, PVOID, ULONG);
-	NTSTATUS Status;
+	typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, UINT, PVOID, ULONG);
 
 	// Get NtSetInformationThread
-	pNtSetInformationThread NtSIT = (pNtSetInformationThread)
-		GetProcAddress(GetModuleHandle(TEXT("ntdll.dll")),
-			"NtSetInformationThread");
+	pNtSetInformationThread fnNtSIT = (pNtSetInformationThread)
+		GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtSetInformationThread");
 
 	// Shouldn't fail
-	if (NtSIT == NULL)
+	if (fnNtSIT == NULL)
 		return FALSE;
 
 	// Set the thread info
+	NTSTATUS nts;
 	if (hThread == NULL)
-		Status = NtSIT(GetCurrentThread(),
+		nts = fnNtSIT(GetCurrentThread(),
 			0x11, // HideThreadFromDebugger
 			0, 0);
 	else
-		Status = NtSIT(hThread, 0x11, 0, 0);
+		nts = fnNtSIT(hThread, 0x11, 0, 0);
 
-	if (Status != 0x00000000)
+	if (nts != 0x00000000)
 		return FALSE;
 	else
 		return TRUE;

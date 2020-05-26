@@ -88,11 +88,8 @@ END
 //
 // RT_RCDATA
 //
-#ifdef _NDEBUG
-IDR_RIFTDLL             RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\Release\\DATA.CRY"
-#else
+
 IDR_RIFTDLL             RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\Debug\\DATA.CRY"
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //

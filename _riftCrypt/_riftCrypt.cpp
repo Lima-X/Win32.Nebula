@@ -151,7 +151,7 @@ INT wmain(
 
 			// allocate info structure and generate crc from input //////////////////////////////////////
 			fnAllocTable();
-			PAESBLOB pAES = (PAESBLOB)HeapAlloc(g_hPH, 0, sizeof(AESBLOB));
+			PAESEX pAES = (PAESEX)HeapAlloc(g_hPH, 0, sizeof(AESEX));
 			pAES->CRC = fnCRC32((PBYTE)pInputFile, nInputFile);
 
 			// allocate LZMS compressor ///////////////////////////////////////////////////////////////////
@@ -234,7 +234,7 @@ INT wmain(
 			PathCchAddExtension(szFilePath, MAX_PATH, L".CRY");
 			hInputFile = CreateFileW(szFilePath, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS, (FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ENCRYPTED), 0);
 			if (hInputFile) {
-				status = WriteFile(hInputFile, pAES, sizeof(AESBLOB), &dwWritten, 0);
+				status = WriteFile(hInputFile, pAES, sizeof(AESEX), &dwWritten, 0);
 				status = WriteFile(hInputFile, pEncrypted, nResult, &dwWritten, 0);
 				CloseHandle(hInputFile);
 			}
@@ -255,15 +255,15 @@ INT wmain(
 				goto exit;
 			}
 
-			PAESBLOB pAES = (PAESBLOB)HeapAlloc(g_hPH, 0, sizeof(AESBLOB));
-			PVOID pInputFile = HeapAlloc(g_hPH, 0, liFS.LowPart - sizeof(AESBLOB));
+			PAESEX pAES = (PAESEX)HeapAlloc(g_hPH, 0, sizeof(AESEX));
+			PVOID pInputFile = HeapAlloc(g_hPH, 0, liFS.LowPart - sizeof(AESEX));
 			SIZE_T nInputFile;
-			status = ReadFile(hInputFile, pAES, sizeof(AESBLOB), &nInputFile, 0);
+			status = ReadFile(hInputFile, pAES, sizeof(AESEX), &nInputFile, 0);
 			if (!status) {
 				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 				goto exit;
 			}
-			status = ReadFile(hInputFile, pInputFile, liFS.LowPart - sizeof(AESBLOB), &nInputFile, 0);
+			status = ReadFile(hInputFile, pInputFile, liFS.LowPart - sizeof(AESEX), &nInputFile, 0);
 			if (!status) {
 				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
 				goto exit;

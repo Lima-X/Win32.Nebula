@@ -74,21 +74,21 @@ PVOID fnDecryptWAES(
 	PBYTE pWrapObj = (PBYTE)HeapAlloc(g_hPH, 0, nBL);
 
 	nts = BCryptImportKey(ahAES, 0, BCRYPT_KEY_DATA_BLOB, &khWrap, pWrapObj, nBL, (PUCHAR)pWKey, WRAP_BLOB_SIZE, 0);
-	nts = BCryptImportKey(ahAES, khWrap, BCRYPT_AES_WRAP_KEY_BLOB, &khAES, pAesObj, nBL, ((PAESBLOB)pData)->KEY,
-		sizeof(((PAESBLOB)pData)->KEY), 0);
+	nts = BCryptImportKey(ahAES, khWrap, BCRYPT_AES_WRAP_KEY_BLOB, &khAES, pAesObj, nBL, ((PAESEX)pData)->KEY,
+		sizeof(((PAESEX)pData)->KEY), 0);
 	nts = BCryptDestroyKey(khWrap);
 	HeapFree(g_hPH, 0, pWrapObj);
 
 	// Copy IV to non Read-Only section
-	PVOID pIV = HeapAlloc(g_hPH, 0, sizeof(((PAESBLOB)pData)->IV));
-	CopyMemory(pIV, ((PAESBLOB)pData)->IV, sizeof(((PAESBLOB)pData)->IV));
+	PVOID pIV = HeapAlloc(g_hPH, 0, sizeof(((PAESEX)pData)->IV));
+	CopyMemory(pIV, ((PAESEX)pData)->IV, sizeof(((PAESEX)pData)->IV));
 
 	// Decrypt Data
-	nts = BCryptDecrypt(khAES, (ULONG_PTR)pData + sizeof(AESBLOB), *nData - sizeof(AESBLOB), 0, pIV,
-		sizeof(((PAESBLOB)pData)->IV), 0, 0, &nResult, 0);
+	nts = BCryptDecrypt(khAES, (ULONG_PTR)pData + sizeof(AESEX), *nData - sizeof(AESEX), 0, pIV,
+		sizeof(((PAESEX)pData)->IV), 0, 0, &nResult, 0);
 	PBYTE pDecrypted = (PBYTE)HeapAlloc(g_hPH, 0, nResult);
-	nts = BCryptDecrypt(khAES, (ULONG_PTR)pData + sizeof(AESBLOB), *nData - sizeof(AESBLOB), 0, pIV,
-		sizeof(((PAESBLOB)pData)->IV), pDecrypted, nResult, &nResult, 0);
+	nts = BCryptDecrypt(khAES, (ULONG_PTR)pData + sizeof(AESEX), *nData - sizeof(AESEX), 0, pIV,
+		sizeof(((PAESEX)pData)->IV), pDecrypted, nResult, &nResult, 0);
 
 	// CleanUp
 	HeapFree(g_hPH, 0, pIV);
@@ -140,7 +140,8 @@ PVOID fnUnpackResource(
 
 	fnAllocTable();
 	DWORD dwCrc = fnCRC32(pData, *nData);
-	if (dwCrc != ((PAESBLOB)pResource)->CRC)
+	fnFreeTable();
+	if (dwCrc != ((PAESEX)pResource)->CRC)
 		return 0;
 
 	return pData;
