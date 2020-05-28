@@ -2,6 +2,11 @@
 #include "_rift.h"
 
 static DWORD WINAPI thAntiDebug(_In_ PVOID pParam);
+static BOOL fnBasicDebuggerCheck();
+static BOOL CheckProcessDebugFlags();
+static BOOL DebugObjectCheck();
+static BOOL CheckOutputDebugString();
+static BOOL Int2DCheck();
 
 BOOL fnAntiDebug() {
 	HideThread(0);
@@ -36,7 +41,7 @@ static DWORD WINAPI thAntiDebug(
 	return 0;
 }
 
-BOOL fnBasicDebuggerCheck() {
+static BOOL fnBasicDebuggerCheck() {
 	BOOL bT = IsDebuggerPresent();
 	if (!bT) {
 		BOOL bDP;
@@ -54,7 +59,7 @@ BOOL fnBasicDebuggerCheck() {
 // the reason we check for false is because
 // the NtQueryProcessInformation function returns the
 // inverse of EPROCESS->NoDebugInherit so (!TRUE == FALSE)
-BOOL CheckProcessDebugFlags() {
+static BOOL CheckProcessDebugFlags() {
 	// Much easier in ASM but C/C++ looks so much better
 	typedef NTSTATUS(WINAPI* pNtQueryInformationProcess)(HANDLE, UINT, PVOID, ULONG, PULONG);
 
@@ -84,22 +89,21 @@ BOOL CheckProcessDebugFlags() {
 // is successful it'll return true which means we're
 // being debugged or it'll return false if it fails
 // or the process isn't being debugged
-BOOL DebugObjectCheck() {
+static BOOL DebugObjectCheck() {
 	// Much easier in ASM but C/C++ looks so much better
 	typedef NTSTATUS(WINAPI* pNtQueryInformationProcess)(HANDLE, UINT, PVOID, ULONG, PULONG);
 
 	HANDLE hDebugObject = NULL;
 
 	// Get NtQueryInformationProcess
-	pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)
-		GetProcAddress(GetModuleHandle(TEXT("ntdll.dll")),
-			"NtQueryInformationProcess");
+	pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)GetProcAddress(GetModuleHandleW(L"ntdll.dll"),
+		"NtQueryInformationProcess");
 
 	NTSTATUS nts = NtQIP(GetCurrentProcess(),
 		0x1e, // ProcessDebugObjectHandle
 		&hDebugObject, 4, NULL);
 
-	if (nts != 0x00000000)
+	if (!nts)
 		return FALSE;
 
 	if (hDebugObject)
@@ -114,20 +118,20 @@ BOOL DebugObjectCheck() {
 // hThread will cause the function to hide the thread
 // the function is running in. Also, the function returns
 // false on failure and true on success
-BOOL HideThread(HANDLE hThread) {
+static BOOL HideThread(HANDLE hThread) {
 	typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, UINT, PVOID, ULONG);
 
 	// Get NtSetInformationThread
-	pNtSetInformationThread fnNtSIT = (pNtSetInformationThread)
-		GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtSetInformationThread");
+	pNtSetInformationThread fnNtSIT = (pNtSetInformationThread)GetProcAddress(GetModuleHandleW(L"ntdll.dll"),
+		"NtSetInformationThread");
 
 	// Shouldn't fail
-	if (fnNtSIT == NULL)
+	if (!fnNtSIT)
 		return FALSE;
 
 	// Set the thread info
 	NTSTATUS nts;
-	if (hThread == NULL)
+	if (!hThread)
 		nts = fnNtSIT(GetCurrentThread(),
 			0x11, // HideThreadFromDebugger
 			0, 0);
@@ -145,7 +149,7 @@ BOOL HideThread(HANDLE hThread) {
 // and if the error does occur then we know
 // there's no debugger, otherwise if there IS
 // a debugger no error will occur
-BOOL CheckOutputDebugString() {
+static BOOL CheckOutputDebugString() {
 	SetLastError(0);
 	OutputDebugStringW(L"dbgC");
 	if (GetLastError() == 0)
@@ -160,7 +164,7 @@ BOOL CheckOutputDebugString() {
 // exception if there is no debugger. Also when used in OllyDBG
 // it will skip a byte in the disassembly and will create
 // some havoc.
-BOOL Int2DCheck() {
+static BOOL Int2DCheck() {
 	__try {
 		__asm {
 			pushad

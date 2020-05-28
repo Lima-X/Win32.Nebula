@@ -3,10 +3,18 @@
 #include "MemoryModule.h"
 #include "resource.h"
 
-/* WinMain : main.c */
+/* Global Data */
 WCHAR g_szMFN[MAX_PATH];
 WCHAR g_szCD[MAX_PATH];
 HMODULE g_hMH;
+
+/* NoCRT */
+#undef CopyMemory
+#define CopyMemory(dest, src, size) __movsb(dest, src, size)
+#undef ZeroMemory
+#define ZeroMemory(dest, size) __stosb(dest, 0, size)
+
+/* WinMain : main.c */
 VOID fnPurge();
 
 /* _riftdll */

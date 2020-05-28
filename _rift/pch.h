@@ -4,6 +4,8 @@
 #include <Windows.h>
 #include <psapi.h>
 #include <strsafe.h>
+#include <TlHelp32.h>
+#include <intrin.h>
 
 #pragma comment(lib, "bcrypt.lib")
 #include <bcrypt.h>

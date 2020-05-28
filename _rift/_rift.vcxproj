@@ -123,9 +123,11 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="main.c" />
+    <ClCompile Include="Process.c" />
     <ClCompile Include="Random.c" />
     <ClCompile Include="Registry.c" />
     <ClCompile Include="UnpackRes.c" />
+    <ClCompile Include="Utils.c" />
     <ClCompile Include="VMDetect.c" />
     <ClCompile Include="Xoshiro128.c" />
   </ItemGroup>

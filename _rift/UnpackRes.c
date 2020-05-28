@@ -77,6 +77,7 @@ PVOID fnDecryptWAES(
 	nts = BCryptImportKey(ahAES, khWrap, BCRYPT_AES_WRAP_KEY_BLOB, &khAES, pAesObj, nBL, ((PAESEX)pData)->KEY,
 		sizeof(((PAESEX)pData)->KEY), 0);
 	nts = BCryptDestroyKey(khWrap);
+	SecureZeroMemory(pWrapObj, nBL);
 	HeapFree(g_hPH, 0, pWrapObj);
 
 	// Copy IV to non Read-Only section
@@ -93,6 +94,7 @@ PVOID fnDecryptWAES(
 	// CleanUp
 	HeapFree(g_hPH, 0, pIV);
 	nts = BCryptDestroyKey(khAES);
+	SecureZeroMemory(pAesObj, nBL);
 	HeapFree(g_hPH, 0, pAesObj);
 	nts = BCryptCloseAlgorithmProvider(ahAES, 0);
 

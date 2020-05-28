@@ -1,11 +1,6 @@
 #include "pch.h"
 #include "_rift.h"
 
-#define CON_SUCCESS (FOREGROUND_GREEN | FOREGROUND_INTENSITY)                    // 0b0010
-#define CON_INFO    ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_BLUE)      // 0b0111
-#define CON_WARNING ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY) // 0b1101
-#define CON_ERROR   (FOREGROUND_RED | FOREGROUND_INTENSITY)                      // 0b1100
-
 static DWORD WINAPI thConsoleTitle(_In_ PVOID pParam);
 static DWORD WINAPI thBootScreen(_In_ PVOID pParam);
 static HANDLE t_hCon;
@@ -24,15 +19,15 @@ BOOL fnOpenConsole() {
 	return bT;
 }
 
-const WCHAR szConsoleTitle[] = L"[_rift-Loader] by Lima X [L4X] | (debug/dev-build)";
+const WCHAR t_szConsoleTitle[] = L"[_rift-Loader] by Lima X [L4X] | (debug/dev-build)";
 static DWORD WINAPI thConsoleTitle(
 	_In_ PVOID pParam
 ) {
 	PVOID pBuffer = 0;
-	PWCHAR pTitleBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, sizeof(szConsoleTitle));
+	PWCHAR pTitleBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, sizeof(t_szConsoleTitle));
 	if (pTitleBuf)
-		for (UINT8 i = 0; i < sizeof(szConsoleTitle) / sizeof(*szConsoleTitle); i++) {
-			pTitleBuf[i] = szConsoleTitle[i];
+		for (UINT8 i = 0; i < sizeof(t_szConsoleTitle) / sizeof(*t_szConsoleTitle); i++) {
+			pTitleBuf[i] = t_szConsoleTitle[i];
 			SetConsoleTitleW(pTitleBuf);
 			Sleep(50);
 		}
@@ -41,7 +36,7 @@ static DWORD WINAPI thConsoleTitle(
 }
 
 
-const static PCWSTR szRiftLogo[] = {
+static PCWSTR t_szRiftLogo[] = {
 	L"             __  _____  __      ____       __________   ____ ",
 	L"     _______|__|/ ____\\/  |_   |   _|      \\______   \\ |_   |",
 	L"     \\_  __ \\  \\   __\\\\   __\\  |  |         |       _/   |  |",
@@ -61,7 +56,7 @@ static DWORD WINAPI thBootScreen(
 
 		if ((bDone >> ui8R) & 0b1) {
 			SetConsoleCursorPosition(t_hCon, (COORD){ ui8I[ui8R], ui8R });
-			WriteConsoleW(t_hCon, &szRiftLogo[ui8R][ui8I[ui8R]], 1, &dwWritten, 0);
+			WriteConsoleW(t_hCon, &t_szRiftLogo[ui8R][ui8I[ui8R]], 1, &dwWritten, 0);
 
 			if (ui8I[ui8R] == 61)
 				bDone &= ~(0b1 << ui8R);
@@ -79,6 +74,8 @@ static DWORD WINAPI thBootScreen(
 		WriteConsoleW(t_hCon, L"=", 1, &dwWritten, 0);
 		Sleep(10);
 	}
+
+	return 0;
 }
 
 

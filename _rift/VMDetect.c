@@ -73,8 +73,6 @@ static BOOL fnCheckVirtualPC() {
 			__emit 07h
 			__emit 0Bh
 
-//			test   ebx, ebx
-//			setz   [bRC] // set return value
 			popad
 		}
 	} __except (fnCVPCExceptionFilter(GetExceptionInformation())) {

@@ -5,6 +5,7 @@ name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #pragma warning(disable : 4214)
 
+/* Global Data */
 HANDLE g_hPH;
 
 /* Console */
@@ -19,7 +20,7 @@ HANDLE g_hPH;
 #define WRAP_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 44-Bytes (Dynamic)
 
 typedef struct {
-	BYTE  KEY[(sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) - 4) + 32];
+	BYTE  KEY[8 + 32];
 	BYTE  IV[AES_IV_SIZE];
 	DWORD CRC;
 } AESEX, * PAESEX;

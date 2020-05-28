@@ -90,28 +90,23 @@ typedef struct {
 
 #define GET_HEADER_DICTIONARY(module, idx)  &(module)->headers->OptionalHeader.DataDirectory[idx]
 
-static __inline uintptr_t
-AlignValueDown(uintptr_t value, uintptr_t alignment) {
+static __inline uintptr_t AlignValueDown(uintptr_t value, uintptr_t alignment) {
 	return value & ~(alignment - 1);
 }
 
-static __inline LPVOID
-AlignAddressDown(LPVOID address, uintptr_t alignment) {
+static __inline LPVOID AlignAddressDown(LPVOID address, uintptr_t alignment) {
 	return (LPVOID)AlignValueDown((uintptr_t)address, alignment);
 }
 
-static __inline size_t
-AlignValueUp(size_t value, size_t alignment) {
+static __inline size_t AlignValueUp(size_t value, size_t alignment) {
 	return (value + alignment - 1) & ~(alignment - 1);
 }
 
-static __inline void*
-OffsetPointer(void* data, ptrdiff_t offset) {
+static __inline void* OffsetPointer(void* data, ptrdiff_t offset) {
 	return (void*)((uintptr_t)data + offset);
 }
 
-static BOOL
-CheckSize(size_t size, size_t expected) {
+static BOOL CheckSize(size_t size, size_t expected) {
 	if (size < expected) {
 		SetLastError(ERROR_INVALID_DATA);
 		return FALSE;
@@ -120,9 +115,7 @@ CheckSize(size_t size, size_t expected) {
 	return TRUE;
 }
 
-static BOOL
-CopySections(const unsigned char* data, size_t size, PIMAGE_NT_HEADERS old_headers, PMEMORYMODULE module)
-{
+static BOOL CopySections(const unsigned char* data, size_t size, PIMAGE_NT_HEADERS old_headers, PMEMORYMODULE module) {
 	int i, section_size;
 	unsigned char* codeBase = module->codeBase;
 	unsigned char* dest;
@@ -194,8 +187,7 @@ static int ProtectionFlags[2][2][2] = {
 	},
 };
 
-static SIZE_T
-GetRealSectionSize(PMEMORYMODULE module, PIMAGE_SECTION_HEADER section) {
+static SIZE_T GetRealSectionSize(PMEMORYMODULE module, PIMAGE_SECTION_HEADER section) {
 	DWORD size = section->SizeOfRawData;
 	if (size == 0) {
 		if (section->Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA) {
@@ -208,8 +200,7 @@ GetRealSectionSize(PMEMORYMODULE module, PIMAGE_SECTION_HEADER section) {
 	return (SIZE_T)size;
 }
 
-static BOOL
-FinalizeSection(PMEMORYMODULE module, PSECTIONFINALIZEDATA sectionData) {
+static BOOL FinalizeSection(PMEMORYMODULE module, PSECTIONFINALIZEDATA sectionData) {
 	DWORD protect, oldProtect;
 	BOOL executable;
 	BOOL readable;
@@ -249,9 +240,7 @@ FinalizeSection(PMEMORYMODULE module, PSECTIONFINALIZEDATA sectionData) {
 	return TRUE;
 }
 
-static BOOL
-FinalizeSections(PMEMORYMODULE module)
-{
+static BOOL FinalizeSections(PMEMORYMODULE module) {
 	int i;
 	PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(module->headers);
 	static const uintptr_t imageOffset = 0;
@@ -298,9 +287,7 @@ FinalizeSections(PMEMORYMODULE module)
 	return TRUE;
 }
 
-static BOOL
-ExecuteTLS(PMEMORYMODULE module)
-{
+static BOOL  ExecuteTLS(PMEMORYMODULE module) {
 	unsigned char* codeBase = module->codeBase;
 	PIMAGE_TLS_DIRECTORY tls;
 	PIMAGE_TLS_CALLBACK* callback;
@@ -321,9 +308,7 @@ ExecuteTLS(PMEMORYMODULE module)
 	return TRUE;
 }
 
-static BOOL
-PerformBaseRelocation(PMEMORYMODULE module, ptrdiff_t delta)
-{
+static BOOL PerformBaseRelocation(PMEMORYMODULE module, ptrdiff_t delta) {
 	unsigned char* codeBase = module->codeBase;
 	PIMAGE_BASE_RELOCATION relocation;
 
@@ -368,9 +353,7 @@ PerformBaseRelocation(PMEMORYMODULE module, ptrdiff_t delta)
 	return TRUE;
 }
 
-static BOOL
-BuildImportTable(PMEMORYMODULE module)
-{
+static BOOL BuildImportTable(PMEMORYMODULE module) {
 	unsigned char* codeBase = module->codeBase;
 	PIMAGE_IMPORT_DESCRIPTOR importDesc;
 	BOOL result = TRUE;
@@ -435,20 +418,17 @@ BuildImportTable(PMEMORYMODULE module)
 	return result;
 }
 
-LPVOID MemoryDefaultAlloc(LPVOID address, SIZE_T size, DWORD allocationType, DWORD protect, void* userdata)
-{
+LPVOID MemoryDefaultAlloc(LPVOID address, SIZE_T size, DWORD allocationType, DWORD protect, void* userdata) {
 	UNREFERENCED_PARAMETER(userdata);
 	return VirtualAlloc(address, size, allocationType, protect);
 }
 
-BOOL MemoryDefaultFree(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType, void* userdata)
-{
+BOOL MemoryDefaultFree(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType, void* userdata) {
 	UNREFERENCED_PARAMETER(userdata);
 	return VirtualFree(lpAddress, dwSize, dwFreeType);
 }
 
-HCUSTOMMODULE MemoryDefaultLoadLibrary(LPCSTR filename, void* userdata)
-{
+HCUSTOMMODULE MemoryDefaultLoadLibrary(LPCSTR filename, void* userdata) {
 	HMODULE result;
 	UNREFERENCED_PARAMETER(userdata);
 	result = LoadLibraryA(filename);
@@ -459,31 +439,30 @@ HCUSTOMMODULE MemoryDefaultLoadLibrary(LPCSTR filename, void* userdata)
 	return (HCUSTOMMODULE)result;
 }
 
-FARPROC MemoryDefaultGetProcAddress(HCUSTOMMODULE module, LPCSTR name, void* userdata)
-{
+FARPROC MemoryDefaultGetProcAddress(HCUSTOMMODULE module, LPCSTR name, void* userdata) {
 	UNREFERENCED_PARAMETER(userdata);
 	return (FARPROC)GetProcAddress((HMODULE)module, name);
 }
 
-void MemoryDefaultFreeLibrary(HCUSTOMMODULE module, void* userdata)
-{
+void MemoryDefaultFreeLibrary(HCUSTOMMODULE module, void* userdata) {
 	UNREFERENCED_PARAMETER(userdata);
 	FreeLibrary((HMODULE)module);
 }
 
-HMEMORYMODULE MemoryLoadLibrary(const void* data, size_t size)
-{
+HMEMORYMODULE MemoryLoadLibrary(const void* data, size_t size) {
 	return MemoryLoadLibraryEx(data, size, MemoryDefaultAlloc, MemoryDefaultFree, MemoryDefaultLoadLibrary, MemoryDefaultGetProcAddress, MemoryDefaultFreeLibrary, NULL);
 }
 
-HMEMORYMODULE MemoryLoadLibraryEx(const void* data, size_t size,
+HMEMORYMODULE MemoryLoadLibraryEx(
+	const void* data,
+	size_t size,
 	CustomAllocFunc allocMemory,
 	CustomFreeFunc freeMemory,
 	CustomLoadLibraryFunc loadLibrary,
 	CustomGetProcAddressFunc getProcAddress,
 	CustomFreeLibraryFunc freeLibrary,
-	void* userdata)
-{
+	void* userdata
+) {
 	PMEMORYMODULE result = NULL;
 	PIMAGE_DOS_HEADER dos_header;
 	PIMAGE_NT_HEADERS old_header;
@@ -664,22 +643,19 @@ error:
 	return NULL;
 }
 
-static int _compare(const void* a, const void* b)
-{
+static int _compare(const void* a, const void* b) {
 	const struct ExportNameEntry* p1 = (const struct ExportNameEntry*)a;
 	const struct ExportNameEntry* p2 = (const struct ExportNameEntry*)b;
 	return strcmp(p1->name, p2->name);
 }
 
-static int _find(const void* a, const void* b)
-{
+static int _find(const void* a, const void* b) {
 	LPCSTR* name = (LPCSTR*)a;
 	const struct ExportNameEntry* p = (const struct ExportNameEntry*)b;
 	return strcmp(*name, p->name);
 }
 
-FARPROC MemoryGetProcAddress(HMEMORYMODULE mod, LPCSTR name)
-{
+FARPROC MemoryGetProcAddress(HMEMORYMODULE mod, LPCSTR name) {
 	PMEMORYMODULE module = (PMEMORYMODULE)mod;
 	unsigned char* codeBase = module->codeBase;
 	DWORD idx = 0;
@@ -758,8 +734,7 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE mod, LPCSTR name)
 	return (FARPROC)(LPVOID)(codeBase + (*(DWORD*)(codeBase + exports->AddressOfFunctions + (idx * 4))));
 }
 
-void MemoryFreeLibrary(HMEMORYMODULE mod)
-{
+void MemoryFreeLibrary(HMEMORYMODULE mod) {
 	PMEMORYMODULE module = (PMEMORYMODULE)mod;
 
 	if (module == NULL) {
@@ -792,8 +767,7 @@ void MemoryFreeLibrary(HMEMORYMODULE mod)
 	HeapFree(GetProcessHeap(), 0, module);
 }
 
-int MemoryCallEntryPoint(HMEMORYMODULE mod)
-{
+int MemoryCallEntryPoint(HMEMORYMODULE mod) {
 	PMEMORYMODULE module = (PMEMORYMODULE)mod;
 
 	if (module == NULL || module->isDLL || module->exeEntry == NULL || !module->isRelocated) {
@@ -805,16 +779,15 @@ int MemoryCallEntryPoint(HMEMORYMODULE mod)
 
 #define DEFAULT_LANGUAGE        MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL)
 
-HMEMORYRSRC MemoryFindResource(HMEMORYMODULE module, LPCTSTR name, LPCTSTR type)
-{
+HMEMORYRSRC MemoryFindResource(HMEMORYMODULE module, LPCTSTR name, LPCTSTR type) {
 	return MemoryFindResourceEx(module, name, type, DEFAULT_LANGUAGE);
 }
 
 static PIMAGE_RESOURCE_DIRECTORY_ENTRY _MemorySearchResourceEntry(
 	void* root,
 	PIMAGE_RESOURCE_DIRECTORY resources,
-	LPCTSTR key)
-{
+	LPCTSTR key
+) {
 	PIMAGE_RESOURCE_DIRECTORY_ENTRY entries = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(resources + 1);
 	PIMAGE_RESOURCE_DIRECTORY_ENTRY result = NULL;
 	DWORD start;
@@ -922,8 +895,7 @@ static PIMAGE_RESOURCE_DIRECTORY_ENTRY _MemorySearchResourceEntry(
 	return result;
 }
 
-HMEMORYRSRC MemoryFindResourceEx(HMEMORYMODULE module, LPCTSTR name, LPCTSTR type, WORD language)
-{
+HMEMORYRSRC MemoryFindResourceEx(HMEMORYMODULE module, LPCTSTR name, LPCTSTR type, WORD language) {
 	unsigned char* codeBase = ((PMEMORYMODULE)module)->codeBase;
 	PIMAGE_DATA_DIRECTORY directory = GET_HEADER_DICTIONARY((PMEMORYMODULE)module, IMAGE_DIRECTORY_ENTRY_RESOURCE);
 	PIMAGE_RESOURCE_DIRECTORY rootResources;
@@ -976,8 +948,7 @@ HMEMORYRSRC MemoryFindResourceEx(HMEMORYMODULE module, LPCTSTR name, LPCTSTR typ
 	return (codeBase + directory->VirtualAddress + (foundLanguage->OffsetToData & 0x7fffffff));
 }
 
-DWORD MemorySizeofResource(HMEMORYMODULE module, HMEMORYRSRC resource)
-{
+DWORD MemorySizeofResource(HMEMORYMODULE module, HMEMORYRSRC resource) {
 	PIMAGE_RESOURCE_DATA_ENTRY entry;
 	UNREFERENCED_PARAMETER(module);
 	entry = (PIMAGE_RESOURCE_DATA_ENTRY)resource;
@@ -988,8 +959,7 @@ DWORD MemorySizeofResource(HMEMORYMODULE module, HMEMORYRSRC resource)
 	return entry->Size;
 }
 
-LPVOID MemoryLoadResource(HMEMORYMODULE module, HMEMORYRSRC resource)
-{
+LPVOID MemoryLoadResource(HMEMORYMODULE module, HMEMORYRSRC resource) {
 	unsigned char* codeBase = ((PMEMORYMODULE)module)->codeBase;
 	PIMAGE_RESOURCE_DATA_ENTRY entry = (PIMAGE_RESOURCE_DATA_ENTRY)resource;
 	if (entry == NULL) {
@@ -999,15 +969,11 @@ LPVOID MemoryLoadResource(HMEMORYMODULE module, HMEMORYRSRC resource)
 	return codeBase + entry->OffsetToData;
 }
 
-int
-MemoryLoadString(HMEMORYMODULE module, UINT id, LPTSTR buffer, int maxsize)
-{
+int MemoryLoadString(HMEMORYMODULE module, UINT id, LPTSTR buffer, int maxsize) {
 	return MemoryLoadStringEx(module, id, buffer, maxsize, DEFAULT_LANGUAGE);
 }
 
-int
-MemoryLoadStringEx(HMEMORYMODULE module, UINT id, LPTSTR buffer, int maxsize, WORD language)
-{
+int MemoryLoadStringEx(HMEMORYMODULE module, UINT id, LPTSTR buffer, int maxsize, WORD language) {
 	HMEMORYRSRC resource;
 	PIMAGE_RESOURCE_DIR_STRING_U data;
 	DWORD size;

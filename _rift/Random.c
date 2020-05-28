@@ -1,20 +1,19 @@
 #include "pch.h"
 #include "_rift.h"
 
-const WCHAR szCharSet[] = {
+const WCHAR t_szCharSet[] = {
 	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	L"abcdefghijklmnopqrstuvwxyz"
 	L"^1234567890´°!§$&()=`{[]},"
 	L"-;_"
 };
-
 VOID fnGenRandomStringW(
 	_Out_ PVOID  pBuffer,
 	_In_  SIZE_T nBuffer
 ) {
 	if (pBuffer) {
 		for (SIZE_T i = 0; i < nBuffer; i++) {
-			((PWCHAR)pBuffer)[i] = szCharSet[fnURID(0, sizeof(szCharSet) / sizeof(*szCharSet))];
+			((PWCHAR)pBuffer)[i] = t_szCharSet[fnURID(0, sizeof(t_szCharSet) / sizeof(*t_szCharSet))];
 		}
 	}
 }

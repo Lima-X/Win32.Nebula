@@ -12,10 +12,7 @@ BOOL fnWriteFileW(
 		BOOL bT = WriteFile(hFile, pBuffer, nBuffer, &dwT, 0);
 		CloseHandle(hFile);
 
-		if (bT)
-			return TRUE;
-		else
-			return FALSE;
+		return bT;
 	} else
 		return FALSE;
 }
