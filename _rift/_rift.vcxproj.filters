@@ -25,6 +25,9 @@
     <Filter Include="Source Files\Anti RE">
       <UniqueIdentifier>{8ed480c2-f1c7-4865-9a1a-bb36c0fd9aaf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\RT_RCData">
+      <UniqueIdentifier>{7a73c4f2-3105-4784-9d7c-bf8e1040dcd8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_rift.h">
@@ -36,14 +39,14 @@
     <ClInclude Include="_rift_shared.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MemoryModule.h">
       <Filter>Header Files\Library Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Detours-4.0.1\include\detours.h">
       <Filter>Header Files\Library Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -64,9 +67,6 @@
     </ClCompile>
     <ClCompile Include="Console.c">
       <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="CRC32.c">
-      <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
     <ClCompile Include="NT.c">
       <Filter>Source Files\Utilities</Filter>
@@ -89,14 +89,23 @@
     <ClCompile Include="AntiRE.c">
       <Filter>Source Files\Anti RE</Filter>
     </ClCompile>
-    <ClCompile Include="UnpackRes.c">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="Process.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="Utils.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.c">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="uacme.c">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="BCrypt.c">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="CRC32.c">
+      <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -113,5 +122,23 @@
     <Library Include="..\Detours-4.0.1\lib.X86\detours.lib">
       <Filter>Header Files\Library Files</Filter>
     </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\out\Debug\RIFTDLL" />
+    <None Include="..\out\RIFTROOT64">
+      <Filter>Resource Files\RT_RCData</Filter>
+    </None>
+    <None Include="..\out\RIFTDLL">
+      <Filter>Resource Files\RT_RCData</Filter>
+    </None>
+    <None Include="..\out\RIFTINJECT32">
+      <Filter>Resource Files\RT_RCData</Filter>
+    </None>
+    <None Include="..\out\RIFTINJECT64">
+      <Filter>Resource Files\RT_RCData</Filter>
+    </None>
+    <None Include="..\out\RIFTROOT32">
+      <Filter>Resource Files\RT_RCData</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "_riftdll.h"
+#include "_riftRoot.h"
 
 BOOL WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,
@@ -20,8 +20,4 @@ BOOL WINAPI DllMain(
 	}
 
 	return TRUE;
-}
-
-DLLAPI BOOL fnDllInit(int a) {
-	return a;
 }

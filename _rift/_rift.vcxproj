@@ -126,9 +126,11 @@
     <ClCompile Include="Process.c" />
     <ClCompile Include="Random.c" />
     <ClCompile Include="Registry.c" />
-    <ClCompile Include="UnpackRes.c" />
+    <ClCompile Include="uacme.c" />
+    <ClCompile Include="BCrypt.c" />
     <ClCompile Include="Utils.c" />
     <ClCompile Include="VMDetect.c" />
+    <ClCompile Include="Window.c" />
     <ClCompile Include="Xoshiro128.c" />
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +141,14 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\Detours-4.0.1\lib.X86\detours.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\out\Debug\RIFTDLL" />
+    <None Include="..\out\RIFTDLL" />
+    <None Include="..\out\RIFTINJECT32" />
+    <None Include="..\out\RIFTINJECT64" />
+    <None Include="..\out\RIFTROOT32" />
+    <None Include="..\out\RIFTROOT64" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

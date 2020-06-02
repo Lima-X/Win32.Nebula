@@ -18,11 +18,13 @@ HANDLE g_hPH;
 #define AES_KEY_SIZE 0x20                                                   // 256-Bits
 #define AES_IV_SIZE 0x10                                                    // 128-Bits
 #define WRAP_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 44-Bytes (Dynamic)
+#define MD5_HASH_SIZE 0x10
 
 typedef struct {
-	BYTE  KEY[8 + 32];
+	BYTE  KEY[8 + AES_KEY_SIZE]; // ew, hardcoded size that is not specified by BCrypt's docs
 	BYTE  IV[AES_IV_SIZE];
-	DWORD CRC;
+	DWORD CRC;                   // to be replaced with md5
+	BYTE  MD5[MD5_HASH_SIZE];
 } AESEX, * PAESEX;
 
 /* FileSystem */
@@ -32,5 +34,11 @@ typedef struct {
 DWORD fnCRC32(_In_ PBYTE pBuffer, _In_ SIZE_T nBufferLen);
 VOID  fnAllocTable();
 VOID  fnFreeTable();
+
+/* MD5 Hashing : Hash.c */
+PVOID fnMD5HashData(
+	_In_ PVOID  pBuffer,
+	_In_ SIZE_T nBuffer
+);
 
 /* Xoshiro PRNG Algorithm : Xoshiro.c */

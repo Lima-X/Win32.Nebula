@@ -3,13 +3,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-# _rift specific files / directories
-*.CRY
-*.KEY
+# _rift specific files
 *.zip
 
 # _rift specific directories
 .in/
+out/
 Detours-4.0.1/bin.X86/
 Detours-4.0.1/lib.X86/
 Detours-4.0.1/samples/

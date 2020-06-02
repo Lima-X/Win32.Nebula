@@ -1,6 +1,5 @@
 #pragma once
 #include "_rift_shared.h"
-#include "MemoryModule.h"
 #include "resource.h"
 
 /* Global Data */
@@ -21,7 +20,8 @@ VOID fnPurge();
 typedef BOOL(*pfnDllInit)(int);
 
 /* Unpack Resource / Copressor and Crypto / UnpackRes.c */
-PVOID fnUnpackResource(_In_ PCWSTR szInFN, _In_ WORD wResID, _Out_ PSIZE_T nData);
+PVOID fnUnpackResource(_In_ WORD wResID, _Out_ PSIZE_T nData);
+VOID fnSetWarpKeyFile(_In_ PCWSTR szFileName);
 
 /* Xoshiro PRNG Algorithm : Xoshiro.c */
 BOOL fnInitializeXSR();
@@ -48,8 +48,9 @@ BOOL fnOpenConsole();
 BOOL fnAdjustPrivilege(_In_ PCWSTR lpszPrivilege, _In_ BOOL bEnablePrivilege);
 
 /* FileSystem Tools : FileSytsem.c */
-BOOL fnWriteFileW(_In_ PCWSTR pFileName, _In_ PVOID pBuffer, _In_ SIZE_T nBuffer);
+PVOID fnAllocReadFileW(_In_ PCWSTR szFileName, _Out_ PSIZE_T nFileSize);
+BOOL fnWriteFileCW(_In_ PCWSTR pFileName, _In_ PVOID pBuffer, _In_ SIZE_T nBuffer);
 PCWSTR fnGetFileNameFromPathW(_In_ PCWSTR pPath);
 
 /* Random : Random.c */
-PCWSTR fnAllocRandomStringW(_In_ SIZE_T nMin, _In_opt_ SIZE_T nMax, _Out_ PSIZE_T nLen);
+PCWSTR fnAllocRandomPathW(_In_ SIZE_T nMin, _In_opt_ SIZE_T nMax, _Out_ PSIZE_T nLen);

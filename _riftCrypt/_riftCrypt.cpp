@@ -5,6 +5,8 @@
 // and only serves the purpose to prepare files for the loader.
 // tbh i just wanted to be done with this as it is already 300+ lines
 // for just a support tool (why do i do this to myself)
+// I should also add that this tool does NOT clean up properly,
+// as it isn't required, the actual decryption module in the loader does.
 
 #include <Windows.h>
 #pragma comment(lib, "bcrypt.lib")
@@ -50,8 +52,8 @@ INT wmain(
 	WCHAR szCD[MAX_PATH];
 	GetCurrentDirectoryW(MAX_PATH, szCD);
 
-	if ((argc != 4) && (argc != 2)) {
-		fnPrintF(L"Usage: [gw]/([en/de] [InputFile] [OutputName/File])\n\n"
+	if ((argc != 4) && (argc != 3)) {
+		fnPrintF(L"Usage: [gw] [KeyFileName]/([en/de] [InputFile] [OutputName/File])\n\n"
 		         L"\t[/en] : Encrypts the specified file with AES256 in CBC mode (random KEY, pIV),\n"
 		         L"\t        the encrypted file is then written to the the current directory.\n"
 		         L"\t        The Application will also export the KEY, pIV, a CRC Checksum of the original\n"
@@ -60,7 +62,7 @@ INT wmain(
 		         L"\t        it also validates that the decrypted content is not corrupted.\n\n"
 		         L"\t[/gw] : Generates the wrap Key used to encrypt the key,\n"
 		         L"\t        that is packed into the encryped data package.\n", CON_WARNING);
-	} else if (argc == 2) {
+	} else if (argc == 3) {
 		if (!lstrcmpW(argv[1], L"/gw")) {
 			BCRYPT_ALG_HANDLE cahAES, cahRNG;
 			NTSTATUS status = BCryptOpenAlgorithmProvider(&cahAES, BCRYPT_AES_ALGORITHM, 0, 0);
@@ -82,7 +84,7 @@ INT wmain(
 
 			PWSTR pFilePath = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
 			CopyMemory(pFilePath, szCD, MAX_PATH);
-			PathCchAppend(pFilePath, MAX_PATH, L"_rift.KEY");
+			PathCchAppend(pFilePath, MAX_PATH, argv[2]);
 			HANDLE hInputFile = CreateFileW(pFilePath, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 			if (hInputFile) {
 				DWORD dwWritten;
@@ -97,27 +99,27 @@ INT wmain(
 		// Get Full Path of Wrap Key / Import it ///////////////////////////////////////////
 		PWSTR szFilePath = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
 		CopyMemory(szFilePath, szCD, MAX_PATH);
-		PathCchAppend(szFilePath, MAX_PATH, L"_rift.KEY");
+		PathCchAppend(szFilePath, MAX_PATH, L"RIFTKEY");
 		HANDLE hWrapBlob = CreateFileW(szFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 		if (hWrapBlob == INVALID_HANDLE_VALUE) {
-			fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x", CON_ERROR, szFilePath, GetLastError());
+			fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x\n", CON_ERROR, szFilePath, GetLastError());
 			goto exit;
 		}
 		LARGE_INTEGER liFS;
 		BOOL status = GetFileSizeEx(hWrapBlob, &liFS);
 		if (!status || ((liFS.HighPart || !liFS.LowPart) && (liFS.LowPart != WRAP_BLOB_SIZE))) {
-			fnPrintF(L"Invalid FileSize\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+			fnPrintF(L"Invalid FileSize\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 			goto exit;
 		}
 		PVOID pWrapBlob = HeapAlloc(g_hPH, 0, liFS.LowPart);
 		if (!pWrapBlob) {
-			fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+			fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 			goto exit;
 		}
 		DWORD dwRead;
 		status = ReadFile(hWrapBlob, pWrapBlob, liFS.LowPart, &dwRead, 0);
 		if (!status) {
-			fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+			fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 			goto exit;
 		}
 		CloseHandle(hWrapBlob);
@@ -128,23 +130,23 @@ INT wmain(
 			PathCchAppend(szFilePath, MAX_PATH, argv[2]);
 			HANDLE hInputFile = CreateFileW(szFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 			if (hInputFile == INVALID_HANDLE_VALUE) {
-				fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x", CON_ERROR, szFilePath, GetLastError());
+				fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x\n", CON_ERROR, szFilePath, GetLastError());
 				goto exit;
 			}
 			status = GetFileSizeEx(hInputFile, &liFS);
 			if ((liFS.HighPart || !liFS.LowPart) || !status) {
-				fnPrintF(L"Invalid FileSize\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				fnPrintF(L"Invalid FileSize\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 				goto exit;
 			}
 			PVOID pInputFile = HeapAlloc(g_hPH, 0, liFS.LowPart);
 			if (!pInputFile) {
-				fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 				goto exit;
 			}
 			SIZE_T nInputFile;
 			status = ReadFile(hInputFile, pInputFile, liFS.LowPart, &nInputFile, 0);
 			if (!status) {
-				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 				goto exit;
 			}
 			CloseHandle(hInputFile);
@@ -158,7 +160,7 @@ INT wmain(
 			COMPRESSOR_HANDLE ch;
 			status = CreateCompressor(COMPRESS_ALGORITHM_LZMS, 0, &ch);
 			if (!status) {
-				fnPrintF(L"Couldn't create compressor\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				fnPrintF(L"Couldn't create compressor\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 				goto exit;
 			}
 
@@ -169,12 +171,12 @@ INT wmain(
 			if (!status) {
 				DWORD dwError = GetLastError();
 				if (dwError != ERROR_INSUFFICIENT_BUFFER) {
-					fnPrintF(L"Couldn't compress Data\nErrorcode: 0x%08x", CON_ERROR);
+					fnPrintF(L"Couldn't compress Data\nErrorcode: 0x%08x\n", CON_ERROR);
 					goto exit;
 				} else {
 					pCompressed = (PBYTE)HeapAlloc(g_hPH, 0, nCompressed);
 					if (!pCompressed) {
-						fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+						fnPrintF(L"Couldn't allocate buffer\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 						goto exit;
 					}
 				}
@@ -183,10 +185,10 @@ INT wmain(
 			// compress File
 			status = Compress(ch, pInputFile, nInputFile, pCompressed, nCompressed, &nCompressed);
 			if (!status) {
-				fnPrintF(L"Couldn't compress Data\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				fnPrintF(L"Couldn't compress Data\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 				goto exit;
 			} if (nCompressed > nInputFile) // <- Unlikely
-				fnPrintF(L"Compressed File will be bigger the original\nThis will be updated", CON_WARNING);
+				fnPrintF(L"Compressed File will be bigger the original\nThis will be updated\n", CON_WARNING);
 
 			// Free Data
 			HeapFree(g_hPH, 0, pInputFile);
@@ -231,7 +233,6 @@ INT wmain(
 			DWORD dwWritten;
 			CopyMemory(szFilePath, szCD, MAX_PATH);
 			PathCchAppend(szFilePath, MAX_PATH, argv[3]);
-			PathCchAddExtension(szFilePath, MAX_PATH, L".CRY");
 			hInputFile = CreateFileW(szFilePath, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS, (FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ENCRYPTED), 0);
 			if (hInputFile) {
 				status = WriteFile(hInputFile, pAES, sizeof(AESEX), &dwWritten, 0);
@@ -246,12 +247,12 @@ INT wmain(
 			PathCchAppend(szFilePath, MAX_PATH, argv[2]);
 			HANDLE hInputFile = CreateFileW(szFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 			if (hInputFile == INVALID_HANDLE_VALUE) {
-				fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x", CON_ERROR, szFilePath, GetLastError());
+				fnPrintF(L"Can't open InputFile: \"%s\"\nErrorcode: 0x%08x\n", CON_ERROR, szFilePath, GetLastError());
 				goto exit;
 			}
 			status = GetFileSizeEx(hInputFile, &liFS);
 			if ((liFS.HighPart || !liFS.LowPart) || !status) {
-				fnPrintF(L"Invalid FileSize\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				fnPrintF(L"Invalid FileSize\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 				goto exit;
 			}
 
@@ -260,12 +261,12 @@ INT wmain(
 			SIZE_T nInputFile;
 			status = ReadFile(hInputFile, pAES, sizeof(AESEX), &nInputFile, 0);
 			if (!status) {
-				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 				goto exit;
 			}
 			status = ReadFile(hInputFile, pInputFile, liFS.LowPart - sizeof(AESEX), &nInputFile, 0);
 			if (!status) {
-				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				fnPrintF(L"Couldn't load InputFile\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 				goto exit;
 			}
 			CloseHandle(hInputFile);
@@ -316,7 +317,7 @@ INT wmain(
 			fnAllocTable();
 			DWORD dwCrc = fnCRC32(pDecompressed, nDecompressed);
 			if (dwCrc != pAES->CRC) {
-				fnPrintF(L"CRC doesn't match !\nErrorcode: 0x%08x", CON_ERROR, GetLastError());
+				fnPrintF(L"CRC doesn't match !\nErrorcode: 0x%08x\n", CON_ERROR, GetLastError());
 				goto exit;
 			}
 
@@ -332,7 +333,7 @@ INT wmain(
 
 			HeapFree(g_hPH, 0, pDecompressed);
 		} else
-			fnPrintF(L"Unknown Command", CON_ERROR);
+			fnPrintF(L"Unknown Command\n", CON_ERROR);
 
 		HeapFree(g_hPH, 0, szFilePath);
 	}

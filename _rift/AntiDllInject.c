@@ -5,12 +5,13 @@ BOOL fnAntiDllInject() {
 
 }
 
-const static PCWSTR t_szAllowedModules[] = {
+static PCWSTR l_szAllowedModules[] = {
+	L"kernel32.dll",
 	L"ntdll.dll",
 	L"user32.dll",
-	L""
+	L"msvcrt.dll"
 };
-#define nAllowedModules (sizeof(t_szAllowedModules) / sizeof(*t_szAllowedModules))
+#define nAllowedModules (sizeof(l_szAllowedModules) / sizeof(PCWSTR))
 
 BOOL fnCheckModules() {
 	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, GetCurrentProcessId());
