@@ -11,13 +11,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="_riftCrypt.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\_rift\BCrypt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\_rift\CRC32.c">
+    <ClCompile Include="_riftCrypt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_rift\Base64.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

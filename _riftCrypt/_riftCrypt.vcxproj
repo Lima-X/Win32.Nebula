@@ -92,9 +92,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\_rift\Base64.c" />
     <ClCompile Include="..\_rift\BCrypt.c" />
-    <ClCompile Include="..\_rift\CRC32.c" />
-    <ClCompile Include="_riftCrypt.cpp" />
+    <ClCompile Include="_riftCrypt.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\_rift\_rift_shared.h" />

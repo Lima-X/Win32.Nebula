@@ -2,26 +2,11 @@
 #include "_rift_shared.h"
 #include "resource.h"
 
-/* Global Data */
-WCHAR g_szMFN[MAX_PATH];
-WCHAR g_szCD[MAX_PATH];
-HMODULE g_hMH;
-
-/* NoCRT */
-#undef CopyMemory
-#define CopyMemory(dest, src, size) __movsb(dest, src, size)
-#undef ZeroMemory
-#define ZeroMemory(dest, size) __stosb(dest, 0, size)
-
 /* WinMain : main.c */
 VOID fnPurge();
 
 /* _riftdll */
 typedef BOOL(*pfnDllInit)(int);
-
-/* Unpack Resource / Copressor and Crypto / UnpackRes.c */
-PVOID fnUnpackResource(_In_ WORD wResID, _Out_ PSIZE_T nData);
-VOID fnSetWarpKeyFile(_In_ PCWSTR szFileName);
 
 /* Xoshiro PRNG Algorithm : Xoshiro.c */
 BOOL fnInitializeXSR();

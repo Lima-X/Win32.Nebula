@@ -115,7 +115,7 @@ static BOOL CheckSize(size_t size, size_t expected) {
 	return TRUE;
 }
 
-static BOOL CopySections(const unsigned char* data, size_t size, PIMAGE_NT_HEADERS old_headers, PMEMORYMODULE module) {
+static BOOL CopySections(CONST unsigned char* data, size_t size, PIMAGE_NT_HEADERS old_headers, PMEMORYMODULE module) {
 	int i, section_size;
 	unsigned char* codeBase = module->codeBase;
 	unsigned char* dest;
@@ -243,7 +243,7 @@ static BOOL FinalizeSection(PMEMORYMODULE module, PSECTIONFINALIZEDATA sectionDa
 static BOOL FinalizeSections(PMEMORYMODULE module) {
 	int i;
 	PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(module->headers);
-	static const uintptr_t imageOffset = 0;
+	static CONST uintptr_t imageOffset = 0;
 	SECTIONFINALIZEDATA sectionData;
 	sectionData.address = (LPVOID)((uintptr_t)section->Misc.PhysicalAddress | imageOffset);
 	sectionData.alignedAddress = AlignAddressDown(sectionData.address, module->pageSize);
@@ -449,12 +449,12 @@ void MemoryDefaultFreeLibrary(HCUSTOMMODULE module, void* userdata) {
 	FreeLibrary((HMODULE)module);
 }
 
-HMEMORYMODULE MemoryLoadLibrary(const void* data, size_t size) {
+HMEMORYMODULE MemoryLoadLibrary(CONST void* data, size_t size) {
 	return MemoryLoadLibraryEx(data, size, MemoryDefaultAlloc, MemoryDefaultFree, MemoryDefaultLoadLibrary, MemoryDefaultGetProcAddress, MemoryDefaultFreeLibrary, NULL);
 }
 
 HMEMORYMODULE MemoryLoadLibraryEx(
-	const void* data,
+	CONST void* data,
 	size_t size,
 	CustomAllocFunc allocMemory,
 	CustomFreeFunc freeMemory,
@@ -487,7 +487,7 @@ HMEMORYMODULE MemoryLoadLibraryEx(
 	if (!CheckSize(size, dos_header->e_lfanew + sizeof(IMAGE_NT_HEADERS))) {
 		return NULL;
 	}
-	old_header = (PIMAGE_NT_HEADERS) & ((const unsigned char*)(data))[dos_header->e_lfanew];
+	old_header = (PIMAGE_NT_HEADERS) & ((CONST unsigned char*)(data))[dos_header->e_lfanew];
 	if (old_header->Signature != IMAGE_NT_SIGNATURE) {
 		SetLastError(ERROR_BAD_EXE_FORMAT);
 		return NULL;
@@ -580,13 +580,13 @@ HMEMORYMODULE MemoryLoadLibraryEx(
 
 	// copy PE header to code
 	memcpy(headers, dos_header, old_header->OptionalHeader.SizeOfHeaders);
-	result->headers = (PIMAGE_NT_HEADERS) & ((const unsigned char*)(headers))[dos_header->e_lfanew];
+	result->headers = (PIMAGE_NT_HEADERS) & ((CONST unsigned char*)(headers))[dos_header->e_lfanew];
 
 	// update position
 	result->headers->OptionalHeader.ImageBase = (uintptr_t)code;
 
 	// copy sections from DLL file block to new memory location
-	if (!CopySections((const unsigned char*)data, size, old_header, result)) {
+	if (!CopySections((CONST unsigned char*)data, size, old_header, result)) {
 		goto error;
 	}
 
@@ -643,15 +643,15 @@ error:
 	return NULL;
 }
 
-static int _compare(const void* a, const void* b) {
-	const struct ExportNameEntry* p1 = (const struct ExportNameEntry*)a;
-	const struct ExportNameEntry* p2 = (const struct ExportNameEntry*)b;
+static int _compare(CONST void* a, CONST void* b) {
+	CONST struct ExportNameEntry* p1 = (CONST struct ExportNameEntry*)a;
+	CONST struct ExportNameEntry* p2 = (CONST struct ExportNameEntry*)b;
 	return strcmp(p1->name, p2->name);
 }
 
-static int _find(const void* a, const void* b) {
+static int _find(CONST void* a, CONST void* b) {
 	LPCSTR* name = (LPCSTR*)a;
-	const struct ExportNameEntry* p = (const struct ExportNameEntry*)b;
+	CONST struct ExportNameEntry* p = (CONST struct ExportNameEntry*)b;
 	return strcmp(*name, p->name);
 }
 
@@ -688,7 +688,7 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE mod, LPCSTR name) {
 		return NULL;
 	}
 	else {
-		const struct ExportNameEntry* found;
+		CONST struct ExportNameEntry* found;
 
 		// Lazily build name table and sort it by names
 		if (!module->nameExportsTable) {
@@ -702,7 +702,7 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE mod, LPCSTR name) {
 				return NULL;
 			}
 			for (i = 0; i < exports->NumberOfNames; i++, nameRef++, ordinal++, entry++) {
-				entry->name = (const char*)(codeBase + (*nameRef));
+				entry->name = (CONST char*)(codeBase + (*nameRef));
 				entry->idx = *ordinal;
 			}
 			qsort(module->nameExportsTable,
@@ -711,7 +711,7 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE mod, LPCSTR name) {
 		}
 
 		// search function name in list of exported names with binary search
-		found = (const struct ExportNameEntry*)bsearch(&name,
+		found = (CONST struct ExportNameEntry*)bsearch(&name,
 			module->nameExportsTable,
 			exports->NumberOfNames,
 			sizeof(struct ExportNameEntry), _find);

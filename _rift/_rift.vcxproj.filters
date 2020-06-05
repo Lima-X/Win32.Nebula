@@ -104,7 +104,10 @@
     <ClCompile Include="BCrypt.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="CRC32.c">
+    <ClCompile Include="Obfustcate.c">
+      <Filter>Source Files\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="Base64.c">
       <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
   </ItemGroup>
@@ -124,7 +127,6 @@
     </Library>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\out\Debug\RIFTDLL" />
     <None Include="..\out\RIFTROOT64">
       <Filter>Resource Files\RT_RCData</Filter>
     </None>

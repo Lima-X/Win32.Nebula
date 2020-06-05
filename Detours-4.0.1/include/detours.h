@@ -85,17 +85,17 @@ typedef struct  _GUID
 
 #ifdef INITGUID
 #define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
-        const GUID name \
+        CONST GUID name \
                 = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
 #else
 #define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
-    const GUID name
+    CONST GUID name
 #endif // INITGUID
 #endif // !GUID_DEFINED
 
 #ifndef _REFGUID_DEFINED
 #define _REFGUID_DEFINED
-#define REFGUID             const GUID * const
+#define REFGUID             CONST GUID * CONST
 #endif // !_REFGUID_DEFINED
 
 #ifndef ARRAYSIZE
@@ -108,8 +108,8 @@ typedef struct  _GUID
 #define DETOUR_INSTRUCTION_TARGET_DYNAMIC       ((PVOID)(LONG_PTR)-1)
 #define DETOUR_SECTION_HEADER_SIGNATURE         0x00727444   // "Dtr\0"
 
-extern const GUID DETOUR_EXE_RESTORE_GUID;
-extern const GUID DETOUR_EXE_HELPER_GUID;
+extern CONST GUID DETOUR_EXE_RESTORE_GUID;
+extern CONST GUID DETOUR_EXE_HELPER_GUID;
 
 #define DETOUR_TRAMPOLINE_SIGNATURE             0x21727444  // Dtr!
 typedef struct _DETOUR_TRAMPOLINE DETOUR_TRAMPOLINE, *PDETOUR_TRAMPOLINE;

@@ -11,17 +11,17 @@ PVOID fnAllocReadFileW(
 		return 0;
 
 	LARGE_INTEGER liFS;
-	BOOL bs = GetFileSizeEx(hFile, &liFS);
-	if (!bs || (liFS.HighPart || !liFS.LowPart))
+	BOOL bT = GetFileSizeEx(hFile, &liFS);
+	if (!bT || (liFS.HighPart || !liFS.LowPart))
 		goto EXIT;
 
-	PVOID pFile = HeapAlloc(g_hPH, 0, liFS.LowPart);
+	PVOID pFile = fnMalloc(liFS.LowPart, 0);
 	if (!pFile)
 		goto EXIT;
 
-	bs = ReadFile(hFile, pFile, liFS.LowPart, nFileSize, 0);
-	if (!bs) {
-		HeapFree(g_hPH, 0, pFile);
+	bT = ReadFile(hFile, pFile, liFS.LowPart, nFileSize, 0);
+	if (!bT) {
+		fnFree(pFile);
 		goto EXIT;
 	}
 

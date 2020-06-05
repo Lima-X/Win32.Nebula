@@ -2,7 +2,8 @@
 #include "_rift.h"
 
 // Internal State / Sync Opbject
-static DWORD l_dwa4S[4];
+// static DWORD l_dwa4S[4];
+static PDWORD l_dwa4S;
 static CRITICAL_SECTION l_cs;
 
 // Internal
@@ -15,7 +16,7 @@ static __inline DWORD fnRotlDW(
 static __inline VOID fnNext128() {
 	EnterCriticalSection(&l_cs);
 
-	const DWORD dwT = l_dwa4S[1] << 9;
+	CONST DWORD dwT = l_dwa4S[1] << 9;
 	l_dwa4S[2] ^= l_dwa4S[0];
 	l_dwa4S[3] ^= l_dwa4S[1];
 	l_dwa4S[1] ^= l_dwa4S[2];
@@ -28,12 +29,12 @@ static __inline VOID fnNext128() {
 
 // Can be used externaly
 DWORD fnNext128ss() {
-	const DWORD dwT = fnRotlDW(l_dwa4S[1] * 5, 7) * 9;
+	CONST DWORD dwT = fnRotlDW(l_dwa4S[1] * 5, 7) * 9;
 	fnNext128();
 	return dwT;
 }
 DWORD fnNext128p() {
-	const DWORD dwT = l_dwa4S[0] + l_dwa4S[3];
+	CONST DWORD dwT = l_dwa4S[0] + l_dwa4S[3];
 	fnNext128();
 	return dwT;
 }
@@ -44,9 +45,9 @@ UINT fnURID(
 	_In_ UINT uiMax
 ) {
 	UINT uiRet;
-	const UINT uiRange = (uiMax - uiMin) + 1;
-	const UINT uiScale = (UINT)-1 / uiRange;
-	const UINT uiLimit = uiRange * uiScale;
+	CONST UINT uiRange = (uiMax - uiMin) + 1;
+	CONST UINT uiScale = (UINT)-1 / uiRange;
+	CONST UINT uiLimit = uiRange * uiScale;
 
 	do {
 		uiRet = fnNext128ss(TRUE);
@@ -67,6 +68,7 @@ BOOL fnInitializeXSR() {
 	BCRYPT_ALG_HANDLE cah;
 	if (!BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, 0, 0)) {
 		InitializeCriticalSection(&l_cs);
+		l_dwa4S = fnMalloc(sizeof(DWORD) * 4, 0);
 		BCryptGenRandom(cah, l_dwa4S, sizeof(DWORD) * 4, 0);
 		BCryptCloseAlgorithmProvider(cah, 0);
 
@@ -77,5 +79,6 @@ BOOL fnInitializeXSR() {
 VOID fnDeleteXSR() {
 	for (UINT8 i = 0; i < 4; i++)
 		l_dwa4S[i] = 0;
+	fnFree(l_dwa4S);
 	DeleteCriticalSection(&l_cs);
 }

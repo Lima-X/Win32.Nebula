@@ -24,7 +24,7 @@ static DWORD WINAPI thConsoleTitle(
 	_In_ PVOID pParam
 ) {
 	PVOID pBuffer = 0;
-	PWCHAR pTitleBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, sizeof(l_szConsoleTitle));
+	PWCHAR pTitleBuf = fnMalloc(sizeof(l_szConsoleTitle), HEAP_ZERO_MEMORY);
 	if (pTitleBuf)
 		for (UINT8 i = 0; i < sizeof(l_szConsoleTitle) / sizeof(WCHAR); i++) {
 			pTitleBuf[i] = l_szConsoleTitle[i];
@@ -101,13 +101,13 @@ BOOL fnPrintF(PCWSTR pText, WORD wAttribute, ...) {
 	va_list vaArg;
 	va_start(vaArg, wAttribute);
 
-	PVOID hBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, (1 << 12));
+	PVOID hBuf = fnMalloc(0x1000, HEAP_ZERO_MEMORY);
 	DWORD nBufLen;
-	StringCchVPrintfW((STRSAFE_LPWSTR)hBuf, (1 << 12) / sizeof(WCHAR), pText, vaArg);
-	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, (1 << 12) / sizeof(WCHAR), (PUINT)&nBufLen);
+	StringCchVPrintfW((STRSAFE_LPWSTR)hBuf, 0x1000 / sizeof(WCHAR), pText, vaArg);
+	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, 0x1000 / sizeof(WCHAR), (PUINT)&nBufLen);
 	SetConsoleTextAttribute(l_hCon, wAttribute);
 	WriteConsoleW(l_hCon, hBuf, nBufLen, &nBufLen, 0);
-	HeapFree(g_hPH, 0, hBuf);
+	fnFree(hBuf);
 
 	va_end(vaArg);
 	return nBufLen;

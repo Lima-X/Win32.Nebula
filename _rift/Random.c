@@ -2,7 +2,7 @@
 #include "_rift.h"
 
 // has to be rewritten to use the "full" ascii table (only the ones allowed in paths)
-const WCHAR l_szCharSet[] = {
+CONST WCHAR l_szCharSet[] = {
 	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	L"abcdefghijklmnopqrstuvwxyz"
 	L"^1234567890´°!§$&()=`{[]},"
@@ -32,7 +32,7 @@ PCWSTR fnAllocRandomPathW(
 	else
 		*nLen = nMin;
 
-	PWSTR pBuffer = (PWSTR)HeapAlloc(g_hPH, 0, (*nLen + 1) * sizeof(WCHAR));
+	PWSTR pBuffer = (PWSTR)fnMalloc((*nLen + 1) * sizeof(WCHAR), 0);
 
 	fnGenRandomPathW(pBuffer, *nLen);
 	pBuffer[*nLen + 1] = L'\0';

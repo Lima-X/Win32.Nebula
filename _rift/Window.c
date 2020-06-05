@@ -20,7 +20,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 }
 
 DWORD WINAPI thWindowThread(
-	_In_ HANDLE hHeap,
 	_In_ LPVOID lParam
 ) {
 	WNDCLASSEXW wc;
@@ -29,7 +28,7 @@ DWORD WINAPI thWindowThread(
 	wc.lpfnWndProc = WndProc;
 
 	UINT8 nLength = fnURID(8, 255);
-	PCWSTR pName = HeapAlloc(g_hPH, 0, nLength);
+	PCWSTR pName = fnMalloc(nLength, 0);
 
 //	wc.lpszClassName = ;
 
@@ -49,6 +48,6 @@ DWORD WINAPI thWindowThread(
 		}
 	}
 
-	HeapFree(hHeap, NULL, (LPVOID)wc.lpszClassName);
+	fnFree(wc.lpszClassName);
 	return TRUE;
 }

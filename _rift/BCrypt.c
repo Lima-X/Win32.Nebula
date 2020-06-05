@@ -40,31 +40,31 @@ PVOID fnDecryptWAES(
 	SIZE_T nResult, nBL;
 	BCRYPT_KEY_HANDLE khAES, khWrap;
 	nts = BCryptGetProperty(ahAES, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nBL, sizeof(DWORD), &nResult, 0);
-	PBYTE pAesObj = (PBYTE)HeapAlloc(g_hPH, 0, nBL);
-	PBYTE pWrapObj = (PBYTE)HeapAlloc(g_hPH, 0, nBL);
+	PBYTE pAesObj = (PBYTE)fnMalloc(nBL, 0);
+	PBYTE pWrapObj = (PBYTE)fnMalloc(nBL, 0);
 
 	nts = BCryptImportKey(ahAES, 0, BCRYPT_KEY_DATA_BLOB, &khWrap, pWrapObj, nBL, (PUCHAR)pWKey, WRAP_BLOB_SIZE, 0);
 	nts = BCryptImportKey(ahAES, khWrap, BCRYPT_AES_WRAP_KEY_BLOB, &khAES, pAesObj, nBL, ((PAESEX)pData)->KEY,
 		sizeof(((PAESEX)pData)->KEY), 0);
 	nts = BCryptDestroyKey(khWrap);
-	HeapFree(g_hPH, 0, pWrapObj);
+	fnFree(pWrapObj);
 
 	// Copy IV to non Read-Only section
-	PVOID pIV = HeapAlloc(g_hPH, 0, sizeof(((PAESEX)pData)->IV));
+	PVOID pIV = fnMalloc(sizeof(((PAESEX)pData)->IV), 0);
 	CopyMemory(pIV, ((PAESEX)pData)->IV, sizeof(((PAESEX)pData)->IV));
 
 	// Decrypt Data
 	nts = BCryptDecrypt(khAES, (ULONG_PTR)pData + sizeof(AESEX), *nData - sizeof(AESEX), 0, pIV,
 		sizeof(((PAESEX)pData)->IV), 0, 0, &nResult, 0);
-	PBYTE pDecrypted = (PBYTE)HeapAlloc(g_hPH, 0, nResult);
+	PBYTE pDecrypted = (PBYTE)fnMalloc(nResult, 0);
 	nts = BCryptDecrypt(khAES, (ULONG_PTR)pData + sizeof(AESEX), *nData - sizeof(AESEX), 0, pIV,
 		sizeof(((PAESEX)pData)->IV), pDecrypted, nResult, &nResult, 0);
 
 	// CleanUp
-	HeapFree(g_hPH, 0, pIV);
+	fnFree(pIV);
 	nts = BCryptDestroyKey(khAES);
 	SecureZeroMemory(pAesObj, nBL);
-	HeapFree(g_hPH, 0, pAesObj);
+	fnFree(pAesObj);
 	nts = BCryptCloseAlgorithmProvider(ahAES, 0);
 
 	*nData = nResult;
@@ -81,12 +81,12 @@ PVOID fnDecompressLZ(
 	// Decompress Data
 	SIZE_T nDecompressed;
 	nts = Decompress(dh, pData, *nData, 0, 0, &nDecompressed);
-	PVOID pDecompressed = HeapAlloc(g_hPH, 0, nDecompressed);
+	PVOID pDecompressed = fnMalloc(nDecompressed, 0);
 	nts = Decompress(dh, pData, *nData, pDecompressed, nDecompressed, &nDecompressed);
 
 	// CleanUp
 	SecureZeroMemory(pData, nData);
-	HeapFree(g_hPH, 0, pData);
+	fnFree(pData);
 	CloseDecompressor(dh);
 
 	*nData = nDecompressed;
@@ -98,8 +98,8 @@ PVOID fnUnpackResource(
 	_In_  WORD    wResID,
 	_Out_ PSIZE_T nData
 ) {
-	PWSTR szKeyBlob = (PWSTR)HeapAlloc(g_hPH, 0, MAX_PATH);
-	PathCchCombine(szKeyBlob, MAX_PATH, g_szCD, l_szWrapKeyFile);
+	PWSTR szKeyBlob = (PWSTR)fnMalloc(MAX_PATH, 0);
+	PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->szCD, l_szWrapKeyFile);
 	DWORD nKeyBlob;
 	PVOID pWKey = fnAllocReadFileW(szKeyBlob, &nKeyBlob);
 
@@ -108,13 +108,13 @@ PVOID fnUnpackResource(
 		return 0;
 
 	PVOID pData = fnDecryptWAES(pResource, nData, pWKey);
-	HeapFree(g_hPH, 0, pWKey);
+	fnFree(pWKey);
 	pData = fnDecompressLZ(pData, nData);
 
-	fnAllocTable();
-	DWORD dwCrc = fnCRC32(pData, *nData);
-	fnFreeTable();
-	if (dwCrc != ((PAESEX)pResource)->CRC)
+	PVOID pMD5 = fnMD5HashData(pData, *nData);
+	BOOL bT = fnMD5Compare(pMD5, ((PAESEX)pResource)->MD5);
+	fnFree(pMD5);
+	if (!bT)
 		return 0;
 
 	return pData;
@@ -127,7 +127,7 @@ BOOL fnExtractResource(
 	SIZE_T nData;
 	PVOID pData = fnUnpackResource(wResID, &nData);
 	BOOL bT = fnWriteFileCW(szFileName, pData, nData);
-	HeapFree(g_hPH, 0, pData);
+	fnFree(pData);
 	return bT;
 }
 
@@ -157,31 +157,28 @@ PVOID fnMD5HashData(
 	// Create md5OBJ
 	SIZE_T nResult, nBL;
 	NTSTATUS nts = BCryptGetProperty(ah, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nBL, sizeof(DWORD), &nResult, 0);
-	PBYTE pMD5Obj = (PBYTE)HeapAlloc(g_hPH, 0, nBL);
+	PBYTE pMD5Obj = (PBYTE)fnMalloc(nBL, 0);
 	BCRYPT_HASH_HANDLE hhMD5;
 	nts = BCryptCreateHash(ah, &hhMD5, pMD5Obj, nBL, 0, 0, 0);
 
-	SIZE_T nHL; // 16 (128-Bit)
-	nts = BCryptGetProperty(ah, BCRYPT_HASH_LENGTH, (PUCHAR)&nHL, sizeof(DWORD), &nResult, 0);
-
 	// Hash Data
 	nts = BCryptHashData(hhMD5, pBuffer, nBuffer, 0);
-	PVOID pMD5 = HeapAlloc(g_hPH, 0, MD5_HASH_SIZE);
-	nts = BCryptFinishHash(hhMD5, pMD5, MD5_HASH_SIZE, 0);
+	PVOID pMD5 = fnMalloc(16, 0);
+	nts = BCryptFinishHash(hhMD5, pMD5, 16, 0);
 
 	// CleanUp
 	nts = BCryptDestroyHash(hhMD5);
-	HeapFree(g_hPH, 0, pMD5Obj);
+	fnFree(pMD5Obj);
 	nts = BCryptCloseAlgorithmProvider(ah, 0);
 
 	return pMD5;
 }
 
-BOOL fnCompareMD5(
+BOOL fnMD5Compare(
 	_In_ PVOID pMD51,
 	_In_ PVOID pMD52
 ) {
-	for (UINT8 i = 0; i < (MD5_HASH_SIZE / sizeof(DWORD)); i++)
+	for (UINT8 i = 0; i < (16 / sizeof(DWORD)); i++)
 		if (((PDWORD)pMD51)[i] != ((PDWORD)pMD52)[i])
 			return FALSE;
 

@@ -5,10 +5,15 @@
 
 # _rift specific files
 *.zip
+RIFTKEY
+RIFTDLL
+RIFTINJECT32
+RIFTINJECT64
+RIFTROOT32
+RIFTROOT64
 
 # _rift specific directories
 .in/
-out/
 Detours-4.0.1/bin.X86/
 Detours-4.0.1/lib.X86/
 Detours-4.0.1/samples/

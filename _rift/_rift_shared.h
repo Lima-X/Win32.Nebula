@@ -1,12 +1,37 @@
+/* This File is shared between multiple Projects and provides intercompatibility between them.
+   It */
 #pragma once
 /* Compiler / Headers */
 #pragma comment(linker, "\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-#pragma warning(disable : 4214)
 
-/* Global Data */
+#ifndef _riftCrypt
+/* Process Information Block (replacment for Global Data) */
+typedef struct {
+	HMODULE hMH;
+	HANDLE hPH;
+	WCHAR szMFN[MAX_PATH];
+	WCHAR szCD[MAX_PATH];
+} PIB, * PPIB;
+PPIB g_PIB;
+#endif
+
+/* NoCRT / this provides replacement Macros for WinAPI Functions that rely on the CRT */
+#undef CopyMemory
+#define CopyMemory(dest, src, size) __movsb(dest, src, size)
+#undef ZeroMemory
+#define ZeroMemory(dest, size) __stosb(dest, 0, size)
+
+#define fnMemset(dest, data, size) __stosb(dest, data, size)
+#ifndef _riftCrypt
+#define fnMalloc(cbBytes, dwFlags) HeapAlloc(g_PIB->hPH, dwFlags, cbBytes)
+#define fnFree(pMem) HeapFree(g_PIB->hPH, 0, pMem)
+#else
 HANDLE g_hPH;
+#define fnMalloc(cbBytes, dwFlags) HeapAlloc(g_hPH, dwFlags, cbBytes)
+#define fnFree(pMem) HeapFree(g_hPH, 0, pMem)
+#endif
 
 /* Console */
 #define CON_SUCCESS ((FOREGROUND_GREEN) | FOREGROUND_INTENSITY)                  // 0b0010
@@ -15,30 +40,26 @@ HANDLE g_hPH;
 #define CON_ERROR   ((FOREGROUND_RED) | FOREGROUND_INTENSITY)                    // 0b1100
 
 /* BCrypt */
-#define AES_KEY_SIZE 0x20                                                   // 256-Bits
-#define AES_IV_SIZE 0x10                                                    // 128-Bits
-#define WRAP_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 44-Bytes (Dynamic)
-#define MD5_HASH_SIZE 0x10
+#define AES_KEY_SIZE 0x10                                                   // 128-Bit
+#define WRAP_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
+
+PVOID fnUnpackResource(_In_ WORD wResID, _Out_ PSIZE_T nData);
+VOID fnLoadWrapKey(_In_ PCWSTR szFileName);
 
 typedef struct {
-	BYTE  KEY[8 + AES_KEY_SIZE]; // ew, hardcoded size that is not specified by BCrypt's docs
-	BYTE  IV[AES_IV_SIZE];
-	DWORD CRC;                   // to be replaced with md5
-	BYTE  MD5[MD5_HASH_SIZE];
+	BYTE KEY[8 + AES_KEY_SIZE]; // ew, hardcoded size that is not specified by BCrypt's docs
+	BYTE IV[16];
+	BYTE MD5[16];
+	/* DATA */
 } AESEX, * PAESEX;
 
 /* FileSystem */
 #define GENERIC_RW (GENERIC_READ | GENERIC_WRITE)
 
-/* CRC32 Hash-Algorithm : CRC32.c */
-DWORD fnCRC32(_In_ PBYTE pBuffer, _In_ SIZE_T nBufferLen);
-VOID  fnAllocTable();
-VOID  fnFreeTable();
-
 /* MD5 Hashing : Hash.c */
-PVOID fnMD5HashData(
-	_In_ PVOID  pBuffer,
-	_In_ SIZE_T nBuffer
-);
+PVOID fnMD5HashData(_In_ PVOID pBuffer, _In_ SIZE_T nBuffer);
+BOOL fnMD5Compare(_In_ PVOID pMD51, _In_ PVOID pMD52);
 
-/* Xoshiro PRNG Algorithm : Xoshiro.c */
+/* Base64 Encoder/Decoder : Base64.c */
+PBYTE fnB64Encode(_In_ PBYTE pBuffer, _In_ SIZE_T nBuffer, _Out_ PSIZE_T nResult);
+PBYTE fnB64Decode(_In_ PBYTE pBuffer, _In_ SIZE_T nBuffer, _Out_ PSIZE_T nResult);

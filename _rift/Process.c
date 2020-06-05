@@ -50,7 +50,7 @@ BOOL fnCreateProcessExW(
 	if (pCmdLine) {
 		SIZE_T nCmdLine;
 		StringCchLengthW(pCmdLine, PATHCCH_MAX_CCH, &nCmdLine);
-		pCmdLineC = (PWSTR)HeapAlloc(g_hPH, 0, (nCmdLine + 1) * sizeof(WCHAR));
+		pCmdLineC = (PWSTR)fnMalloc((nCmdLine + 1) * sizeof(WCHAR), 0);
 		CopyMemory(pCmdLineC, pCmdLine, (nCmdLine + 1) * sizeof(WCHAR));
 	} else
 		pCmdLineC = NULL;
@@ -61,5 +61,6 @@ BOOL fnCreateProcessExW(
 		CloseHandle(pi.hThread);
 	}
 
+	fnFree(pCmdLineC);
 	return bs;
 }

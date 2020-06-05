@@ -109,8 +109,8 @@
   <ItemGroup>
     <ClCompile Include="AntiDllInject.c" />
     <ClCompile Include="AntiDebug.c" />
+    <ClCompile Include="Base64.c" />
     <ClCompile Include="Console.c" />
-    <ClCompile Include="CRC32.c" />
     <ClCompile Include="FileSystem.c" />
     <ClCompile Include="MemoryModule.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
@@ -118,6 +118,7 @@
     </ClCompile>
     <ClCompile Include="NT.c" />
     <ClCompile Include="AntiRE.c" />
+    <ClCompile Include="Obfustcate.c" />
     <ClCompile Include="pch.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -143,7 +144,6 @@
     <Library Include="..\Detours-4.0.1\lib.X86\detours.lib" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\out\Debug\RIFTDLL" />
     <None Include="..\out\RIFTDLL" />
     <None Include="..\out\RIFTINJECT32" />
     <None Include="..\out\RIFTINJECT64" />

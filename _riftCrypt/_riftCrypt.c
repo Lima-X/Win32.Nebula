@@ -16,9 +16,8 @@
 #pragma comment(lib, "pathcch.lib")
 #include <PathCch.h>
 #include <strsafe.h>
-EXTERN_C {
-	#include "..\_rift\_rift_shared.h"
-}
+
+#include "..\_rift\_rift_shared.h"
 
 static HANDLE g_hCon;
 static PVOID  g_pBuf;
@@ -47,6 +46,7 @@ INT wmain(
 	g_hPH = GetProcessHeap();
 	g_hCon = GetStdHandle(STD_OUTPUT_HANDLE);
 	g_pBuf = HeapAlloc(g_hPH, HEAP_ZERO_MEMORY, (1 << 12));
+
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(g_hCon, &csbi);
 	WCHAR szCD[MAX_PATH];

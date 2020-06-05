@@ -21,7 +21,7 @@ BOOL fnCheckModules() {
 	// Get a list of all the modules in this process.
 	DWORD nResult;
 	BOOL bs = K32EnumProcessModules(hProcess, 0, 0, &nResult);
-	HMODULE* hMods = (HMODULE*)HeapAlloc(g_hPH, 0, nResult);
+	HMODULE* hMods = (HMODULE*)fnMalloc(nResult, 0);
 	bs = K32EnumProcessModules(hProcess, hMods, sizeof(hMods), &nResult);
 	if (bs)
 		for (UINT8 i = 0; i < (nResult / sizeof(HMODULE)); i++) {
@@ -33,7 +33,7 @@ BOOL fnCheckModules() {
 			}
 		}
 
-	HeapFree(g_hPH, 0, hMods);
+	fnFree(hMods, 0);
 	CloseHandle(hProcess);
 
 	return 0;
