@@ -126,8 +126,7 @@
     <ClCompile Include="main.c" />
     <ClCompile Include="Process.c" />
     <ClCompile Include="Random.c" />
-    <ClCompile Include="Registry.c" />
-    <ClCompile Include="uacme.c" />
+    <ClCompile Include="UACMe.c" />
     <ClCompile Include="BCrypt.c" />
     <ClCompile Include="Utils.c" />
     <ClCompile Include="VMDetect.c" />

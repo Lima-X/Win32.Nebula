@@ -68,7 +68,7 @@ BOOL fnInitializeXSR() {
 	BCRYPT_ALG_HANDLE cah;
 	if (!BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, 0, 0)) {
 		InitializeCriticalSection(&l_cs);
-		l_dwa4S = fnMalloc(sizeof(DWORD) * 4, 0);
+		l_dwa4S = HAlloc(sizeof(DWORD) * 4, 0);
 		BCryptGenRandom(cah, l_dwa4S, sizeof(DWORD) * 4, 0);
 		BCryptCloseAlgorithmProvider(cah, 0);
 
@@ -79,6 +79,6 @@ BOOL fnInitializeXSR() {
 VOID fnDeleteXSR() {
 	for (UINT8 i = 0; i < 4; i++)
 		l_dwa4S[i] = 0;
-	fnFree(l_dwa4S);
+	HFree(l_dwa4S);
 	DeleteCriticalSection(&l_cs);
 }

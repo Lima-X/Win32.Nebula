@@ -9,14 +9,14 @@ static BOOL CheckOutputDebugString();
 static BOOL Int2DCheck();
 
 BOOL fnAntiDebug() {
-	HideThread(0);
+	fnHideThread(0);
 	CreateThread(0, 0, thAntiDebug, 0, 0, 0);
 }
 
 static DWORD WINAPI thAntiDebug(
 	_In_ PVOID pParam
 ) {
-	// HideThread(0);
+	fnHideThread(0);
 
 	while (TRUE) {
 		BOOL bT = fnBasicDebuggerCheck();
@@ -41,6 +41,7 @@ static DWORD WINAPI thAntiDebug(
 	return 0;
 }
 
+// Rewrite: Do it manually, by reading the flag directly from the PEB
 static BOOL fnBasicDebuggerCheck() {
 	BOOL bT = IsDebuggerPresent();
 	if (!bT) {
@@ -112,13 +113,13 @@ static BOOL DebugObjectCheck() {
 		return FALSE;
 }
 
-// HideThread will attempt to use
+// fnHideThread will attempt to use
 // NtSetInformationThread to hide a thread
 // from the debugger, Passing NULL for
 // hThread will cause the function to hide the thread
 // the function is running in. Also, the function returns
 // false on failure and true on success
-static BOOL HideThread(HANDLE hThread) {
+static BOOL fnHideThread(HANDLE hThread) {
 	typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, UINT, PVOID, ULONG);
 
 	// Get NtSetInformationThread

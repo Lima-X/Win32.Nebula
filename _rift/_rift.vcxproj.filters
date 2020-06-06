@@ -62,9 +62,6 @@
     <ClCompile Include="Xoshiro128.c">
       <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="Registry.c">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="Console.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
@@ -98,9 +95,6 @@
     <ClCompile Include="Window.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="uacme.c">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="BCrypt.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
@@ -109,6 +103,9 @@
     </ClCompile>
     <ClCompile Include="Base64.c">
       <Filter>Source Files\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="UACMe.c">
+      <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

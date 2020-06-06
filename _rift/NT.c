@@ -1,11 +1,11 @@
 #include "pch.h"
 #include "_rift.h"
 
-/*	I could just link to RtlAdjustPrivilege and call that,
-	but where is the fun in that :D
-	so lets to it the normal way (the manual one).
-	As a side effect the exe won't import RtlAdjustPrivilege...
-	which will reduce detection (lol if it weren't for the other stuff).	*/
+/* I could just link to RtlAdjustPrivilege and call that,
+   but where is the fun in that :D
+   so lets to it the normal way (the manual one).
+   As a side effect the exe won't import RtlAdjustPrivilege...
+   which will reduce detection (lol if it weren't for the other stuff). */
 BOOL fnAdjustPrivilege(
 	_In_ PCWSTR szPrivilege,
 	_In_ BOOL   bEnablePrivilege

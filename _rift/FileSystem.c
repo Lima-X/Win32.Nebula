@@ -15,13 +15,13 @@ PVOID fnAllocReadFileW(
 	if (!bT || (liFS.HighPart || !liFS.LowPart))
 		goto EXIT;
 
-	PVOID pFile = fnMalloc(liFS.LowPart, 0);
+	PVOID pFile = HAlloc(liFS.LowPart, 0);
 	if (!pFile)
 		goto EXIT;
 
 	bT = ReadFile(hFile, pFile, liFS.LowPart, nFileSize, 0);
 	if (!bT) {
-		fnFree(pFile);
+		HFree(pFile);
 		goto EXIT;
 	}
 

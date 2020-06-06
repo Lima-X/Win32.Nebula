@@ -14,3 +14,27 @@ BOOL fnIsUserAdmin() {
 
 	return bSId;
 }
+
+PVOID fnLoadResourceW(
+	_In_  WORD   wResID,
+	_In_  PCWSTR pResType,
+	_Out_ PDWORD dwBufferSize
+) {
+	HRSRC hResInfo = FindResourceW(0, MAKEINTRESOURCEW(wResID), pResType);
+	if (hResInfo) {
+		HGLOBAL hgData = LoadResource(0, hResInfo);
+		if (hgData) {
+			PVOID lpBuffer = LockResource(hgData);
+			if (!lpBuffer)
+				return 0;
+
+			*dwBufferSize = SizeofResource(0, hResInfo);
+			if (!*dwBufferSize)
+				return 0;
+
+			return lpBuffer;
+		}
+	}
+
+	return 0;
+}

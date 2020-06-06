@@ -5,7 +5,7 @@
 #include "pch.h"
 #include "_rift.h"
 
-static CONST BYTE l_Base64Table[65] = {
+CONST CHAR g_Base64Table[64] = {
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	"abcdefghijklmnopqrstuvwxyz"
 	"0123456789+/"
@@ -20,7 +20,7 @@ PBYTE fnB64Encode(
 	if (nBuffer % 3)
 		nOut += 4;
 
-	CONST PBYTE pOut = fnMalloc(nOut, 0);
+	CONST PBYTE pOut = HAlloc(nOut, 0);
 	if (!pOut)
 		return 0;
 
@@ -28,22 +28,22 @@ PBYTE fnB64Encode(
 	CONST BYTE* pIn = pBuffer;
 	PBYTE pPos = pOut;
 	while (pEnd - pIn >= 3) {
-		*pPos++ = l_Base64Table[pIn[0] >> 2];
-		*pPos++ = l_Base64Table[((pIn[0] & 0x03) << 4) | (pIn[1] >> 4)];
-		*pPos++ = l_Base64Table[((pIn[1] & 0x0f) << 2) | (pIn[2] >> 6)];
-		*pPos++ = l_Base64Table[pIn[2] & 0x3f];
+		*pPos++ = g_Base64Table[pIn[0] >> 2];
+		*pPos++ = g_Base64Table[((pIn[0] & 0x03) << 4) | (pIn[1] >> 4)];
+		*pPos++ = g_Base64Table[((pIn[1] & 0x0f) << 2) | (pIn[2] >> 6)];
+		*pPos++ = g_Base64Table[pIn[2] & 0x3f];
 
 		pIn += 3;
 	}
 
 	if (pEnd - pIn) {
-		*pPos++ = l_Base64Table[pIn[0] >> 2];
+		*pPos++ = g_Base64Table[pIn[0] >> 2];
 		if (pEnd - pIn == 1) {
-			*pPos++ = l_Base64Table[(pIn[0] & 0x03) << 4];
+			*pPos++ = g_Base64Table[(pIn[0] & 0x03) << 4];
 			*pPos++ = '=';
 		} else {
-			*pPos++ = l_Base64Table[((pIn[0] & 0x03) << 4) | (pIn[1] >> 4)];
-			*pPos++ = l_Base64Table[(pIn[1] & 0x0f) << 2];
+			*pPos++ = g_Base64Table[((pIn[0] & 0x03) << 4) | (pIn[1] >> 4)];
+			*pPos++ = g_Base64Table[(pIn[1] & 0x0f) << 2];
 		}
 
 		*pPos++ = '=';
@@ -58,9 +58,9 @@ PBYTE fnB64Decode(
 	_Out_ PSIZE_T nResult
 ) {
 	BYTE bDTable[256];
-	fnMemset(bDTable, 0x80, 256);
-	for (UINT i = 0; i < sizeof(l_Base64Table) - 1; i++)
-		bDTable[l_Base64Table[i]] = (BYTE)i;
+	MSet(bDTable, 0x80, 256);
+	for (UINT i = 0; i < sizeof(g_Base64Table) - 1; i++)
+		bDTable[g_Base64Table[i]] = (BYTE)i;
 	bDTable['='] = 0;
 
 	SIZE_T nC = 0;
@@ -70,7 +70,7 @@ PBYTE fnB64Decode(
 	if (!nC || nC % 4)
 		return 0;
 
-	CONST PBYTE pOut = fnMalloc(nC / 4 * 3, 0);
+	CONST PBYTE pOut = HAlloc(nC / 4 * 3, 0);
 	PBYTE pPos = pOut;
 	if (!pOut)
 		return 0;
@@ -95,7 +95,7 @@ PBYTE fnB64Decode(
 				else if (bPad == 2)
 					pPos -= 2;
 				else {
-					fnFree(pOut);
+					HFree(pOut);
 					return 0;
 				} break;
 			}
