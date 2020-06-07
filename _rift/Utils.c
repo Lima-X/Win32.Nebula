@@ -16,9 +16,9 @@ BOOL fnIsUserAdmin() {
 }
 
 PVOID fnLoadResourceW(
-	_In_  WORD   wResID,
-	_In_  PCWSTR pResType,
-	_Out_ PDWORD dwBufferSize
+	_In_  WORD    wResID,
+	_In_  PCWSTR  pResType,
+	_Out_ PSIZE_T nBufferSize
 ) {
 	HRSRC hResInfo = FindResourceW(0, MAKEINTRESOURCEW(wResID), pResType);
 	if (hResInfo) {
@@ -28,8 +28,8 @@ PVOID fnLoadResourceW(
 			if (!lpBuffer)
 				return 0;
 
-			*dwBufferSize = SizeofResource(0, hResInfo);
-			if (!*dwBufferSize)
+			*nBufferSize = SizeofResource(0, hResInfo);
+			if (!*nBufferSize)
 				return 0;
 
 			return lpBuffer;

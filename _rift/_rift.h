@@ -45,4 +45,4 @@ PCWSTR fnAllocRandomPathW(_In_ SIZE_T nMin, _In_opt_ SIZE_T nMax);
 
 /* Utils and Other : Utils.c*/
 BOOL fnIsUserAdmin();
-PVOID fnLoadResourceW(_In_ WORD wResID, _In_ PCWSTR pResType, _Out_ PDWORD dwBufferSize);
+PVOID fnLoadResourceW(_In_ WORD wResID, _In_ PCWSTR pResType, _Out_ PSIZE_T nBufferSize);

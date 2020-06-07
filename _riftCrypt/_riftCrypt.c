@@ -80,7 +80,7 @@ INT wmain(
 
 			BCRYPT_KEY_HANDLE ckhWrap;
 			status = BCryptGenerateSymmetricKey(cahAES, &ckhWrap, 0, 0, pWrap, AES_KEY_SIZE, 0);
-			HFree(pWrap);
+			FreeMemory(pWrap);
 
 			SIZE_T nResult;
 			pWrap = (PBYTE)HeapAlloc(g_hPH, 0, AES_BLOB_SIZE);
@@ -98,7 +98,7 @@ INT wmain(
 				CloseHandle(hInputFile);
 			}
 
-			HFree(pWrap);
+			FreeMemory(pWrap);
 		} else
 			fnPrintF(L"Unknown Command", CON_ERROR);
 	} else if (argc == 4) {
@@ -197,7 +197,7 @@ INT wmain(
 				fnPrintF(L"Compressed File will be bigger the original\nThis will be updated\n", CON_WARNING);
 
 			// Free Data
-			HFree(pInputFile);
+			FreeMemory(pInputFile);
 			CloseCompressor(ch);
 
 			// Open Algorithm Providers ///////////////////////////////////////////////////////////////////
@@ -230,7 +230,7 @@ INT wmain(
 			PBYTE pEncrypted = (PBYTE)HeapAlloc(g_hPH, 0, nResult);
 			status = BCryptEncrypt(ckhAES, (PBYTE)pCompressed, nCompressed, 0, pIV, 16, pEncrypted, nResult, &nResult, BCRYPT_BLOCK_PADDING);
 
-			HFree(pCompressed);
+			FreeMemory(pCompressed);
 			status = BCryptDestroyKey(ckhAES);
 			status = BCryptCloseAlgorithmProvider(cahAES, 0);
 			status = BCryptCloseAlgorithmProvider(cahRNG, 0);
@@ -245,8 +245,8 @@ INT wmain(
 				status = WriteFile(hInputFile, pEncrypted, nResult, &dwWritten, 0);
 				CloseHandle(hInputFile);
 			}
-			HFree(pEncrypted);
-			HFree(pAES);
+			FreeMemory(pEncrypted);
+			FreeMemory(pAES);
 		} else if (!lstrcmpW(argv[1], L"/de")) { ////////////////////////////////////////////////////////////////////////
 			// Get Full Path of InputFile Parameter / Import it ////////////////////////////////////
 			CopyMemory(szFilePath, szCD, MAX_PATH);
@@ -291,7 +291,7 @@ INT wmain(
 			status = BCryptImportKey(cahAES, 0, BCRYPT_KEY_DATA_BLOB, &ckhWrap, pWrapObj, dwBL, (PUCHAR)pWrapBlob, AES_BLOB_SIZE, 0);
 			status = BCryptImportKey(cahAES, ckhWrap, BCRYPT_AES_WRAP_KEY_BLOB, &ckhAES, pAesObj, dwBL, pAES->KEY, sizeof(pAES->KEY), 0);
 			status = BCryptDestroyKey(ckhWrap);
-			HFree(pWrapObj);
+			FreeMemory(pWrapObj);
 
 			// Decrypt Data
 			SIZE_T nDecrypted;
@@ -300,9 +300,9 @@ INT wmain(
 			status = BCryptDecrypt(ckhAES, (PBYTE)pInputFile, nInputFile, 0, pAES->IV, sizeof(pAES->IV), pDecrypted, nDecrypted, &nDecrypted, 0);
 
 			// Free Data
-			HFree(pInputFile);
+			FreeMemory(pInputFile);
 			status = BCryptDestroyKey(ckhAES);
-			HFree(pAesObj);
+			FreeMemory(pAesObj);
 			status = BCryptCloseAlgorithmProvider(cahAES, 0);
 
 			// Decompressor /////////////////////////////////////////////////////////
@@ -316,7 +316,7 @@ INT wmain(
 			status = Decompress(dch, pDecrypted, nDecrypted, pDecompressed, nDecompressed, &nDecompressed);
 
 			// Free Data
-			HFree(pDecrypted);
+			FreeMemory(pDecrypted);
 			CloseDecompressor(dch);
 
 			// Checksum and Compare
@@ -337,16 +337,16 @@ INT wmain(
 				CloseHandle(hInputFile);
 			}
 
-			HFree(pDecompressed);
+			FreeMemory(pDecompressed);
 		} else
 			fnPrintF(L"Unknown Command\n", CON_ERROR);
 
-		HFree(szFilePath);
+		FreeMemory(szFilePath);
 	}
 
 exit:
 	SetConsoleTextAttribute(g_hCon, csbi.wAttributes);
-	HFree(g_pBuf);
+	FreeMemory(g_pBuf);
 
 	return 0;
 }

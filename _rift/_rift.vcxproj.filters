@@ -95,16 +95,13 @@
     <ClCompile Include="Window.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="BCrypt.c">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="Obfustcate.c">
-      <Filter>Source Files\Algorithms</Filter>
-    </ClCompile>
     <ClCompile Include="Base64.c">
       <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
     <ClCompile Include="UACMe.c">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Crypt.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>

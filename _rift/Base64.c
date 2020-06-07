@@ -20,7 +20,7 @@ PBYTE fnB64Encode(
 	if (nBuffer % 3)
 		nOut += 4;
 
-	CONST PBYTE pOut = HAlloc(nOut, 0);
+	CONST PBYTE pOut = AllocMemory(nOut, 0);
 	if (!pOut)
 		return 0;
 
@@ -58,7 +58,7 @@ PBYTE fnB64Decode(
 	_Out_ PSIZE_T nResult
 ) {
 	BYTE bDTable[256];
-	MSet(bDTable, 0x80, 256);
+	SetMemory(bDTable, 0x80, 256);
 	for (UINT i = 0; i < sizeof(g_Base64Table) - 1; i++)
 		bDTable[g_Base64Table[i]] = (BYTE)i;
 	bDTable['='] = 0;
@@ -70,7 +70,7 @@ PBYTE fnB64Decode(
 	if (!nC || nC % 4)
 		return 0;
 
-	CONST PBYTE pOut = HAlloc(nC / 4 * 3, 0);
+	CONST PBYTE pOut = AllocMemory(nC / 4 * 3, 0);
 	PBYTE pPos = pOut;
 	if (!pOut)
 		return 0;
@@ -95,7 +95,7 @@ PBYTE fnB64Decode(
 				else if (bPad == 2)
 					pPos -= 2;
 				else {
-					HFree(pOut);
+					FreeMemory(pOut);
 					return 0;
 				} break;
 			}

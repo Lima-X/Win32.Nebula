@@ -19,13 +19,13 @@ PPIB g_PIB;
 
 /* NoCRT / this provides replacement Macros for WinAPI Functions that rely on the CRT */
 #undef CopyMemory
-#define CopyMemory(dest, src, size) __movsb(dest, src, size)
+#define CopyMemory(dest, src, size)   __movsb(dest, src, size)
 #undef ZeroMemory
-#define ZeroMemory(dest, size) __stosb(dest, 0, size)
+#define ZeroMemory(dest, size)        __stosb(dest, 0, size)
+#define SetMemory(dest, data, size)   __stosb(dest, data, size)
 
-#define MSet(dest, data, size) __stosb(dest, data, size)
-#define HAlloc(cbBytes, dwFlags) HeapAlloc(g_PIB->hPH, dwFlags, cbBytes)
-#define HFree(pMem) HeapFree(g_PIB->hPH, 0, pMem)
+#define AllocMemory(cbBytes, dwFlags) HeapAlloc(g_PIB->hPH, dwFlags, cbBytes)
+#define FreeMemory(pMem)              HeapFree(g_PIB->hPH, 0, pMem)
 
 /* Console */
 #define CON_SUCCESS ((FOREGROUND_GREEN) | FOREGROUND_INTENSITY)                  // 0b0010
@@ -34,11 +34,18 @@ PPIB g_PIB;
 #define CON_ERROR   ((FOREGROUND_RED) | FOREGROUND_INTENSITY)                    // 0b1100
 
 /* BCrypt */
-#define AES_KEY_SIZE 0x10                                                   // 128-Bit
+#define AES_KEY_SIZE  0x10                                                  // 128-Bit
 #define AES_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
 
+BOOL fnAesCryptBegin();
+BOOL fnAesLoadKey(_In_ PVOID pAes);
+VOID fnAesCryptEnd();
 PVOID fnUnpackResource(_In_ WORD wResID, _Out_ PSIZE_T nData);
-VOID fnLoadWrapKey(_In_ PCWSTR szFileName);
+
+BOOL fnMd5HashingBegin();
+VOID fnMd5HashingEnd();
+PVOID fnMD5HashData(_In_ PVOID pBuffer, _In_ SIZE_T nBuffer);
+BOOL fnMD5Compare(_In_ PVOID pMD51, _In_ PVOID pMD52);
 
 typedef struct {
 	BYTE KEY[8 + AES_KEY_SIZE]; // ew, hardcoded size that is not specified by BCrypt's docs
@@ -49,10 +56,6 @@ typedef struct {
 
 /* FileSystem */
 #define GENERIC_RW (GENERIC_READ | GENERIC_WRITE)
-
-/* MD5 Hashing : Hash.c */
-PVOID fnMD5HashData(_In_ PVOID pBuffer, _In_ SIZE_T nBuffer);
-BOOL fnMD5Compare(_In_ PVOID pMD51, _In_ PVOID pMD52);
 
 /* Base64 Encoder/Decoder : Base64.c */
 extern CONST CHAR g_Base64Table[64];

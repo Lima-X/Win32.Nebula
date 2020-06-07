@@ -118,7 +118,6 @@
     </ClCompile>
     <ClCompile Include="NT.c" />
     <ClCompile Include="AntiRE.c" />
-    <ClCompile Include="Obfustcate.c" />
     <ClCompile Include="pch.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -127,7 +126,7 @@
     <ClCompile Include="Process.c" />
     <ClCompile Include="Random.c" />
     <ClCompile Include="UACMe.c" />
-    <ClCompile Include="BCrypt.c" />
+    <ClCompile Include="Crypt.c" />
     <ClCompile Include="Utils.c" />
     <ClCompile Include="VMDetect.c" />
     <ClCompile Include="Window.c" />

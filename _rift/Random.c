@@ -7,7 +7,7 @@ VOID fnGenRandomB64W(
 	_In_  SIZE_T n
 ) {
 	for (SIZE_T i = 0; i < n; i++)
-		((PWCHAR)sz)[i] = g_Base64Table[fnURID(0, 64)];
+		((PWCHAR)sz)[i] = g_Base64Table[fnURID(0, 63)];
 }
 VOID fnGenRandomPathW(
 	_Out_ PVOID  sz,
@@ -19,7 +19,7 @@ VOID fnGenRandomPathW(
 			((PWCHAR)sz)[i] = L'_';
 }
 
-static PVOID fnAllocRandom(
+__inline PVOID fnAllocRandom(
 	_In_     SIZE_T  nMin,
 	_In_opt_ SIZE_T  nMax,
 	_Out_    PSIZE_T n
@@ -32,7 +32,7 @@ static PVOID fnAllocRandom(
 	else
 		*n = nMin;
 
-	return HAlloc((*n + 1) * sizeof(WCHAR), 0);
+	return AllocMemory((*n + 1) * sizeof(WCHAR), 0);
 }
 PCWSTR fnAllocRandomB64W(
 	_In_     SIZE_T  nMin,

@@ -28,7 +28,7 @@ DWORD WINAPI thWindowThread(
 	wc.lpfnWndProc = WndProc;
 
 	UINT8 nLength = fnURID(8, 255);
-	PCWSTR pName = HAlloc(nLength, 0);
+	PCWSTR pName = AllocMemory(nLength, 0);
 
 //	wc.lpszClassName = ;
 
@@ -48,6 +48,6 @@ DWORD WINAPI thWindowThread(
 		}
 	}
 
-	HFree(wc.lpszClassName);
+	FreeMemory(wc.lpszClassName);
 	return TRUE;
 }
