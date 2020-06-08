@@ -5,6 +5,7 @@
 
 # _rift specific files
 *.zip
+RIFTKEY
 RIFTDLL
 RIFTINJECT32
 RIFTINJECT64
@@ -13,12 +14,18 @@ RIFTROOT64
 
 # _rift specific directories
 .in/
-Detours-4.0.1/bin.X86/
-Detours-4.0.1/lib.X86/
-Detours-4.0.1/samples/
-Detours-4.0.1/src
-Detours-4.0.1/Makefile
-Detours-4.0.1/system.mak
+
+# msDetours
+msDetours/bin.X86/
+msDetours/lib.X86/
+msDetours/samples/
+msDetours/src
+msDetours/.gitignore
+msDetours/CREDITS.TXT
+msDetours/LICENSE.md
+msDetours/Makefile
+msDetours/README.md
+msDetours/system.mak
 
 # User-specific files
 *.rsuser

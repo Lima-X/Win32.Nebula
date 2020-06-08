@@ -42,11 +42,11 @@
     <ClInclude Include="MemoryModule.h">
       <Filter>Header Files\Library Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Detours-4.0.1\include\detours.h">
-      <Filter>Header Files\Library Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\msDetours\include\detours.h">
+      <Filter>Header Files\Library Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -98,9 +98,6 @@
     <ClCompile Include="Base64.c">
       <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="UACMe.c">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="Crypt.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
@@ -114,11 +111,6 @@
     <Image Include="..\_riftIcon\_rift.ico">
       <Filter>Resource Files</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\Detours-4.0.1\lib.X86\detours.lib">
-      <Filter>Header Files\Library Files</Filter>
-    </Library>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\out\RIFTROOT64">
@@ -136,5 +128,10 @@
     <None Include="..\out\RIFTROOT32">
       <Filter>Resource Files\RT_RCData</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\msDetours\lib.X86\detours.lib">
+      <Filter>Header Files\Library Files</Filter>
+    </Library>
   </ItemGroup>
 </Project>
