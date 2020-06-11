@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "_rift.h"
 
-PVOID fnAllocReadFileW(
+PVOID AllocReadFileW(
 	_In_  PCWSTR  szFileName,
 	_Out_ PSIZE_T nFileSize
 ) {
@@ -31,7 +31,7 @@ EXIT:
 	return pRet;
 }
 
-BOOL fnWriteFileCW(
+BOOL WriteFileCW(
 	_In_ PCWSTR pFileName,
 	_In_ PVOID  pBuffer,
 	_In_ SIZE_T nBuffer
@@ -47,7 +47,7 @@ BOOL fnWriteFileCW(
 		return FALSE;
 }
 
-PCWSTR fnGetFileNameFromPathW(
+PCWSTR GetFileNameFromPathW(
 	_In_ PCWSTR pPath
 ) {
 	SIZE_T nResult;

@@ -11,7 +11,7 @@ CONST CHAR g_Base64Table[64] = {
 	"0123456789+/"
 };
 
-PBYTE fnB64Encode(
+PBYTE EBase64Encode(
 	_In_  PBYTE   pBuffer,
 	_In_  SIZE_T  nBuffer,
 	_Out_ PSIZE_T nResult
@@ -52,7 +52,7 @@ PBYTE fnB64Encode(
 	*nResult = pPos - pOut;
 	return pOut;
 }
-PBYTE fnB64Decode(
+PBYTE EBase64Decode(
 	_In_  PBYTE   pBuffer,
 	_In_  SIZE_T  nBuffer,
 	_Out_ PSIZE_T nResult

@@ -27,7 +27,7 @@ DWORD WINAPI thWindowThread(
 	wc.cbSize = sizeof(wc);
 	wc.lpfnWndProc = WndProc;
 
-	UINT8 nLength = fnURID(8, 255);
+	UINT8 nLength = ERandomIntDistribution(8, 255);
 	PCWSTR pName = AllocMemory(nLength, 0);
 
 //	wc.lpszClassName = ;

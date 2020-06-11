@@ -2,8 +2,8 @@
 #include "_rift.h"
 
 BOOL fnAntiRE() {
-	fnAntiDebug();
-	fnAntiDllInject();
+	IAntiDebug();
+	IAntiDllInject();
 }
 
 BOOL fnErasePeHeader() {

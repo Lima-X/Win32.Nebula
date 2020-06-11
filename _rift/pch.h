@@ -19,5 +19,5 @@
 #pragma comment(lib, "wininet.lib")
 #include <WinInet.h>
 
-#include "..\Detours-4.0.1\include\detours.h"
+#include "..\msDetours\include\detours.h"
 #include "MemoryModule.h"

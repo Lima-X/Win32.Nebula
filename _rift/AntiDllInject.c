@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "_rift.h"
 
-BOOL fnAntiDllInject() {
+BOOL IAntiDllInject() {
 
 }
 
@@ -58,7 +58,7 @@ HMODULE WINAPI HLoadLibraryExW(_In_ LPCWSTR lpLibFileName, _Reserved_ HANDLE hFi
 			return RLoadLibraryExW(lpLibFileName, hFile, dwFlags);
 	return 0;
 }
-BOOL fnHookLoadLibrary() {
+BOOL IHookLoadLibrary() {
 	if (DetourTransactionBegin())
 		goto EXIT;
 
@@ -67,7 +67,7 @@ BOOL fnHookLoadLibrary() {
 	if (hTSnap == INVALID_HANDLE_VALUE)
 		goto EXIT;
 	THREADENTRY32 te; te.dwSize = sizeof(te);
-	HANDLE hThread[0x100];
+	HANDLE hThread[0x20]; // Allocate Dynamically in the future
 	UINT8 nThread = 0;
 	if (Thread32First(hTSnap, &te)) {
 		do {
@@ -75,6 +75,9 @@ BOOL fnHookLoadLibrary() {
 			DetourUpdateThread(hThread[nThread]);
 			nThread++;
 		} while (Thread32Next(hTSnap, &te));
+	} else {
+		CloseHandle(hTSnap);
+		goto EXIT;
 	}
 
 	// Detour LoadLibrary Functions

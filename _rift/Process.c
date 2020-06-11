@@ -22,7 +22,7 @@ BOOL fnProcessMonitorW() {
 					if (!lstrcmpW(pe32.szExeFile, t_szProcs[i])) {
 						HANDLE hProc = OpenProcess(PROCESS_TERMINATE, FALSE, pe32.th32ProcessID);
 						if (hProc) {
-							TerminateProcess(hProc, fnNext128ss());
+							TerminateProcess(hProc, EXoshiroSS());
 							CloseHandle(hProc);
 						}
 					}

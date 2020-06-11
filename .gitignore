@@ -6,6 +6,7 @@
 # _rift specific files
 *.zip
 RIFTKEY
+STRKEY
 RIFTDLL
 RIFTINJECT32
 RIFTINJECT64

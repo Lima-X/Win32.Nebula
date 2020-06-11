@@ -5,7 +5,7 @@ static DWORD WINAPI thConsoleTitle(_In_ PVOID pParam);
 static DWORD WINAPI thBootScreen(_In_ PVOID pParam);
 static HANDLE l_hCon;
 
-BOOL fnOpenConsole() {
+BOOL IOpenConsole() {
 	BOOL bT = AllocConsole();
 	if (bT) {
 		l_hCon = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -51,7 +51,7 @@ static DWORD WINAPI thBootScreen(
 	UINT8 ui8I[6] = { 0 };
 	DWORD dwWritten;
 	while (bDone) {
-		UINT8 ui8R = fnURID(0, 5);
+		UINT8 ui8R = ERandomIntDistribution(0, 5);
 
 		if ((bDone >> ui8R) & 0b1) {
 			SetConsoleCursorPosition(l_hCon, (COORD){ ui8I[ui8R], ui8R });
