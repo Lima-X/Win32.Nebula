@@ -145,7 +145,7 @@ INT wmain(
 			// Get Full Path of Wrap Key / Import it ///////////////////////////////////////////
 			PWSTR szFilePath = AllocMemory(MAX_PATH * sizeof(WCHAR), 0);
 			CopyMemory(szFilePath, g_PIB->szCD, MAX_PATH * sizeof(WCHAR));
-			PathCchAppend(szFilePath, MAX_PATH, L"..\\RIFTKEY");
+			PathCchAppend(szFilePath, MAX_PATH, L"..\\RIFTWKEY");
 			HANDLE hFile = CreateFileW(szFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 			LARGE_INTEGER liFS;
 			BOOL status = GetFileSizeEx(hFile, &liFS);
@@ -169,7 +169,7 @@ INT wmain(
 
 			// Get Full Path of string Key / Import it ///////////////////////////////////////////
 			CopyMemory(szFilePath, g_PIB->szCD, MAX_PATH * sizeof(WCHAR));
-			PathCchAppend(szFilePath, MAX_PATH, L"..\\STRKEY");
+			PathCchAppend(szFilePath, MAX_PATH, L"..\\RIFTSKEY");
 			hFile = CreateFileW(szFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 			status = GetFileSizeEx(hFile, &liFS);
 			pFile = AllocMemory(liFS.LowPart, 0);
@@ -202,7 +202,7 @@ INT wmain(
 		// Get Full Path of Wrap Key / Import it ///////////////////////////////////////////
 		PWSTR szFilePath = AllocMemory(MAX_PATH * sizeof(WCHAR), 0);
 		CopyMemory(szFilePath, g_PIB->szCD, MAX_PATH * sizeof(WCHAR));
-		PathCchAppend(szFilePath, MAX_PATH, L"..\\RIFTKEY");
+		PathCchAppend(szFilePath, MAX_PATH, L"..\\RIFTWKEY");
 		HANDLE hWrapBlob = CreateFileW(szFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 		LARGE_INTEGER liFS;
 		BOOL status = GetFileSizeEx(hWrapBlob, &liFS);

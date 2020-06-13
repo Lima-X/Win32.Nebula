@@ -30,17 +30,14 @@
  * These portions are Copyright (C) 2013 Thomas Heller.
  */
 
-#include <windows.h>
-#include <winnt.h>
-#include <stddef.h>
-#include <tchar.h>
+#include "pch.h"
 #ifdef DEBUG_OUTPUT
 #include <stdio.h>
 #endif
 
 #if _MSC_VER
  // Disable warning about data -> function pointer conversion
-#pragma warning(disable:4055)
+#pragma warning(disable: 4055)
  // C4244: conversion from 'uintptr_t' to 'DWORD', possible loss of data.
 #pragma warning(error: 4244)
 // C4267: conversion from 'size_t' to 'int', possible loss of data.
@@ -1149,7 +1146,7 @@ MemoryLoadStringEx(HMEMORYMODULE module, UINT id, LPTSTR buffer, int maxsize, WO
 		buffer[size] = 0;
 	}
 #if defined(UNICODE)
-	wcsncpy(buffer, data->NameString, size);
+	wcsncpy_s(buffer, size, data->NameString, size);
 #else
 	wcstombs(buffer, data->NameString, size);
 #endif

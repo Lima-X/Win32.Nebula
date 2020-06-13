@@ -42,11 +42,11 @@ PVOID IAesDecrypt(
 	_In_  PVOID             pIV,
 	_Out_ PSIZE_T           nResult
 ) {
-	NTSTATUS nts = BCryptDecrypt(khAES, (PUCHAR)pData, nData, 0, pIV, 16, 0, 0, nResult, 0);
+	NTSTATUS nts = BCryptDecrypt(khAES, pData, nData, 0, pIV, 16, 0, 0, nResult, 0);
 	if (nts)
 		return 0;
 	PVOID pDecrypted = AllocMemory(*nResult, 0);
-	nts = BCryptDecrypt(khAES, (PUCHAR)pData, nData, 0, pIV, 16, pDecrypted, *nResult, nResult, 0);
+	nts = BCryptDecrypt(khAES, pData, nData, 0, pIV, 16, pDecrypted, *nResult, nResult, 0);
 	if (nts) {
 		FreeMemory(pDecrypted);
 		return 0;
@@ -55,7 +55,7 @@ PVOID IAesDecrypt(
 	return pDecrypted;
 }
 
-BOOL EAesUnwrapKey(
+NTSTATUS EAesUnwrapKey(
 	_In_ PCIB   cib,  // Be sure to Free cib after finishing using it
 	_In_ PVOID  pKey,
 	_In_ SIZE_T nKey
@@ -76,7 +76,7 @@ static DECOMPRESSOR_HANDLE l_ch;
 BOOL EDecompressBegin() {
 	return !CreateDecompressor(COMPRESS_ALGORITHM_LZMS, 0, &l_ch);
 }
-VOID EDecommpressEnd() {
+VOID EDecompressEnd() {
 	CloseDecompressor(l_ch);
 }
 
@@ -110,7 +110,7 @@ PVOID EUnpackResource(
 	EAesUnwrapKey(&cib, ((PAESEX)pResource)->KEY, sizeof(((PAESEX)pResource)->KEY));
 	BYTE pIV[16];
 	CopyMemory(&pIV, ((PAESEX)pResource)->IV, 16);
-	PVOID pDecrypted = IAesDecrypt(cib.kh, (PBYTE)pResource + sizeof(AESEX), nData - sizeof(AESEX), &pIV, &nData);
+	PVOID pDecrypted = IAesDecrypt(cib.kh, (PTR)pResource + sizeof(AESEX), *nData - sizeof(AESEX), &pIV, nData);
 	EAesFreeKey(&cib);
 
 	// Decompress
@@ -148,7 +148,7 @@ BOOL EUnpackResourceBegin() {
 }
 VOID EUnpackResourceEnd() {
 	EAesCryptEnd();
-	EDecommpressEnd();
+	EDecompressEnd();
 	EMd5HashEnd();
 }
 

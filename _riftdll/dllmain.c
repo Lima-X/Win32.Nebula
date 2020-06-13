@@ -11,17 +11,18 @@ BOOL WINAPI DllMain(
 	switch (fdwReason) {
 	case DLL_PROCESS_ATTACH:
 	case DLL_THREAD_ATTACH:
-
 		break;
 	case DLL_THREAD_DETACH:
 	case DLL_PROCESS_DETACH:
-
 		break;
 	}
 
 	return TRUE;
 }
 
-DLLAPI BOOL fnDllInit(int a) {
-	return a;
+DLLEX BOOL EDllInit(
+	_In_ PPIB pib
+) {
+	g_PIB = pib;
+	return 0;
 }

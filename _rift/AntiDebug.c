@@ -76,7 +76,9 @@ static BOOL IDebugObjectCheck() {
 // hThread will cause the function to hide the thread
 // the function is running in. Also, the function returns
 // false on failure and true on success
-static BOOL EHideThread(HANDLE hThread) {
+static BOOL EHideThread(
+	_In_opt_ HANDLE hThread
+) {
 	typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, UINT, PVOID, ULONG);
 
 	// Get NtSetInformationThread

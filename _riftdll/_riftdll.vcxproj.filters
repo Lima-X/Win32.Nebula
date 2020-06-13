@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\UACExploit">
+      <UniqueIdentifier>{2d4d1330-00ed-402c-8067-202d8f81c79f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -24,6 +27,9 @@
     <ClInclude Include="..\_rift\_rift_shared.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="appinfo32.h">
+      <Filter>Source Files\UACExploit</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.c">
@@ -32,8 +38,14 @@
     <ClCompile Include="pch.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UACMe.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="aic.c">
+      <Filter>Source Files\UACExploit</Filter>
+    </ClCompile>
+    <ClCompile Include="appinfo32.c">
+      <Filter>Source Files\UACExploit</Filter>
+    </ClCompile>
+    <ClCompile Include="tyranid.c">
+      <Filter>Source Files\UACExploit</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

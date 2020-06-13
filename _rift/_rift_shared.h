@@ -5,6 +5,13 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
+/* Tpyedefs */
+#if defined(_WIN32)
+typedef unsigned long PTR;
+#elif defined(_WIN64)
+typedef unsigned long long PTR;
+#endif
+
 /* Process Information Block (replacment for Global Data) */
 typedef struct {
 #ifndef _riftCrypt
@@ -46,6 +53,9 @@ BOOL EMd5HashBegin();
 VOID EMd5HashEnd();
 VOID EMd5HashData(_Out_ PVOID pMd5, _In_ PVOID pBuffer, _In_ SIZE_T nBuffer);
 BOOL EMd5Compare(_In_ PVOID pMD51, _In_ PVOID pMD52);
+
+BOOL EDecompressBegin();
+VOID EDecompressEnd();
 
 // BCrypt Information Block : Data Structer for encryption and Hashing
 typedef struct {

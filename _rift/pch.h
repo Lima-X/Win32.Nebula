@@ -20,4 +20,9 @@
 #include <WinInet.h>
 
 #include "..\msDetours\include\detours.h"
+
+/* MemoryModule */
 #include "MemoryModule.h"
+#include <winnt.h>
+#include <stddef.h>
+#include <tchar.h>

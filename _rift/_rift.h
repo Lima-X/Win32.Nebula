@@ -5,9 +5,6 @@
 /* WinMain : main.c */
 VOID ESelfDestruct();
 
-/* _riftdll */
-typedef BOOL(*pfnDllInit)(int);
-
 /* Xoshiro PRNG Algorithm : Xoshiro.c */
 BOOL EXoshiroBegin();
 VOID EXoshiroEnd();

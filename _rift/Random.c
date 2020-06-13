@@ -7,7 +7,7 @@ VOID fnGenRandomB64W(
 	_In_  SIZE_T n
 ) {
 	for (SIZE_T i = 0; i < n; i++)
-		((PWCHAR)sz)[i] = g_Base64Table[ERandomIntDistribution(0, 63)];
+		((PWCHAR)sz)[i] = (WCHAR)g_Base64Table[ERandomIntDistribution(0, 63)];
 }
 VOID fnGenRandomPathW(
 	_Out_ PVOID  sz,
@@ -35,13 +35,13 @@ __inline PVOID fnAllocRandom(
 	return AllocMemory((*n + 1) * sizeof(WCHAR), 0);
 }
 PCWSTR EAllocRandomBase64StringW(
-	_In_     SIZE_T  nMin,
-	_In_opt_ SIZE_T  nMax
+	_In_     SIZE_T nMin,
+	_In_opt_ SIZE_T nMax
 ) {
 	SIZE_T n;
 	PVOID pBuffer = fnAllocRandom(nMin, nMax, &n);
 	fnGenRandomB64W(pBuffer, n);
-	((PWCHAR)pBuffer)[n + 1] = L'\0';
+	((PWCHAR)pBuffer)[n] = L'\0';
 	return pBuffer;
 }
 PCWSTR EAllocRandomPathW(
