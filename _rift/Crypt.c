@@ -153,21 +153,25 @@ VOID EUnpackResourceEnd() {
 }
 
 // new hashing algorithnm using bcrypt md5's // to be implemented for future usecases and reimplemented in _riftCrypt
+// note: these functions can't use the Memory Macros but rather have to use the Heap Functions directly,
+// because they are called from the TLS Callback Function.
 BOOL EMd5HashBegin() {
-	l_ciba2[1] = AllocMemory(sizeof(CIB), 0);
+	HANDLE hPH = GetProcessHeap();
+	l_ciba2[1] = HeapAlloc(hPH, 0, sizeof(CIB));
 	BCryptOpenAlgorithmProvider(&l_ciba2[1]->ah, BCRYPT_MD5_ALGORITHM, 0, BCRYPT_HASH_REUSABLE_FLAG);
 
 	SIZE_T nResult;
 	NTSTATUS nts = BCryptGetProperty(l_ciba2[1]->ah, BCRYPT_OBJECT_LENGTH, &l_ciba2[1]->nObj, sizeof(DWORD), &nResult, 0);
-	l_ciba2[1]->pObj = AllocMemory(l_ciba2[1]->nObj, 0);
+	l_ciba2[1]->pObj = HeapAlloc(hPH, 0, l_ciba2[1]->nObj);
 
 	nts = BCryptCreateHash(l_ciba2[1]->ah, &l_ciba2[1]->hh, l_ciba2[1]->pObj, l_ciba2[1]->nObj, 0, 0, BCRYPT_HASH_REUSABLE_FLAG);
 }
 VOID EMd5HashEnd() {
+	HANDLE hPH = GetProcessHeap();
 	NTSTATUS nts = BCryptDestroyHash(l_ciba2[1]->hh);
-	FreeMemory(l_ciba2[1]->pObj);
+	HeapFree(hPH, 0, l_ciba2[1]->pObj);
 	nts = BCryptCloseAlgorithmProvider(l_ciba2[1]->ah, 0);
-	FreeMemory(l_ciba2[1]);
+	HeapFree(hPH, 0, l_ciba2[1]);
 }
 
 VOID EMd5HashData(

@@ -33,7 +33,7 @@ DWORD WINAPI thCheckModules(
 			}
 		}
 
-	FreeMemory(hMods, 0);
+	FreeMemory(hMods);
 	CloseHandle(hProcess);
 
 	return 0;

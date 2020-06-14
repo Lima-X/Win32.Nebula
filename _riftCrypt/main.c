@@ -102,9 +102,9 @@ INT wmain(
 
 	if ((argc != 4) && (argc != 3) && (argc != 2)) {
 		fnPrintF(L"Usage: [gw] [KeyFileName]/([en/de] [InputFile] [OutputName/File])\n\n"
-		         L"\t[/en] : Encrypts the specified file with AES256 in CBC mode (random KEY, pIV),\n"
+		         L"\t[/en] : Encrypts the specified file with AES128 in CBC mode (random KEY, pIV),\n"
 		         L"\t        the encrypted file is then written to the the current directory.\n"
-		         L"\t        The Application will also export the KEY, pIV, a CRC Checksum of the original\n"
+		         L"\t        The Application will also export the KEY, pIV, a MD5 Checksum of the original\n"
 		         L"\t        and internal data (for the decryption part).\n\n"
 		         L"\t[/de] : Decrypts and decompresses the specified file,\n"
 		         L"\t        it also validates that the decrypted content is not corrupted.\n\n"

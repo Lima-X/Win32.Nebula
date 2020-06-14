@@ -5,6 +5,10 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
+/* Windows Naming Convention */
+#define INLINE __inline
+#define STATIC static
+
 /* Tpyedefs */
 #if defined(_WIN32)
 typedef unsigned long PTR;
@@ -41,8 +45,9 @@ PPIB g_PIB;
 #define CON_ERROR   ((FOREGROUND_RED) | FOREGROUND_INTENSITY)                    // 0b1100
 
 /* BCrypt */
-#define AES_KEY_SIZE  0x10                                                  // 128-Bit
+#define AES_KEY_SIZE  0x10                                                 // 128-Bit
 #define AES_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
+#define MD5_SIZE      0x10                                                 // 128-Bit
 
 BOOL EAesCryptBegin();
 BOOL IAesLoadWKey(_In_ PVOID pWAes);

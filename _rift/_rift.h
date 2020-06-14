@@ -19,6 +19,8 @@ BOOL fnAntiRE();
 BOOL IAntiDebug();
 BOOL IAntiDllInject();
 BOOL EHideThread(_In_opt_ HANDLE hThread);
+extern FORCEINLINE BOOL IHashCodeSection();
+BOOL fnErasePeHeader();
 
 /* VMDetection : VMDetect.c */
 BOOL ICheckVmPresent();
