@@ -56,9 +56,9 @@ PDWORD EGetProcessIdbyName(
 		do {
 			if (!lstrcmpiW(pe32.szExeFile, pProcessName)) {
 				if (pProcesses)
-					pProcesses = ReAllocMemory(pProcesses, sizeof(DWORD) * *nProcesses, 0);
+					pProcesses = ReAllocMemory(pProcesses, sizeof(DWORD) * *nProcesses);
 				else
-					pProcesses = AllocMemory(sizeof(DWORD), 0);
+					pProcesses = AllocMemory(sizeof(DWORD));
 
 				pProcesses[*nProcesses] = pe32.th32ProcessID;
 			}

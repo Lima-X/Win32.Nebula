@@ -9,13 +9,13 @@ PCIB l_ciba2[2]; // [0]: WrapKey Object
 
 /* These functions act as Constructors / Destructors, they manage internal data */////////////////////////////////////////////////////////////////////
 BOOL EAesCryptBegin() {
-	l_ciba2[0] = AllocMemory(sizeof(CIB), 0);
+	l_ciba2[0] = AllocMemory(sizeof(CIB));
 	NTSTATUS nts = BCryptOpenAlgorithmProvider(&l_ciba2[0]->ah, BCRYPT_AES_ALGORITHM, 0, 0);
 
 	// Create KeyOBJ / Import Key
 	SIZE_T nResult;
 	nts = BCryptGetProperty(l_ciba2[0]->ah, BCRYPT_OBJECT_LENGTH, &l_ciba2[0]->nObj, sizeof(DWORD), &nResult, 0);
-	l_ciba2[0]->pObj = AllocMemory(l_ciba2[0]->nObj, 0);
+	l_ciba2[0]->pObj = AllocMemory(l_ciba2[0]->nObj);
 }
 BOOL IAesLoadWKey(
 	_In_ PVOID pWAes
@@ -45,7 +45,7 @@ PVOID IAesDecrypt(
 	NTSTATUS nts = BCryptDecrypt(khAES, pData, nData, 0, pIV, 16, 0, 0, nResult, 0);
 	if (nts)
 		return 0;
-	PVOID pDecrypted = AllocMemory(*nResult, 0);
+	PVOID pDecrypted = AllocMemory(*nResult);
 	nts = BCryptDecrypt(khAES, pData, nData, 0, pIV, 16, pDecrypted, *nResult, nResult, 0);
 	if (nts) {
 		FreeMemory(pDecrypted);
@@ -60,7 +60,7 @@ NTSTATUS EAesUnwrapKey(
 	_In_ PVOID  pKey,
 	_In_ SIZE_T nKey
 ) {
-	cib->pObj = AllocMemory(l_ciba2[0]->nObj, 0);
+	cib->pObj = AllocMemory(l_ciba2[0]->nObj);
 	return BCryptImportKey(l_ciba2[0]->ah, l_ciba2[0]->kh, BCRYPT_AES_WRAP_KEY_BLOB, &cib->kh, cib->pObj, l_ciba2[0]->nObj, pKey, nKey, 0);
 }
 VOID EAesFreeKey(
@@ -87,7 +87,7 @@ PVOID IDecompressLZ(
 	// Decompress Data
 	SIZE_T nDecompressed;
 	NTSTATUS nts = Decompress(l_ch, pData, *nData, 0, 0, &nDecompressed);
-	PVOID pDecompressed = AllocMemory(nDecompressed, 0);
+	PVOID pDecompressed = AllocMemory(nDecompressed);
 	nts = Decompress(l_ch, pData, *nData, pDecompressed, nDecompressed, &nDecompressed);
 
 	*nData = nDecompressed;
@@ -120,7 +120,7 @@ PVOID EUnpackResource(
 	FreeMemory(pDecrypted);
 
 	// Check for Corrupted Data
-	PVOID pMd5 = AllocMemory(16, 0);
+	PVOID pMd5 = AllocMemory(16);
 	EMd5HashData(pMd5, pData, *nData);
 	BOOL bT = EMd5Compare(pMd5, ((PAESEX)pResource)->MD5);
 	FreeMemory(pMd5);
@@ -154,7 +154,7 @@ VOID EUnpackResourceEnd() {
 
 // new hashing algorithnm using bcrypt md5's // to be implemented for future usecases and reimplemented in _riftCrypt
 // note: these functions can't use the Memory Macros but rather have to use the Heap Functions directly,
-// because they are called from the TLS Callback Function.
+// because they are called from the TLS Callback Function, where the PIB is not initialized yet.
 BOOL EMd5HashBegin() {
 	HANDLE hPH = GetProcessHeap();
 	l_ciba2[1] = HeapAlloc(hPH, 0, sizeof(CIB));

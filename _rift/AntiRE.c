@@ -24,17 +24,39 @@ BOOL fnErasePeHeader() {
 	return TRUE;
 }
 
-
 /* l_CSh (CodeSectionHash) contains the expected Hash of the CodeSection in memory */
-#pragma data_seg(".data")
-__declspec(allocate(".data")) DWORD l_CSH[16] = {
-	0x6c60b78f, 0x9a88ef46, 0x6dc819fa, 0xa0520fd5
+CONST STATIC BYTE l_CSH[] = { // == 128-Bit/16-Byte
+	'.', 't', 'e', 'x', 't', 'M', 'd', '5', 'S', 'i', 'g',
+	0, 0, 0, 0, 0
 };
-#pragma data_seg()
+FORCEINLINE BOOL IHashCodeSection() {
+	// Read Binary File
+	WCHAR szMFN[MAX_PATH];
+	GetModuleFileNameW(0, szMFN, MAX_PATH);
+	HANDLE hFile = CreateFileW(szMFN, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return 0;
 
-__declspec(noinline) BOOL IHashCodeSection() {
+	LARGE_INTEGER liFS;
+	BOOL bT = GetFileSizeEx(hFile, &liFS);
+	if (!bT || (liFS.HighPart || !liFS.LowPart))
+		return 0;
+
+	HANDLE hPH = GetProcessHeap();
+	PVOID pFile = HeapAlloc(hPH, 0, liFS.LowPart);
+	if (!pFile)
+		return 0;
+
+	SIZE_T nFileSize = 0;
+	bT = ReadFile(hFile, pFile, liFS.LowPart, &nFileSize, 0);
+	CloseHandle(hFile);
+	if (!bT || (nFileSize != liFS.LowPart)) {
+		HeapFree(hPH, 0, pFile);
+		return 0;
+	}
+
 	// Get Nt Headers
-	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)GetModuleHandleW(0);
+	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)pFile;
 	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((PTR)pDosHdr + pDosHdr->e_lfanew);
 	if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
 		return FALSE;
@@ -43,9 +65,9 @@ __declspec(noinline) BOOL IHashCodeSection() {
 	if (pOHdr->Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
 		return FALSE;
 
-	PTR pBoc = 0;
+	PVOID pBoc = 0;
 	SIZE_T nBoc = 0;
-	CONST BYTE bSectionName[8] = { '.', 't', 'e', 'x', 't', 0x00, 0x00, 0x00 };
+	CONST BYTE bSectionName[8] = { '.', 't', 'e', 'x', 't', 0, 0, 0 };
 	for (UINT8 i = 0; i < pFHdr->NumberOfSections; i++) {
 		PIMAGE_SECTION_HEADER pSHdr = ((PIMAGE_SECTION_HEADER)((PTR)pOHdr + (PTR)pFHdr->SizeOfOptionalHeader) + i);
 		BOOLEAN bFlag = TRUE;
@@ -55,8 +77,8 @@ __declspec(noinline) BOOL IHashCodeSection() {
 				break;
 			}
 		} if (bFlag) {
-			pBoc = (PTR)pDosHdr + (PTR)pSHdr->VirtualAddress;
-			nBoc = pSHdr->Misc.VirtualSize;
+			pBoc = (PTR)pDosHdr + (PTR)pSHdr->PointerToRawData;
+			nBoc = pSHdr->SizeOfRawData;
 			break;
 		}
 	}
@@ -65,7 +87,7 @@ __declspec(noinline) BOOL IHashCodeSection() {
 	EMd5HashBegin();
 	BYTE Md5[16];
 	EMd5HashData(Md5, pBoc, nBoc);
-	BOOL bT = EMd5Compare(Md5, l_CSH);
+	bT = EMd5Compare(Md5, l_CSH);
 	EMd5HashEnd();
 
 	return bT;

@@ -20,7 +20,7 @@ PBYTE EBase64Encode(
 	if (nBuffer % 3)
 		nOut += 4;
 
-	CONST PBYTE pOut = AllocMemory(nOut, 0);
+	CONST PBYTE pOut = AllocMemory(nOut);
 	if (!pOut)
 		return 0;
 
@@ -70,7 +70,7 @@ PBYTE EBase64Decode(
 	if (!nC || nC % 4)
 		return 0;
 
-	CONST PBYTE pOut = AllocMemory(nC / 4 * 3, 0);
+	CONST PBYTE pOut = AllocMemory(nC / 4 * 3);
 	PBYTE pPos = pOut;
 	if (!pOut)
 		return 0;

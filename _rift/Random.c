@@ -32,7 +32,7 @@ __inline PVOID fnAllocRandom(
 	else
 		*n = nMin;
 
-	return AllocMemory((*n + 1) * sizeof(WCHAR), 0);
+	return AllocMemory((*n + 1) * sizeof(WCHAR));
 }
 PCWSTR EAllocRandomBase64StringW(
 	_In_     SIZE_T nMin,

@@ -21,7 +21,7 @@ DWORD WINAPI thCheckModules(
 	// Get a list of all the modules in this process.
 	DWORD nResult;
 	BOOL bs = K32EnumProcessModules(hProcess, 0, 0, &nResult);
-	HMODULE* hMods = (HMODULE*)AllocMemory(nResult, 0);
+	HMODULE* hMods = (HMODULE*)AllocMemory(nResult);
 	bs = K32EnumProcessModules(hProcess, hMods, sizeof(hMods), &nResult);
 	if (bs)
 		for (UINT8 i = 0; i < nResult / sizeof(HMODULE); i++) {

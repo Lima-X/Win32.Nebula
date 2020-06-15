@@ -23,14 +23,15 @@ static WCHAR l_szConsoleTitle[] = L"[_rift-Loader] by Lima X [L4X] | (debug/dev-
 static DWORD WINAPI thConsoleTitle(
 	_In_ PVOID pParam
 ) {
-	PVOID pBuffer = 0;
-	PWCHAR pTitleBuf = AllocMemory(sizeof(l_szConsoleTitle), HEAP_ZERO_MEMORY);
-	if (pTitleBuf)
+	PWCHAR pTitleBuf = AllocMemory(sizeof(l_szConsoleTitle));
+	if (pTitleBuf) {
+		ZeroMemory(pTitleBuf, sizeof(l_szConsoleTitle));
 		for (UINT8 i = 0; i < sizeof(l_szConsoleTitle) / sizeof(WCHAR); i++) {
 			pTitleBuf[i] = l_szConsoleTitle[i];
 			SetConsoleTitleW(pTitleBuf);
 			Sleep(50);
 		}
+	}
 
 	return 0;
 }
@@ -101,10 +102,10 @@ BOOL fnPrintF(PCWSTR pText, WORD wAttribute, ...) {
 	va_list vaArg;
 	va_start(vaArg, wAttribute);
 
-	PVOID hBuf = AllocMemory(0x1000, HEAP_ZERO_MEMORY);
-	DWORD nBufLen;
+	PVOID hBuf = AllocMemory(0x1000);
+	SIZE_T nBufLen;
 	StringCchVPrintfW((STRSAFE_LPWSTR)hBuf, 0x1000 / sizeof(WCHAR), pText, vaArg);
-	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, 0x1000 / sizeof(WCHAR), (PUINT)&nBufLen);
+	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, 0x1000 / sizeof(WCHAR), &nBufLen);
 	SetConsoleTextAttribute(l_hCon, wAttribute);
 	WriteConsoleW(l_hCon, hBuf, nBufLen, &nBufLen, 0);
 	FreeMemory(hBuf);

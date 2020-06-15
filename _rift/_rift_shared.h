@@ -34,9 +34,9 @@ PPIB g_PIB;
 #define ZeroMemory(dest, size)      __stosb(dest, 0, size)
 #define SetMemory(dest, data, size) __stosb(dest, data, size)
 
-#define AllocMemory(cbBytes, dwFlags)         HeapAlloc(g_PIB->hPH, dwFlags, cbBytes)
-#define ReAllocMemory(pMem, cbBytes, dwFlags) HeapReAlloc(g_PIB->hPH, dwFlags, pMem, cbBytes)
-#define FreeMemory(pMem)                      HeapFree(g_PIB->hPH, 0, pMem)
+#define AllocMemory(cbBytes)         HeapAlloc(g_PIB->hPH, 0, cbBytes)
+#define ReAllocMemory(pMem, cbBytes) HeapReAlloc(g_PIB->hPH, 0, pMem, cbBytes)
+#define FreeMemory(pMem)             HeapFree(g_PIB->hPH, 0, pMem)
 
 /* Console */
 #define CON_SUCCESS ((FOREGROUND_GREEN) | FOREGROUND_INTENSITY)                  // 0b0010

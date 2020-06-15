@@ -11,7 +11,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		break;
 	case WM_QUERYENDSESSION:
 		return FALSE;
-		break;
 	case WM_ENDSESSION:
 		;
 	}
@@ -28,7 +27,7 @@ DWORD WINAPI thWindowThread(
 	wc.lpfnWndProc = WndProc;
 
 	UINT8 nLength = ERandomIntDistribution(8, 255);
-	PCWSTR pName = AllocMemory(nLength, 0);
+	PCWSTR pName = AllocMemory(nLength);
 
 //	wc.lpszClassName = ;
 

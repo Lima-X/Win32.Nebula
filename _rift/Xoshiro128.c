@@ -61,7 +61,7 @@ BOOL EXoshiroBegin() {
 	BCRYPT_ALG_HANDLE cah;
 	if (!BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, 0, 0)) {
 		InitializeCriticalSection(&l_cs);
-		l_dwa4 = AllocMemory(sizeof(DWORD) * 4, 0);
+		l_dwa4 = AllocMemory(sizeof(DWORD) * 4);
 		BCryptGenRandom(cah, l_dwa4, sizeof(DWORD) * 4, 0);
 		BCryptCloseAlgorithmProvider(cah, 0);
 

@@ -12,6 +12,8 @@ as well as many other Features.
 - [ ] Process enfrocement/persistency (selfmonitoring & BreakOnTermination)
 - [ ] Resource Decryption/Decompression (AES128CBC & LZMS)
 - [ ] String Deobfuscation (Base64 & AES128CBC)
+- [x] TLS Callback for AntiRE
+- [ ] Code/Text Section Hashing
 
 ## \_riftdll
 Main Payload Dll also containing the Loader-Stub (S2).\
@@ -46,6 +48,22 @@ Build utility used to encrypt/compress and obfuscate internal data for \_rift.
 - [x] Compress/Encrypt File
 - [x] Decrypt/Decompress File
 - [ ] Obfuscate Strings (AES128CBC & Base64)
+- [ ] Md5 Patcher for SectionHashing (HexInput)
+
+# Build Instructions
+## Building the Excutable:
+- Build all Second Stage Dependencies
+- Generate Wrap Key using _riftCrypt with /gk
+- Encrypt Dependencies using _riftCrypt with /ec
+- Build _rift 
+- Patch _rift using _riftCrypt with /pa\
+  (this will finalize the Application by patching in the proper MD5's)
+
+## Embedding encrypted Strings:
+- Generate Key using _riftCrypt with /gk
+- Embed the exported Base64 Key in the sourcecode
+- Encrypt and Encode all strings using _riftCrypt with /ec\
+  and embed the encoded strings in the source
 
 # Style/Naming Convention
 ## FunctionNames:

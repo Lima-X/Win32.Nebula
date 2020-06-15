@@ -15,7 +15,7 @@ PVOID AllocReadFileW(
 	if (!bT || (liFS.HighPart || !liFS.LowPart))
 		goto EXIT;
 
-	PVOID pFile = AllocMemory(liFS.LowPart, 0);
+	PVOID pFile = AllocMemory(liFS.LowPart);
 	if (!pFile)
 		goto EXIT;
 
