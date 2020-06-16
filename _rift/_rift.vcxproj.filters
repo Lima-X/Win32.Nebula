@@ -74,9 +74,6 @@
     <ClCompile Include="Random.c">
       <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="FileSystem.c">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="AntiDllInject.c">
       <Filter>Source Files\Anti RE</Filter>
     </ClCompile>

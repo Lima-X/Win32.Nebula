@@ -13,7 +13,8 @@ as well as many other Features.
 - [ ] Resource Decryption/Decompression (AES128CBC & LZMS)
 - [ ] String Deobfuscation (Base64 & AES128CBC)
 - [x] TLS Callback for AntiRE
-- [ ] Code/Text Section Hashing
+- [x] Code/Text Section Hashing\
+      (Upgrade to Hash all Sections (including Section Containing Hash)
 
 ## \_riftdll
 Main Payload Dll also containing the Loader-Stub (S2).\
@@ -40,29 +41,30 @@ The RootKit Dll that will primarily hide Processes and Files.
 - [ ] Hook NtQueryDirectoryFile
 - [ ] Hook NtQuerySystemInformation
 
-## \_riftCrypt
-Build utility used to encrypt/compress and obfuscate internal data for \_rift.
+## \_riftTool
+Build utility used to compress/encrypt, obfuscate internal data and patch _rift.
 
 #### Features:
 - [x] Generate Master Warp Key
 - [x] Compress/Encrypt File
 - [x] Decrypt/Decompress File
 - [ ] Obfuscate Strings (AES128CBC & Base64)
-- [ ] Md5 Patcher for SectionHashing (HexInput)
+- [x] Md5 Patcher for SectionHashing\
+      (Upgrade to Hash all Sections (including Section Containing Hash)
 
 # Build Instructions
 ## Building the Excutable:
 - Build all Second Stage Dependencies
-- Generate Wrap Key using _riftCrypt with /gk
-- Encrypt Dependencies using _riftCrypt with /ec
+- Generate Wrap Key using _riftTool with /gk
+- Encrypt Dependencies using _riftTool with /ec
 - Build _rift 
-- Patch _rift using _riftCrypt with /pa\
+- Patch _rift using _riftTool with /pa\
   (this will finalize the Application by patching in the proper MD5's)
 
 ## Embedding encrypted Strings:
-- Generate Key using _riftCrypt with /gk
+- Generate Key using _riftTool with /gk
 - Embed the exported Base64 Key in the sourcecode
-- Encrypt and Encode all strings using _riftCrypt with /ec\
+- Encrypt and Encode all strings using _riftTool with /ec\
   and embed the encoded strings in the source
 
 # Style/Naming Convention

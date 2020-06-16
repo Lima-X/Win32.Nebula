@@ -11,18 +11,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\_rift\Base64.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\_rift\Crypt.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\_rift\_rift_shared.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="_riftTool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -14,9 +14,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{708DC70C-D97D-4E1F-B214-5259D3E2C669}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>riftCrypt</RootNamespace>
+    <RootNamespace>riftTool</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>_riftCrypt</ProjectName>
+    <ProjectName>_riftTool</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -94,12 +94,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\_rift\Base64.c" />
-    <ClCompile Include="..\_rift\Crypt.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="Utils.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\_rift\_rift_shared.h" />
+    <ClInclude Include="_riftTool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

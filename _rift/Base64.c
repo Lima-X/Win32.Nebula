@@ -11,47 +11,6 @@ CONST CHAR g_Base64Table[64] = {
 	"0123456789+/"
 };
 
-PBYTE EBase64Encode(
-	_In_  PBYTE   pBuffer,
-	_In_  SIZE_T  nBuffer,
-	_Out_ PSIZE_T nResult
-) {
-	SIZE_T nOut = nBuffer / 3 * 4;
-	if (nBuffer % 3)
-		nOut += 4;
-
-	CONST PBYTE pOut = AllocMemory(nOut);
-	if (!pOut)
-		return 0;
-
-	CONST PBYTE pEnd = pBuffer + nBuffer;
-	CONST BYTE* pIn = pBuffer;
-	PBYTE pPos = pOut;
-	while (pEnd - pIn >= 3) {
-		*pPos++ = g_Base64Table[pIn[0] >> 2];
-		*pPos++ = g_Base64Table[((pIn[0] & 0x03) << 4) | (pIn[1] >> 4)];
-		*pPos++ = g_Base64Table[((pIn[1] & 0x0f) << 2) | (pIn[2] >> 6)];
-		*pPos++ = g_Base64Table[pIn[2] & 0x3f];
-
-		pIn += 3;
-	}
-
-	if (pEnd - pIn) {
-		*pPos++ = g_Base64Table[pIn[0] >> 2];
-		if (pEnd - pIn == 1) {
-			*pPos++ = g_Base64Table[(pIn[0] & 0x03) << 4];
-			*pPos++ = '=';
-		} else {
-			*pPos++ = g_Base64Table[((pIn[0] & 0x03) << 4) | (pIn[1] >> 4)];
-			*pPos++ = g_Base64Table[(pIn[1] & 0x0f) << 2];
-		}
-
-		*pPos++ = '=';
-	}
-
-	*nResult = pPos - pOut;
-	return pOut;
-}
 PBYTE EBase64Decode(
 	_In_  PBYTE   pBuffer,
 	_In_  SIZE_T  nBuffer,

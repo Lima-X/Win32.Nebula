@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "_rift.h"
 
-// has to be rewritten to use the "full" ascii table (only the ones allowed in paths)
 VOID fnGenRandomB64W(
 	_Out_ PVOID  sz,
 	_In_  SIZE_T n

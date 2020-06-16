@@ -1,0 +1,219 @@
+// This project is just a mess,
+// most of the sizes are not calculated dynamically and are hard coded,
+// also there're no actual sanity checks as i didn't care for them.
+// this is just a support tool after all
+// and only serves the purpose to prepare files for the loader.
+// tbh i just wanted to be done with this as it is already 300+ lines
+// for just a support tool (why do i do this to myself)
+// I should also add that this tool does NOT clean up properly,
+// as it isn't required, the actual decryption module in the loader does.
+
+// wow, this file is just getting worse and worse,
+// tbh i should just rewrite it at somepoint, maybe when the actuall thing works...
+// to safe some space right now i'll just remove some of the sanity checks
+// ..i'll add them back in maybe later or idk.
+
+#include "_riftTool.h"
+
+INT wmain(
+	_In_     INT    argc,
+	_In_     PWCHAR argv[],
+	_In_opt_ PWCHAR envp[]
+) {
+	UNREFERENCED_PARAMETER(envp);
+	{	// Initialize Process Information block
+		HANDLE hPH = GetProcessHeap();
+		g_PIB = (PPIB)HeapAlloc(hPH, 0, sizeof(PIB));
+		g_PIB->hPH = hPH;
+		GetCurrentDirectoryW(MAX_PATH, g_PIB->szCD);
+	}
+	g_hCon = GetStdHandle(STD_OUTPUT_HANDLE);
+	g_pBuf = AllocMemory(0x800 * sizeof(WCHAR));
+	// Safe CMD
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(g_hCon, &csbi);
+
+	if (argc ==  3) {
+		if (!lstrcmpW(argv[1], L"/gk")) {
+			// Generate Random Aes128 Key
+			BCRYPT_ALG_HANDLE ahAes, ahRng;
+			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
+			nts = BCryptOpenAlgorithmProvider(&ahRng, BCRYPT_RNG_ALGORITHM, 0, 0);
+			PBYTE pKey = AllocMemory(AES_KEY_SIZE);
+			nts = BCryptGenRandom(ahRng, pKey, AES_KEY_SIZE, 0);
+			nts = BCryptCloseAlgorithmProvider(ahRng, 0);
+			BCRYPT_KEY_HANDLE khAes;
+			nts = BCryptGenerateSymmetricKey(ahAes, &khAes, 0, 0, pKey, AES_KEY_SIZE, 0);
+			FreeMemory(pKey);
+
+			// Export AesBlob
+			SIZE_T nResult;
+			PVOID pKeyE = AllocMemory(AES_BLOB_SIZE);
+			nts = BCryptExportKey(khAes, 0, BCRYPT_KEY_DATA_BLOB, pKeyE, AES_BLOB_SIZE, &nResult, 0);
+			nts = BCryptDestroyKey(khAes);
+			BCryptCloseAlgorithmProvider(ahAes, 0);
+
+			// Save Aes Blob
+			PWSTR szFileName = AllocMemory(MAX_PATH * sizeof(WCHAR));
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[2]);
+			nts = WriteFileCW(szFileName, 0, pKeyE, AES_BLOB_SIZE);
+			FreeMemory(szFileName);
+
+			// Output AesBlob as Base64 String
+			PVOID pB64Blob = Base64Encode(pKeyE, AES_BLOB_SIZE, &nResult);
+			FreeMemory(pKeyE);
+			WriteConsoleA(g_hCon, pB64Blob, nResult, &nResult, 0);
+			FreeMemory(pB64Blob);
+		} else if (!lstrcmpW(argv[1], L"/pa")) {
+			// Load Executable/Image
+			PWSTR szFileName = AllocMemory(MAX_PATH * sizeof(WCHAR));
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[2]);
+			SIZE_T nFile;
+			PVOID pFile = ReadFileCW(szFileName, 0, &nFile);
+			if (!pFile)
+				goto exit;
+
+			// Find Code/Text -Section
+			SIZE_T nSection;
+			CONST BYTE ba8CodeSeg[] = { '.', 't', 'e', 'x', 't', 0, 0, 0 };
+			PVOID pCodeSeg = GetSection(pFile, ba8CodeSeg, &nSection);
+
+			// Hash Section
+			BCRYPT_ALG_HANDLE ahMd5;
+			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahMd5, BCRYPT_MD5_ALGORITHM, 0, 0);
+			PVOID pMd5 = AllocMemory(MD5_SIZE);
+			nts = BCryptHash(ahMd5, 0, 0, pCodeSeg, nSection, pMd5, MD5_SIZE);
+			BCryptCloseAlgorithmProvider(ahMd5, 0);
+
+			// Find Data location and patch
+			CONST BYTE ba8DataSeg[] = { '.', 'r', 'd', 'a', 't', 'a', 0, 0 };
+			PVOID pDataSeg = GetSection(pFile, ba8DataSeg, &nSection);
+			CONST BYTE ba16Sig[] = { '.', 't', 'e', 'x', 't', 'M', 'd', '5', 'S', 'i', 'g', 0, 0, 0, 0, 0 };
+			for (UINT i = 0; i < nSection; i++) {
+				BOOLEAN bFlag = TRUE;
+				for (UINT8 j = 0; j < MD5_SIZE; j++) {
+					if (((PBYTE)pDataSeg)[i + j] != ba16Sig[j]) {
+						bFlag = FALSE;
+						break;
+					}
+				} if (bFlag) {
+					CopyMemory((PTR)pDataSeg + i, pMd5, MD5_SIZE);
+					FreeMemory(pMd5);
+					break;
+				}
+			}
+
+			WriteFileCW(szFileName, 0, pFile, nFile);
+			FreeMemory(pFile);
+			FreeMemory(szFileName);
+		} else
+			fnPrintF(L"Unknown Command", CON_ERROR);
+	} else if (!lstrcmpW(argv[1], L"/ec")) {
+		if (argc == 5) {
+			// Load WrapKey
+			PWSTR szFileName = AllocMemory(MAX_PATH * sizeof(WCHAR));
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[3]);
+			SIZE_T nFile;
+			PVOID pWKey = ReadFileCW(szFileName, 0, &nFile);
+			if (!pWKey)
+				goto exit;
+
+			// Load File to Compress & Encrypt
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[2]);
+			PVOID pFile = ReadFileCW(szFileName, 0, &nFile);
+			if (!pFile)
+				goto exit;
+
+			// allocate info structure and generate Md5 from input
+			PAESEX pAes = AllocMemory(sizeof(AESEX));
+			BCRYPT_ALG_HANDLE ahMd5;
+			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahMd5, BCRYPT_MD5_ALGORITHM, 0, 0);
+			nts = BCryptHash(ahMd5, 0, 0, pFile, nFile, pAes->MD5, MD5_SIZE);
+			BCryptCloseAlgorithmProvider(ahMd5, 0);
+
+			// Compress InputFile using LZ
+			COMPRESSOR_HANDLE l_ch;
+			nts = CreateCompressor(COMPRESS_ALGORITHM_LZMS, 0, &l_ch);
+			SIZE_T nResult;
+			nts = Compress(l_ch, pFile, nFile, 0, 0, &nResult);
+			PVOID pCompressed = AllocMemory(nResult);
+			nts = Compress(l_ch, pFile, nFile, pCompressed, nResult, &nFile);
+			FreeMemory(pFile);
+			CloseCompressor(l_ch);
+
+			// Generate Random Aes128 Key
+			BCRYPT_ALG_HANDLE ahRng;
+			nts = BCryptOpenAlgorithmProvider(&ahRng, BCRYPT_RNG_ALGORITHM, 0, 0);
+			PVOID pKey = AllocMemory(AES_KEY_SIZE);
+			nts = BCryptGenRandom(ahRng, pKey, AES_KEY_SIZE, 0);
+			BCRYPT_ALG_HANDLE ahAes;
+			nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
+			BCRYPT_KEY_HANDLE khKey;
+			nts = BCryptGenerateSymmetricKey(ahAes, &khKey, 0, 0, pKey, AES_KEY_SIZE, 0);
+
+			// Wrap and export AesKey
+			SIZE_T nOL;
+			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(SIZE_T), &nResult, 0);
+			PVOID pAesObj = AllocMemory(nOL);
+			BCRYPT_KEY_HANDLE khWKey;
+			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, pAesObj, nOL, (PUCHAR)pWKey, AES_BLOB_SIZE, 0);
+			nts = BCryptExportKey(khKey, khWKey, BCRYPT_AES_WRAP_KEY_BLOB, pAes->KEY, sizeof(pAes->KEY), &nResult, 0);
+			nts = BCryptDestroyKey(khWKey);
+			FreeMemory(pAesObj);
+
+			// init initialization-vector and copy
+			PVOID pIv = AllocMemory(16);
+			nts = BCryptGenRandom(ahRng, pIv, 16, 0);
+			CopyMemory(pAes->IV, pIv, 16);
+			nts = BCryptCloseAlgorithmProvider(ahRng, 0);
+
+			// Encrypt Data
+			nts = BCryptEncrypt(khKey, pCompressed, nFile, 0, pIv, 16, 0, 0, &nResult, BCRYPT_BLOCK_PADDING);
+			PVOID pEncrypted = AllocMemory(nResult);
+			nts = BCryptEncrypt(khKey, pCompressed, nFile, 0, pIv, 16, pEncrypted, nResult, &nFile, BCRYPT_BLOCK_PADDING);
+			FreeMemory(pCompressed);
+			nts = BCryptDestroyKey(khKey);
+			nts = BCryptCloseAlgorithmProvider(ahAes, 0);
+
+			// Export Data ///////////////////////////////////////////////////////////////////////////
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[4]);
+
+			HANDLE hFile = CreateFileW(szFileName, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS,
+				(FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ENCRYPTED), 0);
+			if (hFile) {
+				nts = WriteFile(hFile, pAes, sizeof(AESEX), &nResult, 0);
+				nts = WriteFile(hFile, pEncrypted, nFile, &nResult, 0);
+				CloseHandle(hFile);
+			}
+			FreeMemory(pEncrypted);
+			FreeMemory(pAes);
+		} else if (argc == 4) {
+			// TODO: Add String Encryptor
+		} else
+			fnPrintF(L"Unknown Command", CON_ERROR);
+	} else if (!(argc >= 3) && !(argc <= 5)) {
+		fnPrintF(L"Usage:\n"
+			L"[/gk] [OutputFile]\n"
+			L"\tGenerates a random Aes128 Key and exports it to the specified [OutputFile,]\n"
+			L"\tthis Key is also outputed as a Base64 encoded String to Console.\n"
+
+			L"[/ec] [InputFile] [WKeyFile] [OutputFile]\n"
+			L"\tEncrypts the specified [InputFile] with Aes128Cbc using a random generated Key and IV.\n"
+			L"\tThe AesKey is then wrapped with the imported Aes128 [WKeyFile],\n"
+			L"\twhich is then exported with the encrypted Data and a Md5 Checksum to the [OutputFile].\n"
+			L"[/ec] [KeyFile] [Text]\n"
+			L"\tEncrypts the [Text] with Aes128Cbc using the Key imported from [KeyFile]\n"
+			L"\tand outputs the Ciphertext as an Base64 encoded String to the Console.\n\n"
+
+			L"[/pa] [_riftExe]\n"
+			L"\tFinalizes the [_riftExe] by patching in the proper internal Data.\n"
+			L"\tThis es to be done externaly as it is dependent on the module itself.\n"
+			, CON_WARNING);
+	}
+
+exit:
+	SetConsoleTextAttribute(g_hCon, csbi.wAttributes);
+	FreeMemory(g_pBuf);
+
+	return 0;
+}

@@ -8,4 +8,5 @@ if exist _NDEBUG (
 	goto eof
 )
 
-_riftCrypt.exe /gw "..\RIFTKEY"
+_riftTool.exe /gk "..\RIFTWKEY"
+pause
