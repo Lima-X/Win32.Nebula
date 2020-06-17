@@ -94,6 +94,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\_rift\Data.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="Utils.c" />
   </ItemGroup>

@@ -1,12 +1,13 @@
 #include "pch.h"
 #include "_rift.h"
 
+extern CONST CHAR e_Base64Table[64];
 VOID fnGenRandomB64W(
 	_Out_ PVOID  sz,
 	_In_  SIZE_T n
 ) {
 	for (SIZE_T i = 0; i < n; i++)
-		((PWCHAR)sz)[i] = (WCHAR)g_Base64Table[ERandomIntDistribution(0, 63)];
+		((PWCHAR)sz)[i] = (WCHAR)e_Base64Table[ERandomIntDistribution(0, 63)];
 }
 VOID fnGenRandomPathW(
 	_Out_ PVOID  sz,

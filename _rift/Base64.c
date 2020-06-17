@@ -5,12 +5,7 @@
 #include "pch.h"
 #include "_rift.h"
 
-CONST CHAR g_Base64Table[64] = {
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	"abcdefghijklmnopqrstuvwxyz"
-	"0123456789+/"
-};
-
+extern CONST CHAR e_Base64Table[64];
 PBYTE EBase64Decode(
 	_In_  PBYTE   pBuffer,
 	_In_  SIZE_T  nBuffer,
@@ -18,8 +13,8 @@ PBYTE EBase64Decode(
 ) {
 	BYTE bDTable[256];
 	SetMemory(bDTable, 0x80, 256);
-	for (UINT i = 0; i < sizeof(g_Base64Table) - 1; i++)
-		bDTable[g_Base64Table[i]] = (BYTE)i;
+	for (UINT i = 0; i < sizeof(e_Base64Table) - 1; i++)
+		bDTable[e_Base64Table[i]] = (BYTE)i;
 	bDTable['='] = 0;
 
 	SIZE_T nC = 0;

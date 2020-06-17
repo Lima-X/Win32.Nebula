@@ -15,6 +15,9 @@
 
 #include "_riftTool.h"
 
+extern CONST BYTE e_HashSig[16];
+extern CONST CHAR e_pszSections[3][8];
+
 INT wmain(
 	_In_     INT    argc,
 	_In_     PWCHAR argv[],
@@ -73,36 +76,86 @@ INT wmain(
 			if (!pFile)
 				goto exit;
 
-			// Find Code/Text -Section
-			SIZE_T nSection;
-			CONST BYTE ba8CodeSeg[] = { '.', 't', 'e', 'x', 't', 0, 0, 0 };
-			PVOID pCodeSeg = GetSection(pFile, ba8CodeSeg, &nSection);
+			// Get Nt Headers
+			PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)pFile;
+			PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((PTR)pDosHdr + pDosHdr->e_lfanew);
+			if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
+				return FALSE;
+			PIMAGE_FILE_HEADER pFHdr = &pNtHdr->FileHeader;
+			PIMAGE_OPTIONAL_HEADER pOHdr = &pNtHdr->OptionalHeader;
+			if (pOHdr->Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
+				return FALSE;
 
-			// Hash Section
-			BCRYPT_ALG_HANDLE ahMd5;
-			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahMd5, BCRYPT_MD5_ALGORITHM, 0, 0);
-			PVOID pMd5 = AllocMemory(MD5_SIZE);
-			nts = BCryptHash(ahMd5, 0, 0, pCodeSeg, nSection, pMd5, MD5_SIZE);
-			BCryptCloseAlgorithmProvider(ahMd5, 0);
+			// Prepare Hashing
+			BCRYPT_ALG_HANDLE ah;
+			BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, 0, 0);
+			BCRYPT_HASH_HANDLE hh;
+			BCryptCreateHash(ah, &hh, 0, 0, 0, 0, 0);
 
-			// Find Data location and patch
-			CONST BYTE ba8DataSeg[] = { '.', 'r', 'd', 'a', 't', 'a', 0, 0 };
-			PVOID pDataSeg = GetSection(pFile, ba8DataSeg, &nSection);
-			CONST BYTE ba16Sig[] = { '.', 't', 'e', 'x', 't', 'M', 'd', '5', 'S', 'i', 'g', 0, 0, 0, 0, 0 };
-			for (UINT i = 0; i < nSection; i++) {
-				BOOLEAN bFlag = TRUE;
-				for (UINT8 j = 0; j < MD5_SIZE; j++) {
-					if (((PBYTE)pDataSeg)[i + j] != ba16Sig[j]) {
-						bFlag = FALSE;
+			// Hash Sections
+			PVOID pHash = 0;
+			for (UINT8 i = 0; i < pFHdr->NumberOfSections; i++) {
+				// Get Section and Check if Type is accepted
+				PIMAGE_SECTION_HEADER pSHdr = ((PIMAGE_SECTION_HEADER)((PTR)pOHdr + (PTR)pFHdr->SizeOfOptionalHeader) + i);
+				if (!((pSHdr->Characteristics & IMAGE_SCN_CNT_CODE) || (pSHdr->Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA)))
+					continue;
+
+				// Check for Special Section
+				BOOLEAN bFlag;
+				for (UINT8 j = 0; j < (sizeof(e_pszSections) / sizeof(e_pszSections[0])); j++) {
+					bFlag = TRUE;
+					for (UINT8 n = 0; n < IMAGE_SIZEOF_SHORT_NAME; n++) {
+						if (pSHdr->Name[n] != e_pszSections[j][n]) {
+							bFlag = FALSE;
+							break;
+						}
+					} if (bFlag) {
+						bFlag = j + 1;
 						break;
 					}
-				} if (bFlag) {
-					CopyMemory((PTR)pDataSeg + i, pMd5, MD5_SIZE);
-					FreeMemory(pMd5);
-					break;
 				}
+
+				// Set Section Pointers
+				PVOID pSection = (PTR)pDosHdr + (PTR)pSHdr->PointerToRawData;
+				SIZE_T nSection = pSHdr->SizeOfRawData;
+
+				// Select what to to
+				if (bFlag == 1) {
+					for (UINT j = 0; j < nSection - MD5_SIZE; j++) {
+						bFlag = TRUE;
+						for (UINT8 n = 0; n < MD5_SIZE; n++) {
+							if (((PBYTE)pSection)[j + n] != e_HashSig[n]) {
+								bFlag = FALSE;
+								break;
+							}
+						} if (bFlag) {
+							pHash = (PTR)pSection + j;
+							break;
+						}
+					}
+
+					SIZE_T nRDataP1 = (PTR)pHash - (PTR)pSection;
+					BCryptHashData(hh, pSection, nRDataP1, 0);
+					SIZE_T nRDataP2 = ((PTR)pSection + nSection) - ((PTR)pHash + MD5_SIZE);
+					BCryptHashData(hh, (PTR)pHash + MD5_SIZE, nRDataP2, 0);
+				}
+				else if (bFlag >= 2)
+					continue;
+				else
+					BCryptHashData(hh, pSection, nSection, 0);
 			}
 
+			// Finish Hash
+			PVOID pMd5 = AllocMemory(MD5_SIZE);
+			BCryptFinishHash(hh, pMd5, MD5_SIZE, 0);
+			BCryptDestroyHash(hh);
+			BCryptCloseAlgorithmProvider(ah, 0);
+
+			// Patch Image
+			CopyMemory(pHash, pMd5, MD5_SIZE);
+			FreeMemory(pMd5);
+
+			// Commit Changes to Image
 			WriteFileCW(szFileName, 0, pFile, nFile);
 			FreeMemory(pFile);
 			FreeMemory(szFileName);

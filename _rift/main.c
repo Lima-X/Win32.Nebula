@@ -23,7 +23,7 @@ INT WINAPI wWinMain(
 		GetCurrentDirectoryW(MAX_PATH, g_PIB->szCD);
 	}
 
-	BOOL bT = IHashCodeSection();
+
 //	fnErasePeHeader();
 
 	MessageBox(0, L"TEST : 1", 0, 0);

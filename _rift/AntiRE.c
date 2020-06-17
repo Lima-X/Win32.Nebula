@@ -24,29 +24,25 @@ BOOL fnErasePeHeader() {
 	return TRUE;
 }
 
-/* l_CSh (CodeSectionHash) contains the expected Hash of the CodeSection in memory */
-CONST STATIC BYTE l_CSH[] = { // == 128-Bit/16-Byte
-	'.', 't', 'e', 'x', 't', 'M', 'd', '5', 'S', 'i', 'g',
-	0, 0, 0, 0, 0
-};
+extern CONST BYTE e_HashSig[16];
+extern CONST CHAR e_pszSections[3][8];
 FORCEINLINE BOOL IHashCodeSection() {
+	HANDLE hPH = GetProcessHeap();
+
 	// Read Binary File
-	WCHAR szMFN[MAX_PATH];
+	PVOID szMFN = HeapAlloc(hPH, 0, MAX_PATH * sizeof(WCHAR));
 	GetModuleFileNameW(0, szMFN, MAX_PATH);
 	HANDLE hFile = CreateFileW(szMFN, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if (hFile == INVALID_HANDLE_VALUE)
 		return 0;
-
 	LARGE_INTEGER liFS;
 	BOOL bT = GetFileSizeEx(hFile, &liFS);
 	if (!bT || (liFS.HighPart || !liFS.LowPart))
 		return 0;
 
-	HANDLE hPH = GetProcessHeap();
 	PVOID pFile = HeapAlloc(hPH, 0, liFS.LowPart);
 	if (!pFile)
 		return 0;
-
 	SIZE_T nFileSize = 0;
 	bT = ReadFile(hFile, pFile, liFS.LowPart, &nFileSize, 0);
 	CloseHandle(hFile);
@@ -65,32 +61,71 @@ FORCEINLINE BOOL IHashCodeSection() {
 	if (pOHdr->Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
 		return FALSE;
 
-	PVOID pBoc = 0;
-	SIZE_T nBoc = 0;
-	CONST BYTE bSectionName[8] = { '.', 't', 'e', 'x', 't', 0, 0, 0 };
+	// Prepare Hashing
+	BCRYPT_ALG_HANDLE ah;
+	BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, 0, 0);
+	BCRYPT_HASH_HANDLE hh;
+	BCryptCreateHash(ah, &hh, 0, 0, 0, 0, 0);
+
 	for (UINT8 i = 0; i < pFHdr->NumberOfSections; i++) {
+		// Get Section and Check if Type is accepted
 		PIMAGE_SECTION_HEADER pSHdr = ((PIMAGE_SECTION_HEADER)((PTR)pOHdr + (PTR)pFHdr->SizeOfOptionalHeader) + i);
-		BOOLEAN bFlag = TRUE;
-		for (UINT8 j = 0; j < IMAGE_SIZEOF_SHORT_NAME; j++) {
-			if (pSHdr->Name[j] != bSectionName[j]) {
-				bFlag = FALSE;
+		if (!((pSHdr->Characteristics & IMAGE_SCN_CNT_CODE) || (pSHdr->Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA)))
+			continue;
+
+		// Check for Special Section
+		BOOLEAN bFlag;
+		for(UINT8 j = 0; j < (sizeof(e_pszSections) / sizeof(e_pszSections[0])); j++) {
+			bFlag = TRUE;
+			for (UINT8 n = 0; n < IMAGE_SIZEOF_SHORT_NAME; n++) {
+				if (pSHdr->Name[n] != e_pszSections[j][n]) {
+					bFlag = FALSE;
+					break;
+				}
+			} if (bFlag) {
+				bFlag = j + 1;
 				break;
 			}
-		} if (bFlag) {
-			pBoc = (PTR)pDosHdr + (PTR)pSHdr->PointerToRawData;
-			nBoc = pSHdr->SizeOfRawData;
-			break;
 		}
+
+		// Set Section Pointers
+		PVOID pSection = (PTR)pDosHdr + (PTR)pSHdr->PointerToRawData;
+		SIZE_T nSection = pSHdr->SizeOfRawData;
+
+		// Select what to to
+		if (bFlag == 1) {
+			PVOID pHash = 0;
+
+			// Find Hash Signature
+			for (UINT j = 0; j < nSection - MD5_SIZE; j++) {
+				bFlag = TRUE;
+				for (UINT8 n = 0; n < MD5_SIZE; n++) {
+					if (((PBYTE)pSection)[j + n] != e_HashSig[n]) {
+						bFlag = FALSE;
+						break;
+					}
+				} if (bFlag) {
+					pHash = (PTR)pSection + j;
+					break;
+				}
+			}
+
+			// Hash only Data surrounding the Hash
+			SIZE_T nRDataP1 = (PTR)pHash - (PTR)pSection;
+			BCryptHashData(hh, pSection, nRDataP1, 0);
+			SIZE_T nRDataP2 = ((PTR)pSection + nSection) - ((PTR)pHash + MD5_SIZE);
+			BCryptHashData(hh, (PTR)pHash + MD5_SIZE, nRDataP2, 0);
+		} else if (bFlag >= 2)
+			continue;
+		else
+			BCryptHashData(hh, pSection, nSection, 0);
 	}
 
-	// Hash Code/Text Section
-	EMd5HashBegin();
-	BYTE Md5[16];
-	EMd5HashData(Md5, pBoc, nBoc);
-	bT = EMd5Compare(Md5, l_CSH);
-	EMd5HashEnd();
-
-	return bT;
+	PVOID pMd5 = HeapAlloc(hPH, 0, MD5_SIZE);
+	BCryptFinishHash(hh, pMd5, MD5_SIZE, 0);
+	BCryptDestroyHash(hh);
+	BCryptCloseAlgorithmProvider(ah, 0);
+	return EMd5Compare(pMd5, e_HashSig);
 }
 
 /* Thread Local Storage (TLS) Callback*/
@@ -100,7 +135,9 @@ VOID NTAPI CbTls(PVOID DllHandle, DWORD dwReason, PVOID Reserved) {
 		bTlsFlag = TRUE;
 		BOOL bT = IHashCodeSection();
 		if (bT)
-			MessageBoxW(0, L"TLS", 0, 0);
+			MessageBoxW(0, L"TLS InCorrect", 0, 0);
+		else
+			MessageBoxW(0, L"TLS Correct", 0, 0);
 	}
 }
 

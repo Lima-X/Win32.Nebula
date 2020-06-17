@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "_rift.h"
 
-// The Current AesStringKey used to decrypt Strings
-CONST CHAR szB64StringKey[40] = { "S0RCTQEAAAAQAAAA2b+ZJxjKava01dRnTvX5AQ==" };
+extern CONST CHAR e_szB64StringKey[40];
+extern CONST BYTE e_HashSig[16];
+extern CONST CHAR e_pszSections[3][8];
 
 PCIB l_ciba2[2]; // [0]: WrapKey Object
                  // [1]: Md5Hash Object

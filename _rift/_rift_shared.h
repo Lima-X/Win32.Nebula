@@ -86,7 +86,6 @@ typedef struct {
 #define GENERIC_RW (GENERIC_READ | GENERIC_WRITE)
 
 /* Base64 Encoder/Decoder : Base64.c */
-extern CONST CHAR g_Base64Table[64];
 PBYTE EBase64Decode(_In_ PBYTE pBuffer, _In_ SIZE_T nBuffer, _Out_ PSIZE_T nResult);
 
 /* Utilities and Other : Utils.c */

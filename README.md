@@ -13,8 +13,7 @@ as well as many other Features.
 - [ ] Resource Decryption/Decompression (AES128CBC & LZMS)
 - [ ] String Deobfuscation (Base64 & AES128CBC)
 - [x] TLS Callback for AntiRE
-- [x] Code/Text Section Hashing\
-      (Upgrade to Hash all Sections (including Section Containing Hash)
+- [x] Code/Data Section Hashing
 
 ## \_riftdll
 Main Payload Dll also containing the Loader-Stub (S2).\
@@ -49,8 +48,7 @@ Build utility used to compress/encrypt, obfuscate internal data and patch _rift.
 - [x] Compress/Encrypt File
 - [x] Decrypt/Decompress File
 - [ ] Obfuscate Strings (AES128CBC & Base64)
-- [x] Md5 Patcher for SectionHashing\
-      (Upgrade to Hash all Sections (including Section Containing Hash)
+- [x] Md5 Patcher for SectionHashing
 
 # Build Instructions
 ## Building the Excutable:

@@ -98,6 +98,9 @@
     <ClCompile Include="Crypt.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
+    <ClCompile Include="Data.c">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="_rift.rc">
