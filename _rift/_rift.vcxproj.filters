@@ -59,9 +59,6 @@
     <ClCompile Include="VMDetect.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Xoshiro128.c">
-      <Filter>Source Files\Algorithms</Filter>
-    </ClCompile>
     <ClCompile Include="Console.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>

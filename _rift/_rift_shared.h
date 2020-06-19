@@ -29,17 +29,17 @@ PPIB g_PIB;
 
 /* NoCRT / this provides replacement Macros for WinAPI Functions that rely on the CRT */
 #undef CopyMemory
-#define CopyMemory(dest, src, size) __movsb(dest, src, size)
+#define CopyMemory(dest, src, size)  __movsb(dest, src, size)
 #undef ZeroMemory
-#define ZeroMemory(dest, size)      __stosb(dest, 0, size)
-#define SetMemory(dest, data, size) __stosb(dest, data, size)
+#define ZeroMemory(dest, size)       __stosb(dest, 0, size)
+#define SetMemory(dest, data, size)  __stosb(dest, data, size)
 
 #define AllocMemory(cbBytes)         HeapAlloc(g_PIB->hPH, 0, cbBytes)
 #define ReAllocMemory(pMem, cbBytes) HeapReAlloc(g_PIB->hPH, 0, pMem, cbBytes)
 #define FreeMemory(pMem)             HeapFree(g_PIB->hPH, 0, pMem)
 
 /* Console */
-#define CON_SUCCESS ((FOREGROUND_GREEN) | FOREGROUND_INTENSITY)                  // 0b0010
+#define CON_SUCCESS (FOREGROUND_GREEN)                                           // 0b0010
 #define CON_INFO    (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE)        // 0b0111
 #define CON_WARNING ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY) // 0b1101
 #define CON_ERROR   ((FOREGROUND_RED) | FOREGROUND_INTENSITY)                    // 0b1100

@@ -1,14 +1,33 @@
 #include "pch.h"
 #include "_rift.h"
 
-extern CONST CHAR e_szB64StringKey[40];
-extern CONST BYTE e_HashSig[16];
-extern CONST CHAR e_pszSections[3][8];
+EXTERN_C CONST CHAR e_szB64StringKey[40];
+EXTERN_C CONST BYTE e_HashSig[16];
+EXTERN_C CONST CHAR e_pszSections[3][8];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OLD SHIT
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 PCIB l_ciba2[2]; // [0]: WrapKey Object
                  // [1]: Md5Hash Object
 
-/* These functions act as Constructors / Destructors, they manage internal data */////////////////////////////////////////////////////////////////////
+/* These functions act as Constructors / Destructors, they manage internal data *////////////////////////////////////////////////////////////////////
 BOOL EAesCryptBegin() {
 	l_ciba2[0] = AllocMemory(sizeof(CIB));
 	NTSTATUS nts = BCryptOpenAlgorithmProvider(&l_ciba2[0]->ah, BCRYPT_AES_ALGORITHM, 0, 0);

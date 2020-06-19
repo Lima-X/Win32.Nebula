@@ -24,8 +24,8 @@ BOOL fnErasePeHeader() {
 	return TRUE;
 }
 
-extern CONST BYTE e_HashSig[16];
-extern CONST CHAR e_pszSections[3][8];
+EXTERN_C CONST BYTE e_HashSig[16];
+EXTERN_C CONST CHAR e_pszSections[3][8];
 FORCEINLINE BOOL IHashCodeSection() {
 	HANDLE hPH = GetProcessHeap();
 

@@ -17,7 +17,9 @@ CONST CHAR e_pszSections[3][8] = {
 };
 
 // The Current AesStringKey used to decrypt Strings
-CONST CHAR e_szB64StringKey[40] = { "S0RCTQEAAAAQAAAA2b+ZJxjKava01dRnTvX5AQ==" };
+CONST CHAR e_szB64StringKey[40] = {
+	"S0RCTQEAAAAQAAAA2b+ZJxjKava01dRnTvX5AQ=="
+};
 
 // Base64 Encoder/Decoder CharSet
 CONST CHAR e_Base64Table[64] = {

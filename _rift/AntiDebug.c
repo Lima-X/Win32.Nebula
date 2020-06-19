@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "_rift.h"
 
-static HMODULE hNtDll;
+STATIC HMODULE hNtDll;
 
 // Rewrite: Do it manually, by reading the flag directly from the PEB
 static BOOL IBasicDebuggerCheck() {

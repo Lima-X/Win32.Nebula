@@ -5,7 +5,7 @@
 #include "pch.h"
 #include "_rift.h"
 
-extern CONST CHAR e_Base64Table[64];
+EXTERN_C CONST CHAR e_Base64Table[64];
 PBYTE EBase64Decode(
 	_In_  PBYTE   pBuffer,
 	_In_  SIZE_T  nBuffer,

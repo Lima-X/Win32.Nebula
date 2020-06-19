@@ -132,7 +132,6 @@
     <ClCompile Include="Utils.c" />
     <ClCompile Include="VMDetect.c" />
     <ClCompile Include="Window.c" />
-    <ClCompile Include="Xoshiro128.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="_rift.rc" />

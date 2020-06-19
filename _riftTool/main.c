@@ -65,7 +65,9 @@ INT wmain(
 			// Output AesBlob as Base64 String
 			PVOID pB64Blob = Base64Encode(pKeyE, AES_BLOB_SIZE, &nResult);
 			FreeMemory(pKeyE);
+			SetConsoleTextAttribute(g_hCon, CON_SUCCESS);
 			WriteConsoleA(g_hCon, pB64Blob, nResult, &nResult, 0);
+			WriteConsoleW(g_hCon, L"\n", 1, &nResult, 0);
 			FreeMemory(pB64Blob);
 		} else if (!lstrcmpW(argv[1], L"/pa")) {
 			// Load Executable/Image
@@ -160,7 +162,7 @@ INT wmain(
 			FreeMemory(pFile);
 			FreeMemory(szFileName);
 		} else
-			fnPrintF(L"Unknown Command", CON_ERROR);
+			fnPrintF(L"Unknown Command\n", CON_ERROR);
 	} else if (!lstrcmpW(argv[1], L"/ec")) {
 		if (argc == 5) {
 			// Load WrapKey
@@ -241,9 +243,47 @@ INT wmain(
 			FreeMemory(pEncrypted);
 			FreeMemory(pAes);
 		} else if (argc == 4) {
-			// TODO: Add String Encryptor
+			// Load AesStringKey
+			PWSTR szFileName = AllocMemory(MAX_PATH * sizeof(WCHAR));
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[2]);
+			SIZE_T nFile;
+			PVOID pSKey = ReadFileCW(szFileName, 0, &nFile);
+			if (!pSKey)
+				goto exit;
+
+			// Import AesStringKey
+			BCRYPT_ALG_HANDLE ahAes;
+			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
+			SIZE_T nOL, nResult;
+			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(SIZE_T), &nResult, 0);
+			PVOID pAesObj = AllocMemory(nOL);
+			BCRYPT_KEY_HANDLE khSKey;
+			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khSKey, pAesObj, nOL, (PUCHAR)pSKey, AES_BLOB_SIZE, 0);
+
+			// Encrypt Data
+			SIZE_T nLen;
+			StringCchLengthW(argv[3], 0x800, &nLen);
+			PVOID pIv = AllocMemory(16);
+			ZeroMemory(pIv, 16);
+
+			nts = BCryptEncrypt(khSKey, argv[3], nLen + 1, 0, pIv, 16, 0, 0, &nResult, BCRYPT_BLOCK_PADDING);
+			PVOID pEncrypted = AllocMemory(nResult);
+			nts = BCryptEncrypt(khSKey, argv[3], nLen + 1, 0, pIv, 16, pEncrypted, nResult, &nFile, BCRYPT_BLOCK_PADDING);
+
+			FreeMemory(pIv);
+			nts = BCryptDestroyKey(khSKey);
+			FreeMemory(pAesObj);
+			nts = BCryptCloseAlgorithmProvider(ahAes, 0);
+
+			// Encode Data to Base64 String
+			PVOID pEncoded = Base64Encode(pEncrypted, nFile, &nFile);
+			FreeMemory(pEncrypted);
+			SetConsoleTextAttribute(g_hCon, CON_SUCCESS);
+			WriteConsoleA(g_hCon, pEncoded, nFile, &nResult, 0);
+			WriteConsoleW(g_hCon, L"\n", 1, &nResult, 0);
+			FreeMemory(pEncoded);
 		} else
-			fnPrintF(L"Unknown Command", CON_ERROR);
+			fnPrintF(L"Unknown Command\n", CON_ERROR);
 	} else if (!(argc >= 3) && !(argc <= 5)) {
 		fnPrintF(L"Usage:\n"
 			L"[/gk] [OutputFile]\n"
@@ -260,8 +300,8 @@ INT wmain(
 
 			L"[/pa] [_riftExe]\n"
 			L"\tFinalizes the [_riftExe] by patching in the proper internal Data.\n"
-			L"\tThis es to be done externaly as it is dependent on the module itself.\n"
-			, CON_WARNING);
+			L"\tThis es to be done externaly as it is dependent on the module itself.\n",
+			CON_ERROR);
 	}
 
 exit:
