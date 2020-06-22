@@ -51,7 +51,7 @@ FORCEINLINE BOOL IHashCodeSection() {
 		return 0;
 	}
 
-	// Get Nt Headers
+	// Get NT Headers
 	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)pFile;
 	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((PTR)pDosHdr + pDosHdr->e_lfanew);
 	if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
@@ -89,7 +89,7 @@ FORCEINLINE BOOL IHashCodeSection() {
 		}
 
 		// Set Section Pointers
-		PVOID pSection = (PTR)pDosHdr + (PTR)pSHdr->PointerToRawData;
+		PVOID pSection = (PVOID)((PTR)pDosHdr + (PTR)pSHdr->PointerToRawData);
 		SIZE_T nSection = pSHdr->SizeOfRawData;
 
 		// Select what to to
@@ -105,7 +105,7 @@ FORCEINLINE BOOL IHashCodeSection() {
 						break;
 					}
 				} if (bFlag) {
-					pHash = (PTR)pSection + j;
+					pHash = (PVOID)((PTR)pSection + j);
 					break;
 				}
 			}
@@ -114,7 +114,7 @@ FORCEINLINE BOOL IHashCodeSection() {
 			SIZE_T nRDataP1 = (PTR)pHash - (PTR)pSection;
 			BCryptHashData(hh, pSection, nRDataP1, 0);
 			SIZE_T nRDataP2 = ((PTR)pSection + nSection) - ((PTR)pHash + MD5_SIZE);
-			BCryptHashData(hh, (PTR)pHash + MD5_SIZE, nRDataP2, 0);
+			BCryptHashData(hh, (PUCHAR)((PTR)pHash + MD5_SIZE), nRDataP2, 0);
 		} else if (bFlag >= 2)
 			continue;
 		else
@@ -128,11 +128,30 @@ FORCEINLINE BOOL IHashCodeSection() {
 	return EMd5Compare(pMd5, e_HashSig);
 }
 
-/* Thread Local Storage (TLS) Callback*/
-STATIC BOOLEAN bTlsFlag = FALSE;
-VOID NTAPI CbTls(PVOID DllHandle, DWORD dwReason, PVOID Reserved) {
-	if (!bTlsFlag) {
-		bTlsFlag = TRUE;
+/* Thread Local Storage (TLS) Callback */
+EXTERN_C CONST CHAR e_szB64StringKey[40];
+STATIC BOOLEAN l_bTlsFlag = TRUE;
+VOID NTAPI ITlsCb(
+	_In_ PVOID DllHandle,
+	_In_ DWORD dwReason,
+	_In_ PVOID Reserved
+) {
+	UNREFERENCED_PARAMETER(DllHandle);
+	UNREFERENCED_PARAMETER(dwReason);
+	UNREFERENCED_PARAMETER(Reserved);
+	if (l_bTlsFlag) {
+		{	// Partially initialize PIB (Neccessary Fields only)
+			HANDLE hPH = GetProcessHeap();
+			g_PIB = (PPIB)HeapAlloc(hPH, 0, sizeof(PIB));
+			g_PIB->hPH = hPH;
+
+			SIZE_T nResult;
+			PVOID pSKey = EBase64Decode(e_szB64StringKey, sizeof(e_szB64StringKey), &nResult);
+			ECryptBegin(pSKey, &g_PIB->cibSK);
+			FreeMemory(pSKey);
+		}
+
+		l_bTlsFlag = FALSE;
 		BOOL bT = IHashCodeSection();
 		if (bT)
 			MessageBoxW(0, L"TLS InCorrect", 0, 0);
@@ -144,5 +163,5 @@ VOID NTAPI CbTls(PVOID DllHandle, DWORD dwReason, PVOID Reserved) {
 #pragma comment (linker, "/INCLUDE:__tls_used")
 #pragma comment (linker, "/INCLUDE:_TlsCallback")
 #pragma data_seg(".CRT$XLY")
-PIMAGE_TLS_CALLBACK TlsCallback = CbTls;
+PIMAGE_TLS_CALLBACK TlsCallback = ITlsCb;
 #pragma data_seg()

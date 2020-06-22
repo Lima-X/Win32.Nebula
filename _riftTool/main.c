@@ -180,7 +180,7 @@ INT wmain(
 				goto exit;
 
 			// allocate info structure and generate Md5 from input
-			PAESEX pAes = AllocMemory(sizeof(AESEX));
+			PAESIB pAes = AllocMemory(sizeof(AESIB));
 			BCRYPT_ALG_HANDLE ahMd5;
 			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahMd5, BCRYPT_MD5_ALGORITHM, 0, 0);
 			nts = BCryptHash(ahMd5, 0, 0, pFile, nFile, pAes->MD5, MD5_SIZE);
@@ -236,7 +236,7 @@ INT wmain(
 			HANDLE hFile = CreateFileW(szFileName, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS,
 				(FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ENCRYPTED), 0);
 			if (hFile) {
-				nts = WriteFile(hFile, pAes, sizeof(AESEX), &nResult, 0);
+				nts = WriteFile(hFile, pAes, sizeof(AESIB), &nResult, 0);
 				nts = WriteFile(hFile, pEncrypted, nFile, &nResult, 0);
 				CloseHandle(hFile);
 			}

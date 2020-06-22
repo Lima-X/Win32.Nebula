@@ -5,6 +5,9 @@
 #include "..\_riftTool\_riftTool.h"
 #endif
 
+// Global Process Information Block
+PPIB g_PIB;
+
 /* l_CSh (CodeSectionHash) contains the expected Hash of the CodeSection of the Image.
    This is only a Signature and has to be patched out with _riftTool. */
 CONST BYTE e_HashSig[16] = { // == 128-Bit/16-Byte

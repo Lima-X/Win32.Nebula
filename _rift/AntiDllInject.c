@@ -14,6 +14,7 @@ static PCWSTR l_szAllowedModules[] = {
 DWORD WINAPI thCheckModules(
 	_In_ PVOID pParam
 ) {
+	UNREFERENCED_PARAMETER(pParam);
 	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, GetCurrentProcessId());
 	if (hProcess == INVALID_HANDLE_VALUE)
 		return FALSE;

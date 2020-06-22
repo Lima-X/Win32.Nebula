@@ -22,11 +22,11 @@ DWORD WINAPI thWindowThread(
 	_In_ LPVOID lParam
 ) {
 	WNDCLASSEXW wc;
-	ZeroMemory(&wc, sizeof(wc));
+	ZeroMemory((PBYTE)&wc, sizeof(wc));
 	wc.cbSize = sizeof(wc);
 	wc.lpfnWndProc = WndProc;
 
-	UINT8 nLength = ERandomIntDistribution(8, 255);
+	UINT8 nLength = ERandomIntDistribution(0, 8, 255);
 	PCWSTR pName = AllocMemory(nLength);
 
 //	wc.lpszClassName = ;

