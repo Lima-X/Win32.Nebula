@@ -27,29 +27,11 @@ BOOL fnErasePeHeader() {
 EXTERN_C CONST BYTE e_HashSig[16];
 EXTERN_C CONST CHAR e_pszSections[3][8];
 FORCEINLINE BOOL IHashCodeSection() {
-	HANDLE hPH = GetProcessHeap();
-
 	// Read Binary File
-	PVOID szMFN = HeapAlloc(hPH, 0, MAX_PATH * sizeof(WCHAR));
-	GetModuleFileNameW(0, szMFN, MAX_PATH);
-	HANDLE hFile = CreateFileW(szMFN, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-	if (hFile == INVALID_HANDLE_VALUE)
-		return 0;
-	LARGE_INTEGER liFS;
-	BOOL bT = GetFileSizeEx(hFile, &liFS);
-	if (!bT || (liFS.HighPart || !liFS.LowPart))
-		return 0;
-
-	PVOID pFile = HeapAlloc(hPH, 0, liFS.LowPart);
+	SIZE_T nFileSize;
+	PVOID pFile = AllocReadFileW(g_PIB->szMFN, &nFileSize);
 	if (!pFile)
 		return 0;
-	SIZE_T nFileSize = 0;
-	bT = ReadFile(hFile, pFile, liFS.LowPart, &nFileSize, 0);
-	CloseHandle(hFile);
-	if (!bT || (nFileSize != liFS.LowPart)) {
-		HeapFree(hPH, 0, pFile);
-		return 0;
-	}
 
 	// Get NT Headers
 	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)pFile;
@@ -63,9 +45,9 @@ FORCEINLINE BOOL IHashCodeSection() {
 
 	// Prepare Hashing
 	BCRYPT_ALG_HANDLE ah;
-	BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, 0, 0);
+	BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, NULL, NULL);
 	BCRYPT_HASH_HANDLE hh;
-	BCryptCreateHash(ah, &hh, 0, 0, 0, 0, 0);
+	BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
 
 	for (UINT8 i = 0; i < pFHdr->NumberOfSections; i++) {
 		// Get Section and Check if Type is accepted
@@ -112,25 +94,27 @@ FORCEINLINE BOOL IHashCodeSection() {
 
 			// Hash only Data surrounding the Hash
 			SIZE_T nRDataP1 = (PTR)pHash - (PTR)pSection;
-			BCryptHashData(hh, pSection, nRDataP1, 0);
+			BCryptHashData(hh, pSection, nRDataP1, NULL);
 			SIZE_T nRDataP2 = ((PTR)pSection + nSection) - ((PTR)pHash + MD5_SIZE);
-			BCryptHashData(hh, (PUCHAR)((PTR)pHash + MD5_SIZE), nRDataP2, 0);
+			BCryptHashData(hh, (PUCHAR)((PTR)pHash + MD5_SIZE), nRDataP2, NULL);
 		} else if (bFlag >= 2)
 			continue;
 		else
-			BCryptHashData(hh, pSection, nSection, 0);
+			BCryptHashData(hh, pSection, nSection, NULL);
 	}
 
-	PVOID pMd5 = HeapAlloc(hPH, 0, MD5_SIZE);
-	BCryptFinishHash(hh, pMd5, MD5_SIZE, 0);
+	PVOID pMd5 = AllocMemory(MD5_SIZE);
+	BCryptFinishHash(hh, pMd5, MD5_SIZE, NULL);
 	BCryptDestroyHash(hh);
-	BCryptCloseAlgorithmProvider(ah, 0);
-	return EMd5Compare(pMd5, e_HashSig);
+	BCryptCloseAlgorithmProvider(ah, NULL);
+	BOOL bT = EMd5Compare(pMd5, e_HashSig);
+	FreeMemory(pMd5);
+	return bT;
 }
 
 /* Thread Local Storage (TLS) Callback */
-EXTERN_C CONST CHAR e_szB64StringKey[40];
 STATIC BOOLEAN l_bTlsFlag = TRUE;
+EXTERN_C CONST BYTE e_SKey[28];
 VOID NTAPI ITlsCb(
 	_In_ PVOID DllHandle,
 	_In_ DWORD dwReason,
@@ -142,13 +126,11 @@ VOID NTAPI ITlsCb(
 	if (l_bTlsFlag) {
 		{	// Partially initialize PIB (Neccessary Fields only)
 			HANDLE hPH = GetProcessHeap();
-			g_PIB = (PPIB)HeapAlloc(hPH, 0, sizeof(PIB));
+			g_PIB = (PPIB)HeapAlloc(hPH, NULL, sizeof(PIB));
 			g_PIB->hPH = hPH;
-
-			SIZE_T nResult;
-			PVOID pSKey = EBase64Decode(e_szB64StringKey, sizeof(e_szB64StringKey), &nResult);
-			ECryptBegin(pSKey, &g_PIB->cibSK);
-			FreeMemory(pSKey);
+			HMODULE hP = GetModuleHandleW(NULL);
+			GetModuleFileNameW(hP, g_PIB->szMFN, MAX_PATH);
+			ECryptBegin(e_SKey, &g_PIB->cibSK);
 		}
 
 		l_bTlsFlag = FALSE;

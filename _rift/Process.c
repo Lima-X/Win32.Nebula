@@ -22,12 +22,11 @@ BOOL fnProcessMonitorW() {
 					if (!lstrcmpW(pe32.szExeFile, t_szProcs[i])) {
 						HANDLE hProc = OpenProcess(PROCESS_TERMINATE, FALSE, pe32.th32ProcessID);
 						if (hProc) {
-							TerminateProcess(hProc, EXoshiroSS(0));
+							TerminateProcess(hProc, EXoshiroSS(NULL));
 							CloseHandle(hProc);
 						}
 					}
 			} while (Process32NextW(hProcSnap, &pe32));
-
 		CloseHandle(hProcSnap);
 	}
 
@@ -55,7 +54,7 @@ BOOL fnCreateProcessExW(
 	} else
 		pCmdLineC = NULL;
 
-	BOOL bs = CreateProcessW(pFileName, pCmdLineC, 0, 0, FALSE, dwCreationFlags, 0, pDirectory, &si, &pi);
+	BOOL bs = CreateProcessW(pFileName, pCmdLineC, NULL, NULL, FALSE, dwCreationFlags, NULL, pDirectory, &si, &pi);
 	if (bs) {
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);

@@ -15,7 +15,7 @@ BOOL EAdjustPrivilege(
 		return FALSE;
 
 	LUID id;
-	if (!LookupPrivilegeValueW(0, szPrivilege, &id))
+	if (!LookupPrivilegeValueW(NULL, szPrivilege, &id))
 		return FALSE;
 
 	TOKEN_PRIVILEGES tp;
@@ -24,10 +24,53 @@ BOOL EAdjustPrivilege(
 	tp.Privileges[0].Attributes = (bEnablePrivilege) ? SE_PRIVILEGE_ENABLED : 0;
 
 	// Enable the privilege or disable all privileges.
-	if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), 0, 0))
+	if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL))
 		return FALSE;
 	if (GetLastError() == ERROR_NOT_ALL_ASSIGNED)
 		return FALSE;
 
 	return TRUE;
+}
+
+// Temporery
+#define InitializeObjectAttributes( p, n, a, r, s ) { \
+    (p)->Length = sizeof( OBJECT_ATTRIBUTES );          \
+    (p)->RootDirectory = r;                             \
+    (p)->Attributes = a;                                \
+    (p)->ObjectName = n;                                \
+    (p)->SecurityDescriptor = s;                        \
+    (p)->SecurityQualityOfService = NULL;               \
+    }
+typedef struct _UNICODE_STRING {
+	USHORT Length;
+	USHORT MaximumLength;
+	PWSTR  Buffer;
+} UNICODE_STRING, * PUNICODE_STRING;
+typedef struct _OBJECT_ATTRIBUTES {
+	ULONG           Length;
+	HANDLE          RootDirectory;
+	PUNICODE_STRING ObjectName;
+	ULONG           Attributes;
+	PVOID           SecurityDescriptor;
+	PVOID           SecurityQualityOfService;
+} OBJECT_ATTRIBUTES, * POBJECT_ATTRIBUTES;
+
+VOID SelfDelete() {
+	typedef NTSTATUS(NTAPI* NtDeleteFile)(POBJECT_ATTRIBUTES ObjectAttributes);
+	NtDeleteFile ntdf = (NtDeleteFile)(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtDeleteFile"));
+
+	PWSTR pFile = AllocMemory((MAX_PATH + 4) * sizeof(WCHAR));
+	CopyMemory(pFile, L"\\??\\", 5 * sizeof(WCHAR));
+	StringCchCat(pFile, MAX_PATH + 4, g_PIB->szMFN);
+
+	SIZE_T nLen;
+	StringCchLengthW(pFile, MAX_PATH + 4, &nLen);
+	UNICODE_STRING us;
+	us.Length = (USHORT)nLen * sizeof(WCHAR);
+	us.MaximumLength = (USHORT)(nLen + 1) * sizeof(WCHAR);
+	us.Buffer = pFile;
+
+	OBJECT_ATTRIBUTES oa;
+	InitializeObjectAttributes(&oa, &us, NULL, NULL, NULL);
+	NTSTATUS nts = ntdf(&oa);
 }

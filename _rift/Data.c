@@ -1,7 +1,9 @@
 #include "pch.h"
 #ifdef _rift
 #include "_rift.h"
-#elif defined(_riftTool)
+#elif _riftdll
+#include "..\_riftdll\_riftdll.h"
+#elif _riftTool
 #include "..\_riftTool\_riftTool.h"
 #endif
 
@@ -20,8 +22,11 @@ CONST CHAR e_pszSections[3][8] = {
 };
 
 // The Current AesStringKey used to decrypt Strings
-CONST CHAR e_szB64StringKey[40] = {
-	"S0RCTQEAAAAQAAAA2b+ZJxjKava01dRnTvX5AQ=="
+CONST BYTE e_SKey[28] = {
+	0x4B, 0x44, 0x42, 0x4D, 0x01, 0x00, 0x00, 0x00,
+	0x10, 0x00, 0x00, 0x00,	0xD9, 0xBF, 0x99, 0x27,
+	0x18, 0xCA, 0x6A, 0xF6, 0xB4, 0xD5, 0xD4, 0x67,
+	0x4E, 0xF5, 0xF9, 0x01
 };
 
 // Base64 Encoder/Decoder CharSet

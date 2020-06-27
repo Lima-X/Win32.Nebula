@@ -89,8 +89,8 @@ PVOID GetSection(
 
 // Base64 Encoder
 extern CONST CHAR e_Base64Table[64];
-PBYTE Base64Encode(
-	_In_  PBYTE   pBuffer,
+PCSTR Base64Encode(
+	_In_  PVOID   pBuffer,
 	_In_  SIZE_T  nBuffer,
 	_Out_ PSIZE_T nResult
 ) {
@@ -102,7 +102,7 @@ PBYTE Base64Encode(
 	if (!pOut)
 		return 0;
 
-	CONST PBYTE pEnd = pBuffer + nBuffer;
+	CONST PBYTE pEnd = (PTR)pBuffer + nBuffer;
 	CONST BYTE* pIn = pBuffer;
 	PBYTE pPos = pOut;
 	while (pEnd - pIn >= 3) {

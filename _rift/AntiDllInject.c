@@ -21,7 +21,7 @@ DWORD WINAPI thCheckModules(
 
 	// Get a list of all the modules in this process.
 	DWORD nResult;
-	BOOL bs = K32EnumProcessModules(hProcess, 0, 0, &nResult);
+	BOOL bs = K32EnumProcessModules(hProcess, NULL, 0, &nResult);
 	HMODULE* hMods = (HMODULE*)AllocMemory(nResult);
 	bs = K32EnumProcessModules(hProcess, hMods, sizeof(hMods), &nResult);
 	if (bs)
@@ -50,14 +50,14 @@ HMODULE WINAPI HLoadLibraryW(_In_ LPCWSTR lpLibFileName) {
 	for (UINT8 i = 0; i < sizeof(l_AllowedLibraries) / sizeof(PCWSTR); i++)
 		if (!StrStrIW(lpLibFileName, l_AllowedLibraries[i]))
 			return RLoadLibraryW(lpLibFileName);
-	return 0;
+	return NULL;
 }
 static HMODULE(WINAPI* RLoadLibraryExW)(_In_ LPCWSTR lpLibFileName, _Reserved_ HANDLE hFile, _In_ DWORD dwFlags) = LoadLibraryExW;
 HMODULE WINAPI HLoadLibraryExW(_In_ LPCWSTR lpLibFileName, _Reserved_ HANDLE hFile, _In_ DWORD dwFlags) {
 	for (UINT8 i = 0; i < sizeof(l_AllowedLibraries) / sizeof(PCWSTR); i++)
 		if (!StrStrIW(lpLibFileName, l_AllowedLibraries[i]))
 			return RLoadLibraryExW(lpLibFileName, hFile, dwFlags);
-	return 0;
+	return NULL;
 }
 BOOL IHookLoadLibrary() {
 	if (DetourTransactionBegin())
@@ -72,7 +72,7 @@ BOOL IHookLoadLibrary() {
 	UINT8 nThread = 0;
 	if (Thread32First(hTSnap, &te)) {
 		do {
-			hThread[nThread] = OpenThread(THREAD_ALL_ACCESS, 0, te.th32ThreadID);
+			hThread[nThread] = OpenThread(THREAD_ALL_ACCESS, FALSE, te.th32ThreadID);
 			DetourUpdateThread(hThread[nThread]);
 			nThread++;
 		} while (Thread32Next(hTSnap, &te));

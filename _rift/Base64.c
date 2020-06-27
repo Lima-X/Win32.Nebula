@@ -6,35 +6,35 @@
 #include "_rift.h"
 
 EXTERN_C CONST CHAR e_Base64Table[64];
-PBYTE EBase64Decode(
-	_In_  PBYTE   pBuffer,
-	_In_  SIZE_T  nBuffer,
+PVOID EBase64Decode(
+	_In_  PCSTR   pString,
+	_In_  SIZE_T  nString,
 	_Out_ PSIZE_T nResult
 ) {
 	BYTE bDTable[256];
 	SetMemory(bDTable, 0x80, 256);
-	for (UINT i = 0; i < sizeof(e_Base64Table) - 1; i++)
+	for (UINT i = 0; i < 64; i++)
 		bDTable[e_Base64Table[i]] = (BYTE)i;
 	bDTable['='] = 0;
 
 	SIZE_T nC = 0;
-	for (UINT i = 0; i < nBuffer; i++)
-		if (bDTable[pBuffer[i]] != 0x80)
+	for (UINT i = 0; i < nString; i++)
+		if (bDTable[pString[i]] != 0x80)
 			nC++;
 	if (!nC || nC % 4)
-		return 0;
+		return NULL;
 
 	CONST PBYTE pOut = AllocMemory(nC / 4 * 3);
 	PBYTE pPos = pOut;
 	if (!pOut)
-		return 0;
+		return NULL;
 
 	BYTE bPad = 0, bBlock[4];
 	nC = 0;
-	for (UINT i = 0; i < nBuffer; i++) {
-		if (pBuffer[i] == '=')
+	for (UINT i = 0; i < nString; i++) {
+		if (pString[i] == '=')
 			bPad++;
-		bBlock[nC] = bDTable[pBuffer[i]];
+		bBlock[nC] = bDTable[pString[i]];
 		nC++;
 
 		if (nC == 4) {
@@ -50,7 +50,7 @@ PBYTE EBase64Decode(
 					pPos -= 2;
 				else {
 					FreeMemory(pOut);
-					return 0;
+					return NULL;
 				} break;
 			}
 		}

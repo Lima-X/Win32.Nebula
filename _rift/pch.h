@@ -19,6 +19,13 @@
 #pragma comment(lib, "wininet.lib")
 #include <WinInet.h>
 
+/* Disable useless/unimportant Warnings */
+#pragma warning(disable : 4024)
+#pragma warning(disable : 4047)
+#pragma warning(disable : 4200)
+#pragma warning(disable : 4201)
+
+/* Microsoft Detours */
 #include "..\msDetours\include\detours.h"
 
 /* MemoryModule */

@@ -22,8 +22,8 @@ static BOOL ICheckVMware() {
 }
 
 static BOOL ICheckVirtualBox() {
-	HANDLE hDevice = CreateFileW(L"\\\\.\\VBoxMiniRdrDN", GENERIC_READ,
-		FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	HANDLE hDevice = CreateFileW(L"\\\\.\\VBoxMiniRdrDN", GENERIC_READ, FILE_SHARE_READ,
+		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (hDevice != INVALID_HANDLE_VALUE) {
 		CloseHandle(hDevice);

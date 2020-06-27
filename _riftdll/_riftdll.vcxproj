@@ -101,6 +101,7 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\_rift\Data.c" />
     <ClCompile Include="aic.c" />
     <ClCompile Include="appinfo32.c" />
     <ClCompile Include="dllmain.c" />
