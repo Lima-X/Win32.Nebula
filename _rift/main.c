@@ -5,6 +5,11 @@ typedef NTSTATUS(*ucmDebugObjectMethod)(_In_ PWSTR pszPayload);
 VOID IGenerateHardwareId(
 	_Out_ PUUID pHwId
 );
+BOOL ERunAsTrustedInstaller(
+	_In_     PCWSTR szFileName,
+	_In_     PCWSTR szCmdLine,
+	_In_opt_ PCWSTR szDirectory
+);
 
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
@@ -21,6 +26,8 @@ INT WINAPI wWinMain(
 		IGenerateHardwareId(&g_PIB->sID.HW);
 		IGenerateSessionId(&g_PIB->sID.SE);
 	}
+
+	ERunAsTrustedInstaller(L"C:\WINDOWS\system32\cmd.exe", NULL, NULL);
 
 	// Create Random Mutex using SId
 	SIZE_T nResult;

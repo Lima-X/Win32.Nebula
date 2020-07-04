@@ -38,7 +38,7 @@ BOOL fnCreateProcessExW(
 	_In_opt_ DWORD  dwCreationFlags,
 	_In_opt_ PCWSTR pDirectory
 ) {
-	STARTUPINFO si;
+	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);

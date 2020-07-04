@@ -60,6 +60,7 @@ PDWORD EGetProcessIdbyName(
 					pProcesses = AllocMemory(sizeof(DWORD));
 
 				pProcesses[*nProcesses] = pe32.th32ProcessID;
+				(*nProcesses)++;
 			}
 		} while (Process32Next(hPSnap, &pe32));
 	}
@@ -120,10 +121,9 @@ PCWSTR GetFileNameFromPathW(
 	SIZE_T nResult;
 	StringCchLengthW(pPath, MAX_PATH, &nResult);
 
-	for (UINT16 i = nResult; i > 2; i--) {
+	for (UINT16 i = nResult; i > 2; i--)
 		if (pPath[i - 1] == L'\\')
 			return pPath + i;
-	}
 
 	return NULL;
 }
@@ -281,4 +281,58 @@ VOID IGenerateHardwareId(
 	BCryptDestroyHash(hh);
 	BCryptCloseAlgorithmProvider(ah, NULL);
 	FreeMemory(smTable);
+}
+
+BOOL ERunAsTrustedInstaller(
+	_In_     PCWSTR szFileName,
+	_In_     PCWSTR szCmdLine,
+	_In_opt_ PCWSTR szDirectory
+) {
+	BOOL LE = 0;
+
+	SC_HANDLE hSCM = OpenSCManagerW(NULL, SERVICES_ACTIVE_DATABASE, SC_MANAGER_ALL_ACCESS);
+	LE = GetLastError();
+	if (!hSCM)
+		return LE;
+	SC_HANDLE hSer = OpenServiceW(hSCM, L"TrustedInstaller", GENERIC_EXECUTE);
+	LE = GetLastError();
+	if (!hSer)
+		return LE;
+	BOOL bS = StartServiceW(hSer, NULL, NULL);
+
+	SIZE_T nProc;
+	PDWORD pProc = EGetProcessIdbyName(L"TrustedInstaller.exe", &nProc);
+	bS = EAdjustPrivilege(SE_DEBUG_NAME, TRUE);
+	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pProc[0]);
+	LE = GetLastError();
+
+	HANDLE hTok;
+	EAdjustPrivilege(SE_ASSIGNPRIMARYTOKEN_NAME, TRUE);
+	EAdjustPrivilege(SE_IMPERSONATE_NAME, TRUE);
+
+	bS = OpenProcessToken(hProc, TOKEN_DUPLICATE, &hTok);
+	LE = GetLastError();
+
+	// DuplicateToken(hTok, )
+
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	ZeroMemory(&pi, sizeof(pi));
+	PWSTR pCmdLineC;
+	if (szCmdLine) {
+		SIZE_T nCmdLine;
+		StringCchLengthW(szCmdLine, PATHCCH_MAX_CCH, &nCmdLine);
+		pCmdLineC = (PWSTR)AllocMemory((nCmdLine + 1) * sizeof(WCHAR));
+		CopyMemory(pCmdLineC, szCmdLine, (nCmdLine + 1) * sizeof(WCHAR));
+	} else
+		pCmdLineC = NULL;
+	bS = CreateProcessAsUserW(hTok, szFileName, pCmdLineC, NULL, NULL, FALSE, NULL, NULL, szDirectory, &si, &pi);
+	if (bS) {
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+	}
+
+	return 0;
 }
