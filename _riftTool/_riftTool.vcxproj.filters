@@ -20,12 +20,15 @@
     <ClCompile Include="..\_rift\Data.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\_rift\DataCoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\_rift\_rift_shared.h">
+    <ClInclude Include="_riftTool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="_riftTool.h">
+    <ClInclude Include="..\_rift\shared.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

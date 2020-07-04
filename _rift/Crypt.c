@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "_rift.h"
 
 /* CryptoService Constructor/Destructor */
@@ -52,7 +51,7 @@ PCWSTR EDecryptString(
 	_Out_ PSIZE_T nResult
 ) {
 	StringCchLengthA(pString, STRSAFE_MAX_CCH, nResult);
-	PVOID pData = EBase64Decode(pString, *nResult, nResult);
+	PVOID pData = EBase64DecodeA(pString, *nResult, nResult);
 
 	PVOID pIv = AllocMemory(16);
 	ZeroMemory(pIv, 16);

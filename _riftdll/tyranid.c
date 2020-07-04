@@ -1,10 +1,4 @@
-#include "pch.h"
 #include "_riftdll.h"
-
-BOOLEAN AicLaunchAdminProcess(_In_opt_ LPWSTR ExecutablePath, _In_opt_ LPWSTR CommandLine, _In_ DWORD StartFlags,
-	_In_ DWORD CreationFlags, _In_ LPWSTR CurrentDirectory, _In_ LPWSTR WindowStation, _In_opt_ HWND hWnd, _In_ DWORD Timeout,
-	_In_ DWORD ShowFlags, _Out_ PROCESS_INFORMATION* ProcessInformation
-);
 
 NTSTATUS ucmxCreateProcessFromParent(
 	_In_ HANDLE ParentProcess,

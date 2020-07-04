@@ -13,7 +13,7 @@
  */
  /* @@MIDL_FILE_HEADING(  ) */
 
-#include "pch.h"
+#include "_riftdll.h"
 
 #if !defined(_M_IA64) && !defined(_M_AMD64) && !defined(_ARM_)
 

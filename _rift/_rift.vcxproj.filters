@@ -19,40 +19,34 @@
     <Filter Include="Source Files\Algorithms">
       <UniqueIdentifier>{e72389f3-a674-48be-890e-6ea82c78feb4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Library Files">
-      <UniqueIdentifier>{3b4dbe36-ccd9-4961-893d-c1addc9b66d3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Anti RE">
-      <UniqueIdentifier>{8ed480c2-f1c7-4865-9a1a-bb36c0fd9aaf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource Files\RT_RCData">
       <UniqueIdentifier>{7a73c4f2-3105-4784-9d7c-bf8e1040dcd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Libraries">
+      <UniqueIdentifier>{3b4dbe36-ccd9-4961-893d-c1addc9b66d3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_rift.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="_rift_shared.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MemoryModule.h">
-      <Filter>Header Files\Library Files</Filter>
+      <Filter>Header Files\Libraries</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
     <ClInclude Include="..\msDetours\include\detours.h">
-      <Filter>Header Files\Library Files</Filter>
+      <Filter>Header Files\Libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="shared.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="depends.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pch.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -66,19 +60,10 @@
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="MemoryModule.c">
-      <Filter>Header Files\Library Files</Filter>
+      <Filter>Header Files\Libraries</Filter>
     </ClCompile>
     <ClCompile Include="Random.c">
       <Filter>Source Files\Algorithms</Filter>
-    </ClCompile>
-    <ClCompile Include="AntiDllInject.c">
-      <Filter>Source Files\Anti RE</Filter>
-    </ClCompile>
-    <ClCompile Include="AntiDebug.c">
-      <Filter>Source Files\Anti RE</Filter>
-    </ClCompile>
-    <ClCompile Include="AntiRE.c">
-      <Filter>Source Files\Anti RE</Filter>
     </ClCompile>
     <ClCompile Include="Process.c">
       <Filter>Source Files\Utilities</Filter>
@@ -89,14 +74,17 @@
     <ClCompile Include="Window.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Base64.c">
-      <Filter>Source Files\Algorithms</Filter>
-    </ClCompile>
     <ClCompile Include="Crypt.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="Data.c">
       <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AntiRE.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DataCoder.c">
+      <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -128,7 +116,7 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\msDetours\lib.X86\detours.lib">
-      <Filter>Header Files\Library Files</Filter>
+      <Filter>Header Files\Libraries</Filter>
     </Library>
   </ItemGroup>
 </Project>

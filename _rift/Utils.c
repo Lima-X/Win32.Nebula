@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "_rift.h"
 
 BOOL IIsUserAdmin() {
@@ -134,7 +133,7 @@ BOOL EExtractResource(
 	_In_ WORD   wResID
 ) {
 	SIZE_T nData;
-	PVOID pData = EUnpackResource(&g_PIB->cibWK, wResID, &nData);
+	PVOID pData = EUnpackResource(&g_PIB->sCIB.WK, wResID, &nData);
 	BOOL bT = WriteFileCW(szFileName, pData, nData);
 	FreeMemory(pData);
 	return bT;
@@ -150,7 +149,7 @@ PVOID IDownloadKey() {
 
 	PCSTR szB64URL = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0xpbWEtWC1Db2RpbmcvV2luMzIuX3JpZnQvbWFzdGVyL19yaWZ0L21haW4uYz90b2tlbj1BSVNMVElGQkxFWE5IREJIWDZaMkZPUzYzUUozVQA=";
 	SIZE_T nURL;
-	PCSTR szURL = EBase64Decode(szB64URL, 156, &nURL);
+	PCSTR szURL = EBase64DecodeA(szB64URL, 156, &nURL);
 	HINTERNET hUrl = InternetOpenUrlA(hNet, szURL, NULL, 0, NULL, NULL);
 	if (!hUrl)
 		return NULL;
@@ -170,11 +169,10 @@ PVOID IDownloadKey() {
 	return pBuffer;
 }
 
-CONST STATIC DWORD dwFTPS[3] = {
-	'ACPI', 'FIRM', 'RSMB'
-};
-VOID IGenerateHwid(
-	_Out_ PVOID pHWID
+// so apperently every kind of data im grabbing is different
+// so fuck me in the ass, this is basically a session id now
+VOID IGenerateSessionId(
+	_Out_ PUUID pSId
 ) {
 	// Prepare Hashing
 	BCRYPT_ALG_HANDLE ah;
@@ -182,6 +180,9 @@ VOID IGenerateHwid(
 	BCRYPT_HASH_HANDLE hh;
 	BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
 
+	CONST STATIC DWORD dwFTPS[] = {
+		'ACPI', 'FIRM', 'RSMB'
+	};
 	for (UINT8 i = 0; i < sizeof(dwFTPS) / sizeof(DWORD); i++) {
 		// Enumerate Table Entries
 		SIZE_T nTableId = EnumSystemFirmwareTables(dwFTPS[i], NULL, 0);
@@ -203,7 +204,81 @@ VOID IGenerateHwid(
 	}
 
 	// Finish Hashing
-	BCryptFinishHash(hh, pHWID, MD5_SIZE, NULL);
+	BCryptFinishHash(hh, pSId, MD5_SIZE, NULL);
 	BCryptDestroyHash(hh);
 	BCryptCloseAlgorithmProvider(ah, NULL);
+}
+
+VOID IGenerateHardwareId(
+	_Out_ PUUID pHwId
+) {
+	// Get SMBios Table
+	typedef struct _RawSMBIOSData {
+		BYTE  Used20CallingMethod;
+		BYTE  SMBIOSMajorVersion;
+		BYTE  SMBIOSMinorVersion;
+		BYTE  DmiRevision;
+		DWORD Length;
+		BYTE  SMBIOSTableData[];
+	} SMBIOS, * PSMBIOS;
+	DWORD dwTable;
+	EnumSystemFirmwareTables('RSMB', &dwTable, sizeof(dwTable));
+	SIZE_T nTable = GetSystemFirmwareTable('RSMB', dwTable, NULL, 0);
+	PSMBIOS smTable = AllocMemory(nTable);
+	GetSystemFirmwareTable('RSMB', dwTable, smTable, nTable);
+
+	// Prepare Hashing
+	BCRYPT_ALG_HANDLE ah;
+	BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, NULL, NULL);
+	BCRYPT_HASH_HANDLE hh;
+	BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
+
+	// Get First Entry
+	typedef struct _SMBIOSTableHeader {
+		BYTE bType;
+		BYTE nLength;
+		WORD wHandle;
+	} SMTABLEHDR, * PSMTABLEHDR;
+	PSMTABLEHDR pEntry = smTable->SMBIOSTableData;
+	while (pEntry->bType != 127) {
+		// Start of String Table
+		PVOID pStringTable = (PTR)pEntry + pEntry->nLength;
+
+		// Get Entry Size and next Entry Address
+		while (*((PWORD)pStringTable) != (WORD)0x0000)
+			((PTR)pStringTable)++;
+		SIZE_T nEntry = ((PTR)pStringTable + 2) - (PTR)pEntry;
+
+		// Test if Entry should be hashed
+		CONST STATIC BYTE bTypes[] = {
+			0x00, // BIOS            : O
+			0x04, // Processor       : S
+			0x07, // Cache           : O
+			0x08, // Ports           : O
+			0x09, // Slots           : O
+			0x10, // Physical Memory : O
+			0x11, // Memory Devices  : O
+			0x02  // Baseboard       : X
+		};
+		for (UINT8 i = 0; i < sizeof(bTypes); i++) {
+			if (pEntry->bType == bTypes[i]) {
+				if (pEntry->bType == 4) {
+					// Avoid "Current Speed" Field
+					BCryptHashData(hh, pEntry, 0x16, NULL);
+					BCryptHashData(hh, (PTR)pEntry + 0x18, nEntry - 0x18, NULL);
+				} else
+					BCryptHashData(hh, pEntry, nEntry, NULL);
+				break;
+			}
+		}
+
+		// Set Address of next Entry
+		(PTR)pEntry += nEntry;
+	}
+
+	// Finish Hashing
+	BCryptFinishHash(hh, pHwId, sizeof(*pHwId), NULL);
+	BCryptDestroyHash(hh);
+	BCryptCloseAlgorithmProvider(ah, NULL);
+	FreeMemory(smTable);
 }

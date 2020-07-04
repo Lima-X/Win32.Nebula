@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "_rift.h"
 
 // DummyWindow Proc that monitors Windows' activity (shuting down etc)

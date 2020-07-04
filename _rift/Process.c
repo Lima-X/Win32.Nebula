@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "_rift.h"
 
 static PCWSTR t_szProcs[] = {

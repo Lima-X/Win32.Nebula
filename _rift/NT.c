@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "_rift.h"
 
 /* I could just link to RtlAdjustPrivilege and call that,
@@ -56,6 +55,20 @@ typedef struct _OBJECT_ATTRIBUTES {
 } OBJECT_ATTRIBUTES, * POBJECT_ATTRIBUTES;
 
 VOID SelfDelete() {
+	typedef NTSTATUS(NTAPI* NtDeleteFile)(IN POBJECT_ATTRIBUTES ObjectAttributes);
+	NtDeleteFile ntdf = (NtDeleteFile)(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtDeleteFile"));
+	typedef BOOLEAN(NTAPI* RtlDosPathNameToNtPathName_U)(IN PCWSTR DosName, OUT PUNICODE_STRING NtName, OUT PCWSTR* PartName, OUT PVOID RelativeName);
+	RtlDosPathNameToNtPathName_U rtlius = (RtlDosPathNameToNtPathName_U)GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlDosPathNameToNtPathName_U");
+
+	UNICODE_STRING us;
+	rtlius(L"F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\Debug\\_riftdll.dll", &us, NULL, NULL);
+
+	OBJECT_ATTRIBUTES oa;
+	InitializeObjectAttributes(&oa, &us, NULL, NULL, NULL);
+	NTSTATUS nts = ntdf(&oa);
+}
+
+VOID SelfDelete2() {
 	typedef NTSTATUS(NTAPI* NtDeleteFile)(POBJECT_ATTRIBUTES ObjectAttributes);
 	NtDeleteFile ntdf = (NtDeleteFile)(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtDeleteFile"));
 

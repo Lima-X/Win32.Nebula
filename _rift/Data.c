@@ -1,4 +1,3 @@
-#include "pch.h"
 #ifdef _rift
 #include "_rift.h"
 #elif _riftdll

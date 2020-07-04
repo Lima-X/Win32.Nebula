@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "_rift.h"
 
 static DWORD WINAPI thConsoleTitle(_In_ PVOID pParam);

@@ -6,10 +6,11 @@
 #define STATIC       static
 #define FASTCALL   __fastcall
 #define DEPRECATED __declspec(deprecated)
+typedef UUID*        PUUID;
 
-/* Tpyedefs */
+/* Typedefs */
 #if defined(_WIN32)
-typedef unsigned long PTR;
+typedef unsigned long      PTR;
 #elif defined(_WIN64)
 typedef unsigned long long PTR;
 #endif
@@ -52,7 +53,7 @@ VOID ECryptEnd(_In_ PCIB cib);
 PVOID EUnpackResource(_In_ PCIB cib, _In_ WORD wResID, _Out_ PSIZE_T nData);
 
 PCWSTR EDecryptString(_In_ PCIB cib, _In_ PCSTR pString, _Out_ PSIZE_T nResult);
-#define DecryptString(pString, nResult) EDecryptString(&g_PIB->cibSK, pString, nResult)
+#define DecryptString(pString, nResult) EDecryptString(&g_PIB->sCIB.SK, pString, nResult)
 
 PVOID EMd5HashData(_In_ PVOID pBuffer, _In_ SIZE_T nBuffer);
 BOOL EMd5Compare(_In_ PVOID pMD51, _In_ PVOID pMD52);
@@ -68,8 +69,9 @@ typedef struct _AESIB {
 /* FileSystem */
 #define GENERIC_RW (GENERIC_READ | GENERIC_WRITE)
 
-/* Base64 Encoder/Decoder : Base64.c */
-PVOID EBase64Decode(_In_ PCSTR pString, _In_ SIZE_T nString, _Out_ PSIZE_T nResult);
+/* Base64 Encoder/Decoder / UUID Converters : DataCoder.c */
+PCSTR EBase64EncodeA(_In_ PVOID pData, _In_ SIZE_T nData, _Out_ PSIZE_T nOut);
+PVOID EBase64DecodeA(_In_ PCSTR pString, _In_ SIZE_T nString, _Out_ PSIZE_T nOut);
 
 /* Utilities and Other : Utils.c */
 PDWORD EGetProcessIdbyName(_In_ PCWSTR pProcessName, _Out_ PSIZE_T nProcesses);
@@ -79,11 +81,16 @@ typedef struct _PIB {
 #ifndef _riftCrypt
 	HMODULE hMH;
 	WCHAR   szMFN[MAX_PATH];
-	BYTE    Hwid[MD5_SIZE];
+	struct {
+		UUID HW;
+		UUID SE;
+	} sID;
+	struct {
+		CIB SK;
+		CIB WK;
+	} sCIB;
 #endif
-	HANDLE hPH;
-	WCHAR  szCD[MAX_PATH];
-	CIB    cibWK;
-	CIB    cibSK;
+	HANDLE  hPH;
+	WCHAR   szCD[MAX_PATH];
 } PIB, * PPIB;
 EXTERN_C PPIB g_PIB;

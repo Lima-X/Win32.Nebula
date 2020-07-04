@@ -30,7 +30,7 @@
  * These portions are Copyright (C) 2013 Thomas Heller.
  */
 
-#include "pch.h"
+#include "depends.h"
 #ifdef DEBUG_OUTPUT
 #include <stdio.h>
 #endif

@@ -270,7 +270,7 @@ INT wmain(
 			nts = BCryptCloseAlgorithmProvider(ahAes, 0);
 
 			// Encode Data to Base64 String
-			PVOID pEncoded = Base64Encode(pEncrypted, nFile, &nFile);
+			PVOID pEncoded = EBase64EncodeA(pEncrypted, nFile, &nFile);
 			FreeMemory(pEncrypted);
 			SetConsoleTextAttribute(g_hCon, CON_SUCCESS);
 			WriteConsoleA(g_hCon, pEncoded, nFile, &nResult, 0);

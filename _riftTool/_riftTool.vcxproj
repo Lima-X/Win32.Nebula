@@ -95,11 +95,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\_rift\Data.c" />
+    <ClCompile Include="..\_rift\DataCoder.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="Utils.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\_rift\_rift_shared.h" />
+    <ClInclude Include="..\_rift\shared.h" />
     <ClInclude Include="_riftTool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

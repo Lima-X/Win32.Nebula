@@ -59,7 +59,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>$(ProjectName);_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -78,7 +78,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -103,28 +103,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\msDetours\include\detours.h" />
+    <ClInclude Include="depends.h" />
     <ClInclude Include="MemoryModule.h" />
-    <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="_rift.h" />
-    <ClInclude Include="_rift_shared.h" />
+    <ClInclude Include="shared.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AntiDllInject.c" />
-    <ClCompile Include="AntiDebug.c" />
-    <ClCompile Include="Base64.c" />
+    <ClCompile Include="DataCoder.c" />
     <ClCompile Include="Console.c" />
     <ClCompile Include="Data.c" />
     <ClCompile Include="MemoryModule.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="NT.c" />
     <ClCompile Include="AntiRE.c" />
-    <ClCompile Include="pch.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="main.c" />
     <ClCompile Include="Process.c" />
     <ClCompile Include="Random.c" />

@@ -1,5 +1,21 @@
 #pragma once
-#include "..\_rift\_rift_shared.h"
+
+#include "..\_rift\depends.h"
+
+#pragma warning(push)
+#pragma warning(disable : 4005)
+#include <ntstatus.h>
+#pragma warning(pop)
+
+/* RPC DebugObject UAC Bypass/Exploit */
+#pragma comment(lib, "rpcrt4.lib")
+#include <rpcndr.h>
+#include <rpc.h>
+#include <oaidl.h>
+#include <ocidl.h>
+#include "appinfo32.h"
+
+#include "..\_rift\shared.h"
 
 // Why did i even bother making this macro for this
 // if this file doesn't get used outside the dll anyways -.-

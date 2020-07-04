@@ -87,51 +87,6 @@ PVOID GetSection(
 	return 0;
 }
 
-// Base64 Encoder
-extern CONST CHAR e_Base64Table[64];
-PCSTR Base64Encode(
-	_In_  PVOID   pBuffer,
-	_In_  SIZE_T  nBuffer,
-	_Out_ PSIZE_T nResult
-) {
-	SIZE_T nOut = nBuffer / 3 * 4;
-	if (nBuffer % 3)
-		nOut += 4;
-
-	CONST PBYTE pOut = AllocMemory(nOut);
-	if (!pOut)
-		return 0;
-
-	CONST PBYTE pEnd = (PTR)pBuffer + nBuffer;
-	CONST BYTE* pIn = pBuffer;
-	PBYTE pPos = pOut;
-	while (pEnd - pIn >= 3) {
-		*pPos++ = e_Base64Table[pIn[0] >> 2];
-		*pPos++ = e_Base64Table[((pIn[0] & 0x03) << 4) | (pIn[1] >> 4)];
-		*pPos++ = e_Base64Table[((pIn[1] & 0x0f) << 2) | (pIn[2] >> 6)];
-		*pPos++ = e_Base64Table[pIn[2] & 0x3f];
-
-		pIn += 3;
-	}
-
-	if (pEnd - pIn) {
-		*pPos++ = e_Base64Table[pIn[0] >> 2];
-		if (pEnd - pIn == 1) {
-			*pPos++ = e_Base64Table[(pIn[0] & 0x03) << 4];
-			*pPos++ = '=';
-		}
-		else {
-			*pPos++ = e_Base64Table[((pIn[0] & 0x03) << 4) | (pIn[1] >> 4)];
-			*pPos++ = e_Base64Table[(pIn[1] & 0x0f) << 2];
-		}
-
-		*pPos++ = '=';
-	}
-
-	*nResult = pPos - pOut;
-	return pOut;
-}
-
 // shitty debug/info print function
 BOOL fnPrintF(PCWSTR pText, WORD wAttribute, ...) {
 	va_list vaArg;

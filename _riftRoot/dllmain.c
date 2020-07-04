@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "_riftRoot.h"
 
 BOOL WINAPI DllMain(

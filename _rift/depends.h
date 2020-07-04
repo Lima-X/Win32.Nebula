@@ -6,6 +6,10 @@
 #include <strsafe.h>
 #include <TlHelp32.h>
 
+#include <Shlobj.h>
+#include <KnownFolders.h>
+#include <PathCch.h>
+
 // Doing it Explicitly instead for Obfuscation
 // #pragma comment(lib, "ntdll.lib")
 #pragma comment(lib, "bcrypt.lib")
@@ -28,8 +32,5 @@
 /* Microsoft Detours */
 #include "..\msDetours\include\detours.h"
 
-/* MemoryModule */
-#include "MemoryModule.h"
-#include <winnt.h>
-#include <stddef.h>
-#include <tchar.h>
+/* Shared Declarations */
+#include "shared.h"

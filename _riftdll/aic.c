@@ -14,7 +14,6 @@
 * PARTICULAR PURPOSE.
 *
 *******************************************************************************/
-#include "pch.h"
 #include "_riftdll.h"
 
 #if defined(__cplusplus)
