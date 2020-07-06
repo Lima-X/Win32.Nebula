@@ -16,7 +16,6 @@ RIFTROOT64
 # _rift specific directories
 .in/
 /dtBlackBone
-/hfUACMe
 
 # msDetours
 msDetours/bin.X86/

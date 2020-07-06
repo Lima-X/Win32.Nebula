@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\_rift\depends.h"
+#include "..\_riftldr\depends.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4005)
@@ -15,7 +15,7 @@
 #include <ocidl.h>
 #include "appinfo32.h"
 
-#include "..\_rift\shared.h"
+#include "..\_riftldr\shared.h"
 
 // Why did i even bother making this macro for this
 // if this file doesn't get used outside the dll anyways -.-

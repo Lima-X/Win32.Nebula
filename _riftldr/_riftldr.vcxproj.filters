@@ -22,27 +22,18 @@
     <Filter Include="Resource Files\RT_RCData">
       <UniqueIdentifier>{7a73c4f2-3105-4784-9d7c-bf8e1040dcd8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Libraries">
-      <UniqueIdentifier>{3b4dbe36-ccd9-4961-893d-c1addc9b66d3}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="_rift.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MemoryModule.h">
-      <Filter>Header Files\Libraries</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\msDetours\include\detours.h">
-      <Filter>Header Files\Libraries</Filter>
     </ClInclude>
     <ClInclude Include="shared.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="depends.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="_riftldr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -58,9 +49,6 @@
     </ClCompile>
     <ClCompile Include="NT.c">
       <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="MemoryModule.c">
-      <Filter>Header Files\Libraries</Filter>
     </ClCompile>
     <ClCompile Include="Random.c">
       <Filter>Source Files\Algorithms</Filter>
@@ -85,6 +73,9 @@
     </ClCompile>
     <ClCompile Include="DataCoder.c">
       <Filter>Source Files\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="BlackBone.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -113,10 +104,5 @@
     <None Include="..\out\RIFTROOT32">
       <Filter>Resource Files\RT_RCData</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\msDetours\lib.X86\detours.lib">
-      <Filter>Header Files\Libraries</Filter>
-    </Library>
   </ItemGroup>
 </Project>

@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.30011.22
+VisualStudioVersion = 16.0.30225.117
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_rift", "_rift\_rift.vcxproj", "{A641FBB6-FFE1-41C8-9BB8-17CD61AD2EF8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftldr", "_riftldr\_riftldr.vcxproj", "{A641FBB6-FFE1-41C8-9BB8-17CD61AD2EF8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftdll", "_riftdll\_riftdll.vcxproj", "{21265FC7-5328-4846-845D-13404C45FB8E}"
 EndProject
@@ -14,13 +14,26 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftTool", "_riftTool\_rif
 		{21265FC7-5328-4846-845D-13404C45FB8E} = {21265FC7-5328-4846-845D-13404C45FB8E}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Loader", "Loader", "{70E05276-5A9B-4F1D-A745-851DDA55C016}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "riftCore", "riftCore", "{70E05276-5A9B-4F1D-A745-851DDA55C016}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RootKit", "RootKit", "{410236BD-0C95-4218-8E1C-BC6735B91591}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftInject", "_riftInject\_riftInject.vcxproj", "{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftRoot", "_riftRoot\_riftRoot.vcxproj", "{0881218E-929D-4CDF-AAAD-B4C4955C6081}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3P Libraries", "3P Libraries", "{ADF0C4C8-1A43-41D1-BCFB-DA8133BFEDFD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Detours", "Detours", "{BF696E0C-93B0-4E49-A5D4-CE10FF979E9B}"
+	ProjectSection(SolutionItems) = preProject
+		msDetours\include\detours.h = msDetours\include\detours.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BlackBone", "BlackBone", "{B3507EC6-C620-42C5-ABFE-0157137B3ABA}"
+	ProjectSection(SolutionItems) = preProject
+		dtBlackBone\src\BlackBone\ManualMap\MMap.h = dtBlackBone\src\BlackBone\ManualMap\MMap.h
+		dtBlackBone\src\BlackBone\ManualMap\Native\NtLoader.h = dtBlackBone\src\BlackBone\ManualMap\Native\NtLoader.h
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -74,8 +87,10 @@ Global
 		{21265FC7-5328-4846-845D-13404C45FB8E} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
 		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD} = {410236BD-0C95-4218-8E1C-BC6735B91591}
 		{0881218E-929D-4CDF-AAAD-B4C4955C6081} = {410236BD-0C95-4218-8E1C-BC6735B91591}
+		{BF696E0C-93B0-4E49-A5D4-CE10FF979E9B} = {ADF0C4C8-1A43-41D1-BCFB-DA8133BFEDFD}
+		{B3507EC6-C620-42C5-ABFE-0157137B3ABA} = {ADF0C4C8-1A43-41D1-BCFB-DA8133BFEDFD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {080A687B-9432-4766-82CC-3903E4C81097}
+		SolutionGuid = {FA23DB8B-7FAB-4586-936D-4ADB4CD8B90E}
 	EndGlobalSection
 EndGlobal

@@ -1,4 +1,4 @@
-#include "_rift.h"
+#include "_riftldr.h"
 
 // DummyWindow Proc that monitors Windows' activity (shuting down etc)
 // this will be used in order to prevent the loader from accidentally

@@ -1,4 +1,4 @@
-#include "_rift.h"
+#include "_riftldr.h"
 
 /* Anti Debugger / Debugger Detection *//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 STATIC HMODULE hNtDll;
@@ -366,7 +366,7 @@ BOOL fnErasePeHeader() {
 
 EXTERN_C CONST BYTE e_HashSig[16];
 EXTERN_C CONST CHAR e_pszSections[3][8];
-FORCEINLINE BOOL IHashCodeSection() {
+FORCEINLINE BOOL IHashBinaryCheck() {
 	// Read Binary File
 	SIZE_T nFileSize;
 	PVOID pFile = AllocReadFileW(g_PIB->szMFN, &nFileSize);
@@ -474,7 +474,7 @@ VOID NTAPI ITlsCb(
 		}
 
 		l_bTlsFlag = FALSE;
-		BOOL bT = IHashCodeSection();
+		BOOL bT = IHashBinaryCheck();
 		if (bT)
 			MessageBoxW(0, L"TLS InCorrect", 0, 0);
 		else

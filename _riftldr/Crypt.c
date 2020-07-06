@@ -1,4 +1,4 @@
-#include "_rift.h"
+#include "_riftldr.h"
 
 /* CryptoService Constructor/Destructor */
 BOOL ECryptBegin(

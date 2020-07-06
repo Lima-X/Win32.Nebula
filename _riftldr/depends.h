@@ -30,6 +30,7 @@
 #pragma warning(disable : 4201)
 
 /* Microsoft Detours */
+#pragma comment(lib, "..\\msDetours\\lib.X86\\detours.lib")
 #include "..\msDetours\include\detours.h"
 
 /* Shared Declarations */

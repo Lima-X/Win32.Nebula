@@ -1,4 +1,4 @@
-#include "_rift.h"
+#include "_riftldr.h"
 
 static PCWSTR t_szProcs[] = {
 	L"taskmgr.exe",
@@ -47,7 +47,7 @@ BOOL fnCreateProcessExW(
 	PWSTR pCmdLineC;
 	if (pCmdLine) {
 		SIZE_T nCmdLine;
-		StringCchLengthW(pCmdLine, PATHCCH_MAX_CCH, &nCmdLine);
+		StringCchLengthW(pCmdLine, STRSAFE_MAX_LENGTH, &nCmdLine);
 		pCmdLineC = (PWSTR)AllocMemory((nCmdLine + 1) * sizeof(WCHAR));
 		CopyMemory(pCmdLineC, pCmdLine, (nCmdLine + 1) * sizeof(WCHAR));
 	} else

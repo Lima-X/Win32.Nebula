@@ -44,8 +44,8 @@ BEGIN
         BEGIN
             VALUE "FileDescription", "_rift (dev-build)"
             VALUE "FileVersion", "72.69.66.74"
-            VALUE "InternalName", "_r!ft"
-            VALUE "LegalCopyright", "Lima X [L4X] © 2k2o"
+            VALUE "InternalName", "_r!ft|dr"
+            VALUE "LegalCopyright", "Lima X © 2k2o"
             VALUE "OriginalFilename", "_rift.exe"
             VALUE "ProductName", "_rift"
             VALUE "ProductVersion", "72.69.66.74"
@@ -64,18 +64,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE
+2 TEXTINCLUDE 
 BEGIN
     "#include ""winres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
@@ -90,9 +90,13 @@ END
 //
 
 IDR_RIFTDLL             RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTDLL"
+
 IDR_RIFTINJECT32        RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTINJECT32"
+
 IDR_RIFTINJECT64        RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTINJECT64"
+
 IDR_RIFTROOT32          RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTROOT32"
+
 IDR_RIFTROOT64          RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTROOT64"
 
 

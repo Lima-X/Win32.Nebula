@@ -1,4 +1,4 @@
-#include "_rift.h"
+#include "_riftldr.h"
 
 static BOOL ICheckVMware() {
 	__try {

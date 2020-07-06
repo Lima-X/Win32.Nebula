@@ -1,4 +1,4 @@
-#include "_rift.h"
+#include "_riftldr.h"
 
 /* I could just link to RtlAdjustPrivilege and call that,
    but where is the fun in that :D

@@ -17,10 +17,10 @@
     <ClCompile Include="Utils.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\_rift\Data.c">
+    <ClCompile Include="..\_riftldr\Data.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\_rift\DataCoder.c">
+    <ClCompile Include="..\_riftldr\DataCoder.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -28,7 +28,7 @@
     <ClInclude Include="_riftTool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\_rift\shared.h">
+    <ClInclude Include="..\_riftldr\shared.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

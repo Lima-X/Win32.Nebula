@@ -41,7 +41,7 @@
     <ClCompile Include="tyranid.c">
       <Filter>Source Files\UACExploit</Filter>
     </ClCompile>
-    <ClCompile Include="..\_rift\Data.c">
+    <ClCompile Include="..\_riftldr\Data.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>

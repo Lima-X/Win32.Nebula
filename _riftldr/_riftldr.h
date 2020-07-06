@@ -3,9 +3,8 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-#include "depends.h"
 #include "resource.h"
-#include "MemoryModule.h"
+#include "depends.h"
 
 /* WinMain : main.c */
 VOID ESelfDestruct();
@@ -24,7 +23,6 @@ BOOL fnAntiRE();
 BOOL IAntiDebug();
 BOOL IAntiDllInject();
 BOOL EHideThread(_In_opt_ HANDLE hThread);
-extern FORCEINLINE BOOL IHashCodeSection();
 BOOL fnErasePeHeader();
 
 /* VMDetection : VMDetect.c */

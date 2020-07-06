@@ -1,4 +1,4 @@
-#include "_rift.h"
+#include "_riftldr.h"
 
 // Internal/Global State & Sync Opbject
 STATIC PDWORD l_dwState;

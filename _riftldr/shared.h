@@ -9,10 +9,10 @@
 typedef UUID*        PUUID;
 
 /* Typedefs */
-#if defined(_WIN32)
-typedef unsigned long      PTR;
-#elif defined(_WIN64)
+#ifdef _WIN64
 typedef unsigned long long PTR;
+#elif _WIN32
+typedef unsigned long      PTR;
 #endif
 
 /* NoCRT / this provides replacement Macros for WinAPI Functions that rely on the CRT */

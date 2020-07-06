@@ -1,7 +1,7 @@
 # \_rift (PDL)
 Packed(compressed & encryped) Dll Loader.
 
-## \_rift
+## \_riftldr
 Main Executable containing the Core-Loader (S1) and its packed Resources,
 as well as many other Features.
 
@@ -10,8 +10,8 @@ as well as many other Features.
 - [X] Anti Debug
 - [ ] Anti Dll Injection (Module enumeration & LoadLibrary Hooking)
 - [ ] Process enfrocement/persistency (selfmonitoring & BreakOnTermination)
-- [ ] Resource Decryption/Decompression (AES128CBC & LZMS)
-- [ ] String Deobfuscation (Base64 & AES128CBC)
+- [x] Resource Decryption/Decompression (AES128CBC & LZMS)
+- [x] String Deobfuscation (Base64 & AES128CBC)
 - [x] TLS Callback for AntiRE
 - [x] Code/Data Section Hashing
 

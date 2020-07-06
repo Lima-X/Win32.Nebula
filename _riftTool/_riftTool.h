@@ -1,7 +1,7 @@
 #pragma once
 
-#include "..\_rift\depends.h"
-#include "..\_rift\shared.h"
+#include "..\_riftldr\depends.h"
+#include "..\_riftldr\shared.h"
 
 HANDLE g_hCon;
 PVOID  g_pBuf;

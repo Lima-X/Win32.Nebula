@@ -1,5 +1,5 @@
-#ifdef _rift
-#include "_rift.h"
+#ifdef _riftldr
+#include "_riftldr.h"
 #elif _riftdll
 #include "..\_riftdll\_riftdll.h"
 #elif _riftTool
