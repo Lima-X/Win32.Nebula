@@ -57,8 +57,7 @@ BOOL fnCreateProcessExW(
 	if (bs) {
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
-	}
-
-	FreeMemory(pCmdLineC);
+	} if (pCmdLineC)
+		FreeMemory(pCmdLineC);
 	return bs;
 }

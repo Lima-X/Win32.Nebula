@@ -12,12 +12,12 @@ PPIB g_PIB;
 /* l_CSh (CodeSectionHash) contains the expected Hash of the CodeSection of the Image.
    This is only a Signature and has to be patched out with _riftTool. */
 CONST BYTE e_HashSig[16] = { // == 128-Bit/16-Byte
-	'.', 't', 'e', 'x', 't', 'M', 'd', '5', 'S', 'i', 'g', 0, 0, 0, 0, 0
+	".SectionHashSig\0"
 };
 CONST CHAR e_pszSections[3][8] = {
-	{ '.', 'r', 'd', 'a', 't', 'a', 0, 0 }, // Special
-	{ '.', 'r', 's', 'r', 'c', 0, 0, 0 },   // Ignore
-	{ '.', 'r', 'e', 'l', 'o', 'c', 0, 0 }  // Ignore
+	".rdata\0\0",  // Special
+	".rsrc\0\0\0", // Ignore
+	".reloc\0\0"   // Ignore (not sure if UpdateResource might mess with this)
 };
 
 // The Current AesStringKey used to decrypt Strings

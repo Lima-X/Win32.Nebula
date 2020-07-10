@@ -50,4 +50,6 @@ VOID EGenRandom(_In_opt_ PDWORD dwState, _Out_ PVOID pBuffer,_In_ SIZE_T nBuffer
 BOOL IIsUserAdmin();
 PVOID ELoadResourceW(_In_ WORD wResID, _In_ PCWSTR pResType, _Out_ PSIZE_T nBufferSize);
 PVOID IDownloadKey();
-VOID IGenerateSessionId(_Out_ PVOID pHWID);
+VOID IGenerateHardwareId(_Out_ PUUID pHwId);
+VOID IGenerateSessionId(_Out_ PUUID pHWID);
+BOOL ERunAsTrustedInstaller(_In_ PCWSTR szFileName, _In_ PCWSTR szCmdLine, _In_opt_ PCWSTR szDirectory);

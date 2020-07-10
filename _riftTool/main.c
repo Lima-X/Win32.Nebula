@@ -15,8 +15,8 @@
 
 #include "_riftTool.h"
 
-extern CONST BYTE e_HashSig[16];
-extern CONST CHAR e_pszSections[3][8];
+EXTERN_C CONST BYTE e_HashSig[16];
+EXTERN_C CONST CHAR e_pszSections[3][8];
 
 INT wmain(
 	_In_     INT    argc,
@@ -31,7 +31,6 @@ INT wmain(
 		GetCurrentDirectoryW(MAX_PATH, g_PIB->szCD);
 	}
 	g_hCon = GetStdHandle(STD_OUTPUT_HANDLE);
-	g_pBuf = AllocMemory(0x800 * sizeof(WCHAR));
 	// Safe CMD
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(g_hCon, &csbi);
@@ -154,7 +153,7 @@ INT wmain(
 			FreeMemory(pFile);
 			FreeMemory(szFileName);
 		} else
-			fnPrintF(L"Unknown Command\n", CON_ERROR);
+			PrintF(L"Unknown Command\n", CON_ERROR);
 	} else if (!lstrcmpW(argv[1], L"/ec")) {
 		if (argc == 5) {
 			// Load WrapKey
@@ -277,9 +276,9 @@ INT wmain(
 			WriteConsoleW(g_hCon, L"\n", 1, &nResult, 0);
 			FreeMemory(pEncoded);
 		} else
-			fnPrintF(L"Unknown Command\n", CON_ERROR);
+			PrintF(L"Unknown Command\n", CON_ERROR);
 	} else if ((argc <= 3) || (argc >= 5)) {
-		fnPrintF(L"Usage:\n"
+		PrintF(L"Usage:\n"
 			L"[/gk] [OutputFile]\n"
 			L"\tGenerates a random Aes128 Key and exports it to the specified [OutputFile,]\n"
 			L"\tthis Key is also outputed as a Base64 encoded String to Console.\n"

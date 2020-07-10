@@ -22,6 +22,15 @@ VOID ECryptEnd(
 	FreeMemory(cib);
 }
 
+VOID IConvertKeyToBlob(
+	_In_  PUUID pKey,
+	_Out_ PVOID pBlob
+) {
+	CopyMemory(pBlob, &((BCRYPT_KEY_DATA_BLOB_HEADER){ BCRYPT_KEY_DATA_BLOB_MAGIC, BCRYPT_KEY_DATA_BLOB_VERSION1, AES_KEY_SIZE }),
+		sizeof(BCRYPT_KEY_DATA_BLOB_HEADER));
+	CopyMemory((PTR)pBlob + sizeof(BCRYPT_KEY_DATA_BLOB_HEADER), pKey, AES_KEY_SIZE);
+}
+
 /* Internal Decryption Subroutine */
 PVOID IAesDecrypt(
 	_In_  BCRYPT_KEY_HANDLE kh,

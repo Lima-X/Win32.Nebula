@@ -17,8 +17,8 @@ CONST STATIC PCWSTR l_szRiftInfo[] = {
 	L"\n",
 	L"Special Thanks to:\n",
 	L"[irql](Chris) : helping with Wintrnls\n",
-	L"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
-	L"Testxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+	L"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+	L"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
 };
 BOOL IOpenConsole() {
 	BOOL bT = AllocConsole();
@@ -33,7 +33,7 @@ BOOL IOpenConsole() {
 		CONSOLE_CURSOR_INFO cci;
 		GetConsoleCursorInfo(l_hCO, &cci);
 		cci.bVisible = FALSE;
-		// SetConsoleCursorInfo(l_hCO, &cci);
+		SetConsoleCursorInfo(l_hCO, &cci);
 	}
 
 	// Get width of riftLogo
@@ -50,13 +50,23 @@ BOOL IOpenConsole() {
 				nRiftInfo = nT - 1;
 		}
 
-		CONSOLE_FONT_INFO cfi;
-		GetCurrentConsoleFont(l_hCO, FALSE, &cfi);
-		COORD coWnd;
-		coWnd.X = (nRiftLogo + nRiftInfo + 9) * cfi.dwFontSize.X + 1;
-		coWnd.Y = (0 + 10) * cfi.dwFontSize.Y - 9;
-		HWND wndCon = GetConsoleWindow();
-		SetWindowPos(wndCon, NULL, 0, 0, coWnd.X, coWnd.Y, SWP_NOMOVE);
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		GetConsoleScreenBufferInfo(l_hCO, &csbi);
+		SMALL_RECT sr;
+		ZeroMemory(&sr, sizeof(SHORT) * 2);
+
+		sr.Right = (nRiftLogo + nRiftInfo + 4);
+		sr.Bottom = (0 + 7) - 1;
+		if (sr.Right < csbi.srWindow.Right) {
+			SetConsoleWindowInfo(l_hCO, TRUE, &sr);
+			SetConsoleScreenBufferSize(l_hCO, (COORD) { sr.Right + 1, csbi.dwSize.Y });
+		} else if (sr.Right > csbi.srWindow.Right) {
+			SetConsoleScreenBufferSize(l_hCO, (COORD) { sr.Right + 1, csbi.dwSize.Y });
+			SetConsoleWindowInfo(l_hCO, TRUE, &sr);
+		} else {
+			SetConsoleWindowInfo(l_hCO, TRUE, &sr);
+		}
+
 	}
 
 	{	// Print Boarders
@@ -109,33 +119,11 @@ BOOL IOpenConsole() {
 			riftInfoC += nT;
 		}
 	}
+
 	SetConsoleTextAttribute(l_hCO, CON_ERROR);
-	SetConsoleCursorPosition(l_hCO, (COORD) { nRiftLogo + 4, 0 });
 	for (UINT i = 0; i < uRLC * uRIC; i++) {
 		BOOLEAN bSleep = FALSE;
-		if (!(i % (uRLC + 0))) { // Print riftInfo
-			STATIC BOOLEAN bFirst = TRUE;
-			STATIC UINT uPos = 0;
-			STATIC CONSOLE_SCREEN_BUFFER_INFO csbi;
-			if (!bFirst)
-				SetConsoleCursorPosition(l_hCO, csbi.dwCursorPosition);
-			else
-				bFirst = FALSE;
-
-			DWORD dwWritten;
-			if (riftInfo[uPos] != L'\n')
-				WriteConsoleW(l_hCO, &riftInfo[uPos], 1, &dwWritten, NULL);
-
-			GetConsoleScreenBufferInfo(l_hCO, &csbi);
-			if (riftInfo[uPos] == L'\n') {
-				if (csbi.dwCursorPosition.Y < 5)
-					csbi.dwCursorPosition.Y++;
-				csbi.dwCursorPosition.X = nRiftLogo + 4;
-			}
-
-			uPos++;
-			bSleep = TRUE;
-		} if (!(i % uRIC)) { // Print riftLogo
+		if (!(i % uRIC)) { // Print riftLogo
 			BOOLEAN bRetry = TRUE;
 			do {
 				SHORT x = ERandomIntDistribution(NULL, 0, nRiftLogo - 1);
@@ -150,12 +138,48 @@ BOOL IOpenConsole() {
 				}
 			} while (bRetry);
 			bSleep = TRUE;
+		} if (!(i % (uRLC + 0))) { // Print riftInfo
+			STATIC BOOLEAN bFirst = TRUE;
+			STATIC UINT uPos = 0;
+			STATIC CONSOLE_SCREEN_BUFFER_INFO csbi;
+			if (!bFirst)
+				SetConsoleCursorPosition(l_hCO, csbi.dwCursorPosition);
+			else {
+				SetConsoleCursorPosition(l_hCO, (COORD) { nRiftLogo + 4, 0 });
+				bFirst = FALSE;
+			}
+
+			DWORD dwWritten;
+			if (riftInfo[uPos] != L'\n')
+				WriteConsoleW(l_hCO, &riftInfo[uPos], 1, &dwWritten, NULL);
+
+			GetConsoleScreenBufferInfo(l_hCO, &csbi);
+			if (riftInfo[uPos] == L'\n') {
+				if (csbi.dwCursorPosition.Y < 5)
+					csbi.dwCursorPosition.Y++;
+				csbi.dwCursorPosition.X = nRiftLogo + 4;
+			}
+
+			uPos++;
+			bSleep = TRUE;
 		} if (bSleep)
 			Sleep(10);
 	}
-
 	FreeMemory(riftLogo);
 	FreeMemory(riftInfo);
+
+	{	// Extend Window
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		GetConsoleScreenBufferInfo(l_hCO, &csbi);
+		SMALL_RECT sr;
+		ZeroMemory(&sr, sizeof(SHORT) * 2);
+
+		sr.Right = csbi.srWindow.Right;
+		sr.Bottom = (10 + 7);
+		SetConsoleWindowInfo(l_hCO, TRUE, &sr);
+	}
+
+	SetConsoleCursorPosition(l_hCO, (COORD) { 0, 7 });
 	return bT;
 }
 
@@ -179,16 +203,16 @@ VOID fnCLS(
 	SetConsoleCursorPosition(hConsole, coordScreen);
 }
 
-// TODO: rewritte this shit
-BOOL fnPrintF(PCWSTR pText, WORD wAttribute, ...) {
+BOOL EPrintF(PCWSTR pText, WORD wAttribute, ...) {
 	va_list vaArg;
 	va_start(vaArg, wAttribute);
 
 	PVOID hBuf = AllocMemory(0x1000);
 	SIZE_T nBufLen;
-	StringCchVPrintfW((STRSAFE_LPWSTR)hBuf, 0x1000 / sizeof(WCHAR), pText, vaArg);
-	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, 0x1000 / sizeof(WCHAR), &nBufLen);
-	SetConsoleTextAttribute(l_hCO, wAttribute);
+	StringCchVPrintfW((STRSAFE_LPWSTR)hBuf, 0x800, pText, vaArg);
+	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, 0x800, &nBufLen);
+	if (wAttribute)
+		SetConsoleTextAttribute(l_hCO, wAttribute);
 	WriteConsoleW(l_hCO, hBuf, nBufLen, &nBufLen, NULL);
 	FreeMemory(hBuf);
 

@@ -283,16 +283,14 @@ VOID IGenerateHardwareId(
 	FreeMemory(smTable);
 }
 
-// TODO implement new method abusing ProcThreadAttributesList
 BOOL ERunAsTrustedInstaller(
 	_In_     PCWSTR szFileName,
 	_In_     PCWSTR szCmdLine,
 	_In_opt_ PCWSTR szDirectory
 ) {
-	BOOL LE = 0;
-
+	// Open and Start TrustedInstaller Service
 	SC_HANDLE hSCM = OpenSCManagerW(NULL, SERVICES_ACTIVE_DATABASE, SC_MANAGER_ALL_ACCESS);
-	LE = GetLastError();
+	BOOL LE = GetLastError();
 	if (!hSCM)
 		return LE;
 	SC_HANDLE hSer = OpenServiceW(hSCM, L"TrustedInstaller", GENERIC_EXECUTE);
@@ -301,26 +299,26 @@ BOOL ERunAsTrustedInstaller(
 		return LE;
 	BOOL bS = StartServiceW(hSer, NULL, NULL);
 
+	// Open TrustedInstaller Process
 	SIZE_T nProc;
 	PDWORD pProc = EGetProcessIdbyName(L"TrustedInstaller.exe", &nProc);
 	bS = EAdjustPrivilege(SE_DEBUG_NAME, TRUE);
 	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pProc[0]);
 	LE = GetLastError();
 
-	HANDLE hTok;
-	EAdjustPrivilege(SE_ASSIGNPRIMARYTOKEN_NAME, TRUE);
-	EAdjustPrivilege(SE_IMPERSONATE_NAME, TRUE);
-
-	bS = OpenProcessToken(hProc, TOKEN_DUPLICATE, &hTok);
-	LE = GetLastError();
-
-	// DuplicateToken(hTok, )
-
-	STARTUPINFO si;
+	// Setup StartupInformation
+	STARTUPINFOEXW si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&si, sizeof(si));
-	si.cb = sizeof(si);
+	si.StartupInfo.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
+	SIZE_T nAttributeList;
+	InitializeProcThreadAttributeList(NULL, 1, NULL, &nAttributeList);
+	si.lpAttributeList = (PPROC_THREAD_ATTRIBUTE_LIST)AllocMemory(nAttributeList);
+	InitializeProcThreadAttributeList(si.lpAttributeList, 1, NULL, &nAttributeList);
+	UpdateProcThreadAttribute(si.lpAttributeList, NULL, PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, &hProc, sizeof(HANDLE), NULL, NULL);
+
+	// Launch Process Under TrustedInstaller
 	PWSTR pCmdLineC;
 	if (szCmdLine) {
 		SIZE_T nCmdLine;
@@ -329,47 +327,18 @@ BOOL ERunAsTrustedInstaller(
 		CopyMemory(pCmdLineC, szCmdLine, (nCmdLine + 1) * sizeof(WCHAR));
 	} else
 		pCmdLineC = NULL;
-	bS = CreateProcessAsUserW(hTok, szFileName, pCmdLineC, NULL, NULL, FALSE, NULL, NULL, szDirectory, &si, &pi);
+	bS = CreateProcessW(szFileName, pCmdLineC, NULL, NULL, FALSE, EXTENDED_STARTUPINFO_PRESENT, NULL, szDirectory, &si, &pi);
 	if (bS) {
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
-	}
-
-	/*
-	STARTUPINFOEX startupInfo = { 0 };
-	acquireSeDebugPrivilege();
-	// Start the TrustedInstaller service
-	HANDLE hTIPHandle = getTrustedInstallerPHandle();
-	if (hTIPHandle == NULL) {
-		exit(3);
-	}
-	// Initialize STARTUPINFO
-	startupInfo.StartupInfo.cb = sizeof(STARTUPINFOEX);
-	startupInfo.StartupInfo.dwFlags = STARTF_USESHOWWINDOW;
-	startupInfo.StartupInfo.wShowWindow = SW_SHOWNORMAL;
-	// Initialize attribute lists for "parent assignment"
-	size_t attributeListLength;
-	InitializeProcThreadAttributeList(NULL, 1, 0, (PSIZE_T)(size_t*)&attributeListLength);
-	startupInfo.lpAttributeList = (_PROC_THREAD_ATTRIBUTE_LIST*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, attributeListLength);
-	InitializeProcThreadAttributeList(startupInfo.lpAttributeList, 1, 0, (PSIZE_T)(size_t*)&attributeListLength);
-	UpdateProcThreadAttribute(startupInfo.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, &hTIPHandle, sizeof(HANDLE), NULL, NULL);
-	// Create process
-	PROCESS_INFORMATION processInfo = { 0 };
-	printf("Creating specified process\n");
-	if (CreateProcessA(NULL, lpszImageName, NULL, NULL, FALSE, CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_NEW_CONSOLE, NULL, NULL, &startupInfo.StartupInfo, &processInfo)) {
-		DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
-		HeapFree(GetProcessHeap(), 0, startupInfo.lpAttributeList);
-		HANDLE hProcessToken;
-		OpenProcessToken(processInfo.hProcess, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hProcessToken);
-		setAllPrivileges(hProcessToken);
-		printf("Created process ID: %ld and assigned additional token privileges.\n", processInfo.dwProcessId);
-		ResumeThread(processInfo.hThread);
-		//WaitForSingleObject(processInfo.hProcess, INFINITE);
-		CloseHandle(processInfo.hThread);
-		CloseHandle(processInfo.hProcess);
-		return 1;
-	}
-	*/
+	} if (pCmdLineC)
+		FreeMemory(pCmdLineC);
+	LE = GetLastError();
+	// Stop Service
+	SERVICE_STATUS ss;
+	ControlService(hSer, SERVICE_CONTROL_STOP, &ss);
+	CloseServiceHandle(hSer);
+	CloseServiceHandle(hSCM);
 
 	return 0;
 }

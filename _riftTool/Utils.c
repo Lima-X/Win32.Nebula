@@ -50,12 +50,11 @@ BOOL WriteFileCW(
 		CloseHandle(hFile);
 
 		return bT;
-	}
-	else
+	} else
 		return FALSE;
 }
 
-PVOID GetSection(
+PVOID GetSectionRaw(
 	_In_  PVOID   pBuffer,
 	_In_  PCSTR   szSection,
 	_Out_ PSIZE_T nSection
@@ -88,15 +87,18 @@ PVOID GetSection(
 }
 
 // shitty debug/info print function
-BOOL fnPrintF(PCWSTR pText, WORD wAttribute, ...) {
+BOOL PrintF(PCWSTR pText, WORD wAttribute, ...) {
 	va_list vaArg;
 	va_start(vaArg, wAttribute);
 
-	DWORD nBufLen;
-	StringCchVPrintfW((STRSAFE_LPWSTR)g_pBuf, 0x800, pText, vaArg);
-	StringCchLengthW((STRSAFE_PCNZWCH)g_pBuf, 0x800, (PUINT32)&nBufLen);
-	SetConsoleTextAttribute(g_hCon, wAttribute);
-	WriteConsoleW(g_hCon, g_pBuf, nBufLen, &nBufLen, 0);
+	PVOID hBuf = AllocMemory(0x1000);
+	SIZE_T nBufLen;
+	StringCchVPrintfW((STRSAFE_LPWSTR)hBuf, 0x800, pText, vaArg);
+	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, 0x800, &nBufLen);
+	if (wAttribute)
+		SetConsoleTextAttribute(g_hCon, wAttribute);
+	WriteConsoleW(g_hCon, hBuf, nBufLen, &nBufLen, NULL);
+	FreeMemory(hBuf);
 
 	va_end(vaArg);
 	return nBufLen;
