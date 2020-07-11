@@ -28,7 +28,7 @@ INT wmain(
 		HANDLE hPH = GetProcessHeap();
 		g_PIB = (PPIB)HeapAlloc(hPH, 0, sizeof(PIB));
 		g_PIB->hPH = hPH;
-		GetCurrentDirectoryW(MAX_PATH, g_PIB->szCD);
+		GetCurrentDirectoryW(MAX_PATH, g_PIB->sMod.szCD);
 	}
 	g_hCon = GetStdHandle(STD_OUTPUT_HANDLE);
 	// Safe CMD
@@ -57,14 +57,14 @@ INT wmain(
 
 			// Save Aes Blob
 			PWSTR szFileName = AllocMemory(MAX_PATH * sizeof(WCHAR));
-			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[2]);
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
 			nts = WriteFileCW(szFileName, 0, pKeyE, AES_BLOB_SIZE);
 			FreeMemory(szFileName);
 			FreeMemory(pKeyE);
 		} else if (!lstrcmpW(argv[1], L"/pa")) {
 			// Load Executable/Image
 			PWSTR szFileName = AllocMemory(MAX_PATH * sizeof(WCHAR));
-			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[2]);
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
 			SIZE_T nFile;
 			PVOID pFile = ReadFileCW(szFileName, 0, &nFile);
 			if (!pFile)
@@ -158,14 +158,14 @@ INT wmain(
 		if (argc == 5) {
 			// Load WrapKey
 			PWSTR szFileName = AllocMemory(MAX_PATH * sizeof(WCHAR));
-			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[3]);
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[3]);
 			SIZE_T nFile;
 			PVOID pWKey = ReadFileCW(szFileName, 0, &nFile);
 			if (!pWKey)
 				goto EXIT;
 
 			// Load File to Compress & Encrypt
-			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[2]);
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
 			PVOID pFile = ReadFileCW(szFileName, 0, &nFile);
 			if (!pFile)
 				goto EXIT;
@@ -174,7 +174,7 @@ INT wmain(
 			PAESIB pAes = AllocMemory(sizeof(AESIB));
 			BCRYPT_ALG_HANDLE ahMd5;
 			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahMd5, BCRYPT_MD5_ALGORITHM, 0, 0);
-			nts = BCryptHash(ahMd5, 0, 0, pFile, nFile, pAes->Md5, MD5_SIZE);
+			nts = BCryptHash(ahMd5, 0, 0, pFile, nFile, &pAes->Md5, MD5_SIZE);
 			BCryptCloseAlgorithmProvider(ahMd5, 0);
 
 			// Compress InputFile using LZ
@@ -222,7 +222,7 @@ INT wmain(
 			nts = BCryptCloseAlgorithmProvider(ahAes, 0);
 
 			// Export Data ///////////////////////////////////////////////////////////////////////////
-			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[4]);
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[4]);
 
 			HANDLE hFile = CreateFileW(szFileName, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS,
 				(FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ENCRYPTED), 0);
@@ -236,7 +236,7 @@ INT wmain(
 		} else if (argc == 4) {
 			// Load AesStringKey
 			PWSTR szFileName = AllocMemory(MAX_PATH * sizeof(WCHAR));
-			PathCchCombine(szFileName, MAX_PATH, g_PIB->szCD, argv[2]);
+			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
 			SIZE_T nFile;
 			PVOID pSKey = ReadFileCW(szFileName, 0, &nFile);
 			if (!pSKey)
@@ -299,7 +299,5 @@ INT wmain(
 
 EXIT:
 	SetConsoleTextAttribute(g_hCon, csbi.wAttributes);
-	FreeMemory(g_pBuf);
-
 	return 0;
 }

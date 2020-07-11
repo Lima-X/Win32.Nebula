@@ -1,5 +1,5 @@
 #ifdef _riftldr
-#include "_riftldr.h"
+#include "..\_riftldr\_riftldr.h"
 #elif _riftTool
 #include "..\_riftTool\_riftTool.h"
 #endif
@@ -150,14 +150,17 @@ PVOID EBase64DecodeA(
 }
 
 // UUID Encoder/Decoder
-PCSTR EUuIdEncodeA(
+PCSTR EUuidEncodeA(
 	_In_ PUUID pId
 ) {
-	PCSTR sz = AllocMemory((16 * 2) + 5);
-	StringCchPrintfA(sz, ((16 * 2) + 5), "%08x-%04x-%04x-%04x-%04x%08x",
+	PSTR sz = AllocMemory((16 * 2) + 5);
+	for (UINT8 i = 0; i < 2; i++)
+		for (UINT8 j = 0; j < 2 + (4 * i); j++)
+			StringCchPrintfA((sz + j * 2) + (19 + 5 * i), 2 + 1, "%02x", pId->Data4[j + (2 * i)]);
+	sz[19 + 4] = '-';
+	StringCchPrintfA(sz, ((16 * 2) + 5), "%08x-%04x-%04x-%s",
 		pId->Data1, pId->Data2, pId->Data3,
-		(WORD)(pId->Data4),
-		(DWORD)((PTR)(pId->Data4) + 2));
+		sz + 19);
 	return sz;
 }
 
@@ -169,14 +172,36 @@ FORCEINLINE UINT8 ICharToInt(
 	if (c >= 'a' && c <= 'f')
 		return c - 'a' + 10;
 }
-VOID EUuIdDecodeA(
+VOID EUuidDecodeA(
 	_In_  PCSTR pString,
 	_Out_ PUUID pId
 ) {
+	CONST SIZE_T nPart[] = { 8, 4, 4 };
+	for (UINT8 i = 0; i < sizeof(nPart) / sizeof(SIZE_T); i++) {
+
+	}
+
+
 	while (pString[0] && pString[1]) {
 		if (pString[0] == '-')
 			pString++;
-		*((PWORD)pId)++ = (ICharToInt(pString[0]) << 4) + ICharToInt(pString[1]);
+		*(((PBYTE)pId)++) = (ICharToInt(pString[0]) << 4) + ICharToInt(pString[1]);
 		(PTR)pString += 2;
 	}
+}
+
+PVOID ISigScan(
+	_In_ PVOID  pData, // Address of Data
+	_In_ SIZE_T nData, // Sizeof Data
+	_In_ PSIG   sig    // Signature
+) {
+	while ((nData-- - sig->nLength) + 1) {
+		SIZE_T nSig = sig->nLength;
+		while (nSig--)
+			if ((sig->szMask[nSig] == 'x') && (((PBYTE)pData)[nSig] != ((PBYTE)sig->pSig)[nSig]))
+				break;
+		if (nSig == -1)
+			return pData;
+		((PBYTE)pData)++;
+	} return NULL;
 }

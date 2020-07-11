@@ -24,9 +24,6 @@
     <ClInclude Include="appinfo32.h">
       <Filter>Source Files\UACExploit</Filter>
     </ClInclude>
-    <ClInclude Include="..\_rift\shared.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.c">
@@ -41,7 +38,7 @@
     <ClCompile Include="tyranid.c">
       <Filter>Source Files\UACExploit</Filter>
     </ClCompile>
-    <ClCompile Include="..\_riftldr\Data.c">
+    <ClCompile Include="..\shared\data.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>

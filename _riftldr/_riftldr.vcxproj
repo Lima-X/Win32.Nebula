@@ -99,16 +99,14 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="depends.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="_riftldr.h" />
-    <ClInclude Include="shared.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BlackBone.cpp" />
-    <ClCompile Include="DataCoder.c" />
+    <ClCompile Include="..\shared\shared.c" />
     <ClCompile Include="Console.c" />
-    <ClCompile Include="Data.c" />
+    <ClCompile Include="..\shared\data.c" />
     <ClCompile Include="NT.c" />
     <ClCompile Include="AntiRE.c" />
     <ClCompile Include="main.c" />

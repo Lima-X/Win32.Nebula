@@ -6,10 +6,11 @@
 #define STATIC       static
 #define FASTCALL   __fastcall
 #define DEPRECATED __declspec(deprecated)
+#define EXTERN       EXTERN_C
 typedef UUID*        PUUID;
 typedef UUID         MD5, * PMD5;
 
-/* Typedefs */
+// Raw Pointer Type
 #ifdef _WIN64
 typedef unsigned long long PTR;
 #elif _WIN32
@@ -26,6 +27,17 @@ typedef unsigned long      PTR;
 #define AllocMemory(cbBytes)         HeapAlloc(g_PIB->hPH, NULL, cbBytes)
 #define ReAllocMemory(pMem, cbBytes) HeapReAlloc(g_PIB->hPH, NULL, pMem, cbBytes)
 #define FreeMemory(pMem)             HeapFree(g_PIB->hPH, NULL, pMem)
+INLINE INT CompareMemory(
+	_In_ PVOID  pMem1,
+	_In_ PVOID  pMem2,
+	_In_ SIZE_T nSize
+) {
+	PBYTE bMem1 = (PBYTE)pMem1, bMem2 = (PBYTE)pMem2;
+	while (nSize--) {
+		if (*(bMem1++) != *(bMem2++))
+			return *(--bMem1) < *(--bMem2) ? -1 : 1;
+	} return 0;
+}
 
 /* Console */
 #define CON_SUCCESS (FOREGROUND_GREEN)                                           // 0b0010
@@ -57,8 +69,8 @@ PVOID EUnpackResource(_In_ PCIB cib, _In_ WORD wResID, _Out_ PSIZE_T nData);
 PCWSTR EDecryptString(_In_ PCIB cib, _In_ PCSTR pString, _Out_ PSIZE_T nResult);
 #define DecryptString(pString, nResult) EDecryptString(&g_PIB->sCIB.SK, pString, nResult)
 
-PVOID EMd5HashData(_In_ PVOID pBuffer, _In_ SIZE_T nBuffer);
-BOOL EMd5Compare(_In_ PVOID pMD51, _In_ PVOID pMD52);
+BOOL EMd5HashData(_In_ PVOID pBuffer, _In_ SIZE_T nBuffer, _Out_ PMD5 pHash);
+// BOOL EMd5Compare(_In_ PVOID pMD51, _In_ PVOID pMD52);
 
 // Encrypted File/Resource Header
 typedef struct _AESIB {
@@ -71,21 +83,35 @@ typedef struct _AESIB {
 /* FileSystem */
 #define GENERIC_RW (GENERIC_READ | GENERIC_WRITE)
 
-/* Base64 Encoder/Decoder / UUID Converters : DataCoder.c */
+/* Base64 Encoder/Decoder, UUID Converters and SigScanner : shared.c */
+// why -A suffix, because these functions work with raw data,
+// also Hex and Base64 don't need Unicode
+// and it would be stupid to use Unicode outside of the programm anyways,
+// as it would just bloat the data
 PCSTR EBase64EncodeA(_In_ PVOID pData, _In_ SIZE_T nData, _Out_ PSIZE_T nOut);
 PVOID EBase64DecodeA(_In_ PCSTR pString, _In_ SIZE_T nString, _Out_ PSIZE_T nOut);
+
+#define UUID_STRLEN ((16 * 2) + 5)
+PCSTR EUuidEncodeA(_In_ PUUID pId);
+VOID EUuidDecodeA(_In_  PCSTR pString, _Out_ PUUID pId);
+
+typedef struct _SIG { // Signature Block
+	PVOID  pSig;       // Signature
+	PCSTR  szMask;     // Mask (to ignore certain Bytes)
+	SIZE_T nLength;    // Length of Signature to search
+} SIG, * PSIG;
+PVOID ISigScan(_In_ PVOID pData, _In_ SIZE_T nData, _In_ PSIG sig);
 
 /* Utilities and Other : Utils.c */
 PDWORD EGetProcessIdbyName(_In_ PCWSTR pProcessName, _Out_ PSIZE_T nProcesses);
 
 /* Process Information Block (replacment for Global Data) */
 typedef struct _PIB {
+	HANDLE  hPH; // Process Heap Handle
 #ifndef _riftTool
-	HMODULE hMH;             // Current Module (BaseAddress)
-	WCHAR   szMFN[MAX_PATH]; // Current Module Filename
-	struct {                 // Hardware and Session ID's
-		UUID HW;              // Hardware ID (linked to specific SMBIOS Entries)
-		UUID SE;              // Session ID (linked to ACPI, FIRM and SMBIOS Information)
+	struct {     // Hardware and Session ID's
+		UUID HW;  // Hardware ID (linked to specific SMBIOS Entries)
+		UUID SE;  // Session ID (linked to ACPI, FIRM and SMBIOS Information)
 	} sID;
 	struct {    // Standart Crypto Providers and Key's
 		CIB SK;  // Internal deobfuscation Key (used to decrypt .WK and strings, maybe more in the future)
@@ -93,10 +119,13 @@ typedef struct _PIB {
 	} sCIB;
 	struct {      // Commandline
 		SIZE_T n;  // Number of elements inside the Vector
-		PWSTR  v;  // Argument array (Vector)
+		PWSTR* v;  // Argument array (Vector)
 	} sArg;
 #endif
-	WCHAR   szCD[MAX_PATH]; // Current Directory
-	HANDLE  hPH;            // Process Heap Handle
+	struct {                     // Module Information
+		HMODULE hMH;              // Current Module (BaseAddress)
+		WCHAR   szMFN[MAX_PATH];  // Current Module Filename
+		WCHAR   szCD[MAX_PATH];   // Current Directory
+	} sMod;
 } PIB, * PPIB;
-EXTERN_C PPIB g_PIB;
+EXTERN PPIB g_PIB;

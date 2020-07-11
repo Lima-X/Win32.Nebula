@@ -27,12 +27,6 @@
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="shared.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="depends.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="_riftldr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -65,17 +59,17 @@
     <ClCompile Include="Crypt.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Data.c">
-      <Filter>Resource Files</Filter>
-    </ClCompile>
     <ClCompile Include="AntiRE.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DataCoder.c">
-      <Filter>Source Files\Algorithms</Filter>
-    </ClCompile>
     <ClCompile Include="BlackBone.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\shared.c">
+      <Filter>Source Files\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\data.c">
+      <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

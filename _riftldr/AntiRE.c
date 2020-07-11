@@ -346,9 +346,9 @@ BOOL fnAntiRE() {
 	IAntiDebug();
 }
 
-BOOL fnErasePeHeader() {
+DEPRECATED BOOL fnErasePeHeader() {
 	// Get Nt Headers
-	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)g_PIB->hMH;
+	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)g_PIB->sMod.hMH;
 	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((PTR)pDosHdr + pDosHdr->e_lfanew);
 	if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
 		return FALSE;
@@ -358,18 +358,20 @@ BOOL fnErasePeHeader() {
 
 	DWORD dwProtect;
 	SIZE_T nOHdr = pOHdr->SizeOfHeaders;
-	VirtualProtect(g_PIB->hMH, nOHdr, PAGE_EXECUTE_READWRITE, &dwProtect);
-	SecureZeroMemory(g_PIB->hMH, nOHdr);
-	VirtualProtect(g_PIB->hMH, nOHdr, dwProtect, &dwProtect);
+	VirtualProtect(g_PIB->sMod.hMH, nOHdr, PAGE_EXECUTE_READWRITE, &dwProtect);
+	SecureZeroMemory(g_PIB->sMod.hMH, nOHdr);
+	VirtualProtect(g_PIB->sMod.hMH, nOHdr, dwProtect, &dwProtect);
 	return TRUE;
 }
 
-EXTERN_C CONST BYTE e_HashSig[16];
-EXTERN_C CONST CHAR e_pszSections[3][8];
+EXTERN_C CONST SIG e_HashSig;
+EXTERN_C CONST CHAR e_pszSections[ANYSIZE_ARRAY][8];
+EXTERN_C CONST SIZE_T e_nSections;
+// Will Redo in Memory
 FORCEINLINE BOOL IHashBinaryCheck() {
 	// Read Binary File
 	SIZE_T nFileSize;
-	PVOID pFile = AllocReadFileW(g_PIB->szMFN, &nFileSize);
+	PVOID pFile = AllocReadFileW(g_PIB->sMod.szMFN, &nFileSize);
 	if (!pFile)
 		return 0;
 
@@ -397,7 +399,7 @@ FORCEINLINE BOOL IHashBinaryCheck() {
 
 		// Check for Special Section
 		BOOLEAN bFlag;
-		for(UINT8 j = 0; j < (sizeof(e_pszSections) / sizeof(e_pszSections[0])); j++) {
+		for(UINT8 j = 0; j < e_nSections; j++) {
 			bFlag = TRUE;
 			for (UINT8 n = 0; n < IMAGE_SIZEOF_SHORT_NAME; n++) {
 				if (pSHdr->Name[n] != e_pszSections[j][n]) {
@@ -422,10 +424,10 @@ FORCEINLINE BOOL IHashBinaryCheck() {
 			for (UINT j = 0; j < nSection - MD5_SIZE; j++) {
 				bFlag = TRUE;
 				for (UINT8 n = 0; n < MD5_SIZE; n++) {
-					if (((PBYTE)pSection)[j + n] != e_HashSig[n]) {
+					// if (((PBYTE)pSection)[j + n] != e_HashSig) {
 						bFlag = FALSE;
 						break;
-					}
+					// }
 				} if (bFlag) {
 					pHash = (PVOID)((PTR)pSection + j);
 					break;
@@ -452,9 +454,26 @@ FORCEINLINE BOOL IHashBinaryCheck() {
 	return bT;
 }
 
-/* Thread Local Storage (TLS) Callback */
+BOOL IHashMappedSection() {
+	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)GetModuleHandleW(NULL);
+	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((PTR)pDosHdr + pDosHdr->e_lfanew);
+	if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
+		return FALSE;
+	PIMAGE_FILE_HEADER pFHdr = &pNtHdr->FileHeader;
+	PIMAGE_OPTIONAL_HEADER pOHdr = &pNtHdr->OptionalHeader;
+	if (pOHdr->Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
+		return FALSE;
+
+	// Temporery
+	INT nRelocDif = pDosHdr - pOHdr->ImageBase;
+
+}
+
+/* Thread Local Storage (TLS) Callback :
+   This will start the Protection Services
+   and partially initialize _riftldr       */
 STATIC BOOLEAN l_bTlsFlag = TRUE;
-EXTERN_C CONST BYTE e_SKey[28];
+EXTERN_C CONST BYTE e_SKey[24];
 VOID NTAPI ITlsCb(
 	_In_ PVOID DllHandle,
 	_In_ DWORD dwReason,
@@ -469,7 +488,7 @@ VOID NTAPI ITlsCb(
 			g_PIB = (PPIB)HeapAlloc(hPH, NULL, sizeof(PIB));
 			g_PIB->hPH = hPH;
 			HMODULE hP = GetModuleHandleW(NULL);
-			GetModuleFileNameW(hP, g_PIB->szMFN, MAX_PATH);
+			GetModuleFileNameW(hP, g_PIB->sMod.szMFN, MAX_PATH);
 			ECryptBegin(e_SKey, &g_PIB->sCIB.SK);
 		}
 

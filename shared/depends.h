@@ -34,4 +34,4 @@
 #include "..\msDetours\include\detours.h"
 
 /* Shared Declarations */
-#include "..\shared\shared.h"
+#include "shared.h"

@@ -35,6 +35,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BlackBone", "BlackBone", "{
 		dtBlackBone\src\BlackBone\ManualMap\Native\NtLoader.h = dtBlackBone\src\BlackBone\ManualMap\Native\NtLoader.h
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Other", "Other", "{118C1682-B6BB-40BC-8076-F301EDE6C451}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{0174DC8F-1080-4FE5-8AA3-4F2C045FC589}"
+	ProjectSection(SolutionItems) = preProject
+		shared\data.c = shared\data.c
+		shared\depends.h = shared\depends.h
+		shared\shared.c = shared\shared.c
+		shared\shared.h = shared\shared.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -87,8 +97,10 @@ Global
 		{21265FC7-5328-4846-845D-13404C45FB8E} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
 		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD} = {410236BD-0C95-4218-8E1C-BC6735B91591}
 		{0881218E-929D-4CDF-AAAD-B4C4955C6081} = {410236BD-0C95-4218-8E1C-BC6735B91591}
+		{ADF0C4C8-1A43-41D1-BCFB-DA8133BFEDFD} = {118C1682-B6BB-40BC-8076-F301EDE6C451}
 		{BF696E0C-93B0-4E49-A5D4-CE10FF979E9B} = {ADF0C4C8-1A43-41D1-BCFB-DA8133BFEDFD}
 		{B3507EC6-C620-42C5-ABFE-0157137B3ABA} = {ADF0C4C8-1A43-41D1-BCFB-DA8133BFEDFD}
+		{0174DC8F-1080-4FE5-8AA3-4F2C045FC589} = {118C1682-B6BB-40BC-8076-F301EDE6C451}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FA23DB8B-7FAB-4586-936D-4ADB4CD8B90E}

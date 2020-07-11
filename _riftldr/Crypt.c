@@ -30,6 +30,15 @@ VOID IConvertKeyToBlob(
 		sizeof(BCRYPT_KEY_DATA_BLOB_HEADER));
 	CopyMemory((PTR)pBlob + sizeof(BCRYPT_KEY_DATA_BLOB_HEADER), pKey, AES_KEY_SIZE);
 }
+VOID IWrapKey(
+	_In_  PCIB  pKey,
+	_In_  PCIB  pWrap,
+	_Out_ PVOID pBlob
+) {
+
+
+}
+
 
 /* Internal Decryption Subroutine */
 PVOID IAesDecrypt(
@@ -106,11 +115,9 @@ PVOID EUnpackResource(
 	BCryptImportKey(cib->ah, cib->uHandle.kh, BCRYPT_AES_WRAP_KEY_BLOB, &kh, pObj, cib->nObj,
 		((PAESIB)pResource)->Key, sizeof(((PAESIB)pResource)->Key), NULL);
 
-	// Move Iv to modifieable location
+	// Decrypt Data
 	PVOID pIv = AllocMemory(16);
 	CopyMemory(&pIv, ((PAESIB)pResource)->Iv, 16);
-
-	// Decrypt Data
 	PVOID pDecrypted = IAesDecrypt(kh, ((PAESIB)pResource)->Data, *nData - sizeof(AESIB), &pIv, nData);
 	FreeMemory(pIv);
 	BCryptDestroyKey(kh);
@@ -124,20 +131,19 @@ PVOID EUnpackResource(
 	FreeMemory(pDecrypted);
 
 	// Check for Corrupted Data
-	PVOID pMd5 = AllocMemory(16);
-	EMd5HashData(pMd5, pData, *nData);
-	BOOL bT = EMd5Compare(pMd5, ((PAESIB)pResource)->Md5);
-	FreeMemory(pMd5);
-	if (bT)
-		return NULL;
-
-	return pData;
+	MD5 pHash;
+	EMd5HashData(pData, *nData, &pHash);
+	if (!CompareMemory(&pHash, &((PAESIB)pResource)->Md5, 16))
+		return pData;
+	FreeMemory(pData);
+	return NULL;
 }
 
 /* Md5 Hashing */
-PVOID EMd5HashData(
+BOOL EMd5HashData(
 	_In_  PVOID  pBuffer,
-	_In_  SIZE_T nBuffer
+	_In_  SIZE_T nBuffer,
+	_Out_ PMD5   pHash
 ) {
 	PCIB cib = AllocMemory(sizeof(CIB));
 	NTSTATUS nts = BCryptOpenAlgorithmProvider(&cib->ah, BCRYPT_MD5_ALGORITHM, NULL, NULL);
@@ -147,22 +153,20 @@ PVOID EMd5HashData(
 
 	nts = BCryptCreateHash(cib->ah, &cib->uHandle.hh, cib->pObj, cib->nObj, NULL, 0, NULL);
 	nts = BCryptHashData(cib->uHandle.hh, pBuffer, nBuffer, 0);
-	PVOID pMd5 = AllocMemory(MD5_SIZE);
-	nts = BCryptFinishHash(cib->uHandle.hh, pMd5, 16, NULL);
+	nts = BCryptFinishHash(cib->uHandle.hh, pHash, 16, NULL);
 
 	nts = BCryptDestroyHash(cib->uHandle.hh);
 	FreeMemory(cib->pObj);
 	nts = BCryptCloseAlgorithmProvider(cib->ah, NULL);
 	FreeMemory(cib);
-
-	return pMd5;
+	return nts;
 }
 BOOL EMd5Compare(
-	_In_ PVOID pMD51,
-	_In_ PVOID pMD52
+	_In_ PMD5 pHash1,
+	_In_ PMD5 pHash2
 ) {
 	for (UINT8 i = 0; i < (16 / sizeof(DWORD)); i++)
-		if (((PDWORD)pMD51)[i] != ((PDWORD)pMD52)[i])
+		if (((PDWORD)pHash1)[i] != ((PDWORD)pHash2)[i])
 			return 1;
 	return 0;
 }

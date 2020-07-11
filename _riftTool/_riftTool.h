@@ -1,7 +1,7 @@
 #pragma once
 
-#include "..\_riftldr\depends.h"
-#include "..\_riftldr\shared.h"
+#include "..\shared\depends.h"
+#include "..\shared\shared.h"
 
 HANDLE g_hCon;
 

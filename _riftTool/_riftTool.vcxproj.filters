@@ -17,18 +17,15 @@
     <ClCompile Include="Utils.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\_riftldr\Data.c">
+    <ClCompile Include="..\shared\shared.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\_riftldr\DataCoder.c">
+    <ClCompile Include="..\shared\data.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_riftTool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\_riftldr\shared.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

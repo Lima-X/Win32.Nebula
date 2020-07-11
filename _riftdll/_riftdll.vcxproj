@@ -91,12 +91,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\_rift\shared.h" />
     <ClInclude Include="appinfo32.h" />
     <ClInclude Include="_riftdll.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\_riftldr\Data.c" />
+    <ClCompile Include="..\shared\data.c" />
     <ClCompile Include="aic.c" />
     <ClCompile Include="appinfo32.c" />
     <ClCompile Include="dllmain.c" />

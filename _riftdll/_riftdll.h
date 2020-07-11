@@ -15,7 +15,7 @@
 #include <ocidl.h>
 #include "appinfo32.h"
 
-#include "..\_riftldr\shared.h"
+#include "..\shared\shared.h"
 
 // Why did i even bother making this macro for this
 // if this file doesn't get used outside the dll anyways -.-
