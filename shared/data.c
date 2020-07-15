@@ -9,29 +9,29 @@
 // Global Process Information Block
 PPIB g_PIB;
 
-/* l_CSh (CodeSectionHash) contains the expected Hash of the CodeSection of the Image.
+/* Contains the expected Hash of Section in the Image.
    This is only a Signature and has to be patched out with _riftTool. */
-CONST SIG e_HashSig2 = {
-	".SectionHashSig",
-	"xxxxxxxxxxxxxxxx",
-	16
-};
-
-
+CONST SIG e_HashSig = {	".SectionHashSig", "xxxxxxxxxxxxxxxx", 16 };
 
 CONST CHAR e_pszSections[][8] = {
-	".rdata\0",  // Special
-	".rsrc\0\0", // Ignore
-	// ".reloc\0"   // Ignore (not sure if UpdateResource might mess with this)
+	".rdata\0",   // Special
+	".rsrc\0\0",  // Ignore
+	// ".reloc\0" // Ignore (not sure if UpdateResource might mess with this)
 };
 CONST SIZE_T e_nSections = sizeof(e_pszSections) / sizeof(*e_pszSections);
 
-// The Current AesStringKey used to decrypt Strings
-CONST BYTE e_SKey[16] = {
-	0xD9, 0xBF, 0x99, 0x27,
-	0x18, 0xCA, 0x6A, 0xF6,
-	0xB4, 0xD5, 0xD4, 0x67,
-	0x4E, 0xF5, 0xF9, 0x01
+/* The Current AesInternalKey used to decrypt Internal Data,
+   this Key is hardcoded and should not be changed.
+   Changing this Key would requirer to reencrypt all Data that is based on this Key,
+   this includes all obfuscated Strings and even external Resources. */
+CONST BYTE e_IKey[AES_KEY_SIZE] = {
+	0xd9, 0xbf, 0x99, 0x27, 0x18, 0xca, 0x6a, 0xf6,
+	0xb4, 0xd5, 0xd4, 0x67,	0x4e, 0xf5, 0xf9, 0x01
+};
+// KillSwitch Data Hash
+CONST BYTE e_KillSwitchHash[sizeof(MD5)] = {
+	0xc5, 0xc9, 0x2b, 0x4e, 0xe2, 0xc4, 0x61, 0x8f,
+	0x65, 0x59, 0xf1, 0x98, 0x48, 0xae, 0xf5, 0x3b
 };
 
 // Base64 Encoder/Decoder CharSet

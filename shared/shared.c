@@ -149,53 +149,50 @@ PVOID EBase64DecodeA(
 	return IBase64DecodeA(pString, nString, nResult, e_Base64Table);
 }
 
-// UUID Encoder/Decoder
-PCSTR EUuidEncodeA(
-	_In_ PUUID pId
+/* UUID Converters */
+VOID EUuidEncodeA(      // UUID to String
+	_In_  PUUID pId,    // UUID to Encode
+	_Out_ PSTR  pString // String to fill
 ) {
-	PSTR sz = AllocMemory((16 * 2) + 5);
 	for (UINT8 i = 0; i < 2; i++)
 		for (UINT8 j = 0; j < 2 + (4 * i); j++)
-			StringCchPrintfA((sz + j * 2) + (19 + 5 * i), 2 + 1, "%02x", pId->Data4[j + (2 * i)]);
-	sz[19 + 4] = '-';
-	StringCchPrintfA(sz, ((16 * 2) + 5), "%08x-%04x-%04x-%s",
-		pId->Data1, pId->Data2, pId->Data3,
-		sz + 19);
-	return sz;
+			StringCchPrintfA((pString + j * 2) + (19 + 5 * i), 2 + 1, "%02x", pId->Data4[j + (2 * i)]);
+	pString[19 + 4] = '-';
+	StringCchPrintfA(pString,  UUID_STRLEN, "%08x-%04x-%04x-%s", pId->Data1, pId->Data2, pId->Data3, pString + 19);
 }
 
-FORCEINLINE UINT8 ICharToInt(
-	_In_ CHAR c
+FORCEINLINE UINT8 ICharToHex( // Char to Hexvalue
+	_In_ CHAR c               // Char to convert
 ) {
 	if (c >= '0' && c <= '9')
 		return c - '0';
 	if (c >= 'a' && c <= 'f')
 		return c - 'a' + 10;
 }
-VOID EUuidDecodeA(
-	_In_  PCSTR pString,
-	_Out_ PUUID pId
+VOID EUuidDecodeA(       // String to UUID
+	_In_  PCSTR pString, // String to Decode
+	_Out_ PUUID pId      // UUID to fill
 ) {
-	CONST SIZE_T nPart[] = { 8, 4, 4 };
-	for (UINT8 i = 0; i < sizeof(nPart) / sizeof(SIZE_T); i++) {
-
-	}
-
-
-	while (pString[0] && pString[1]) {
+	CONST UINT8 nPart[] = { 4, 2, 2 };
+	for (UINT8 i = 0; i < sizeof(nPart); i++) {
+		UINT nC = nPart[i];
+		while (nC--)
+			((PBYTE)pId)[nC] = (ICharToHex(*pString++) << 4) + ICharToHex(*pString++);
+		(PBYTE)pId += nPart[i];
+		pString++;
+	} while (pString[0] && pString[1]) {
 		if (pString[0] == '-')
 			pString++;
-		*(((PBYTE)pId)++) = (ICharToInt(pString[0]) << 4) + ICharToInt(pString[1]);
-		(PTR)pString += 2;
+		*(((PBYTE)pId)++) = (ICharToHex(*pString++) << 4) + ICharToHex(*pString++);
 	}
 }
 
-PVOID ISigScan(
+PVOID ISigScan(        // Signatrure Scanner/Finder
 	_In_ PVOID  pData, // Address of Data
-	_In_ SIZE_T nData, // Sizeof Data
-	_In_ PSIG   sig    // Signature
+	_In_ SIZE_T nData, // Size of Data
+	_In_ PSIG   sig    // Signature Info
 ) {
-	while ((nData-- - sig->nLength) + 1) {
+	do {
 		SIZE_T nSig = sig->nLength;
 		while (nSig--)
 			if ((sig->szMask[nSig] == 'x') && (((PBYTE)pData)[nSig] != ((PBYTE)sig->pSig)[nSig]))
@@ -203,5 +200,6 @@ PVOID ISigScan(
 		if (nSig == -1)
 			return pData;
 		((PBYTE)pData)++;
-	} return NULL;
+	} while (nData-- - sig->nLength);
+	return NULL;
 }

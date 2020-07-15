@@ -203,18 +203,25 @@ VOID fnCLS(
 	SetConsoleCursorPosition(hConsole, coordScreen);
 }
 
-BOOL EPrintF(PCWSTR pText, WORD wAttribute, ...) {
+STATUS EPrintFW(
+	_In_     PCWSTR pText,
+	_In_opt_ WORD   wAttribute,
+	_In_opt_ ...
+) {
 	va_list vaArg;
 	va_start(vaArg, wAttribute);
 
-	PVOID hBuf = AllocMemory(0x1000);
+	PVOID hBuf = VirtualAlloc(NULL, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	SIZE_T nBufLen;
+	if (!hBuf)
+		return -1;
+
 	StringCchVPrintfW((STRSAFE_LPWSTR)hBuf, 0x800, pText, vaArg);
 	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, 0x800, &nBufLen);
 	if (wAttribute)
 		SetConsoleTextAttribute(l_hCO, wAttribute);
 	WriteConsoleW(l_hCO, hBuf, nBufLen, &nBufLen, NULL);
-	FreeMemory(hBuf);
+	VirtualFree(hBuf, 0, MEM_RELEASE);
 
 	va_end(vaArg);
 	return nBufLen;

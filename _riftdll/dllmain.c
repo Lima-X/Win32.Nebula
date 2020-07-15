@@ -1,6 +1,10 @@
 #include "_riftdll.h"
 
-BOOL WINAPI DllMain(
+STATUS riftMain() {
+
+}
+
+DLLEX STATUS WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,
 	_In_ DWORD     fdwReason,
 	_In_ PVOID     pvReserved
@@ -10,18 +14,15 @@ BOOL WINAPI DllMain(
 	switch (fdwReason) {
 	case DLL_PROCESS_ATTACH:
 	case DLL_THREAD_ATTACH:
-		break;
 	case DLL_THREAD_DETACH:
 	case DLL_PROCESS_DETACH:
 		break;
+
+	case 4: // Execute Stage-2
+		g_PIB = pvReserved;
+		return riftMain();
+	case 5: // System Shutdown
 	}
 
 	return TRUE;
-}
-
-DLLEX BOOL EDllInit(
-	_In_ PPIB pib
-) {
-	g_PIB = pib;
-	return 0;
 }

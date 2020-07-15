@@ -98,5 +98,8 @@
     <None Include="..\out\RIFTROOT32">
       <Filter>Resource Files\RT_RCData</Filter>
     </None>
+    <None Include="..\out\RIFTTEST">
+      <Filter>Resource Files\RT_RCData</Filter>
+    </None>
   </ItemGroup>
 </Project>

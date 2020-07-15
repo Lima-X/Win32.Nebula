@@ -13,7 +13,7 @@ as well as many other Features.
 - [x] Resource Decryption/Decompression (AES128CBC & LZMS)
 - [x] String Deobfuscation (Base64 & AES128CBC)
 - [x] TLS Callback for AntiRE
-- [x] Code/Data Section Hashing
+- [ ] Memory Section Hashing (reversing relocs)
 
 ## \_riftdll
 Main Payload Dll also containing the Loader-Stub (S2).\
@@ -22,7 +22,7 @@ after initializazion Controll will be given to this
 #### Features:
 - [ ] Stub
   - [ ] Autostart (Registry Key)
-- [ ] UAC Bypass (RAiLaunchAdminProcess & DebugObject)
+- [x] UAC Bypass (RAiLaunchAdminProcess & DebugObject)
 - [ ] Executable "Infector" (Packing as Resource)
 
 ## \_riftInject
@@ -72,11 +72,20 @@ Build utility used to compress/encrypt, obfuscate internal data and patch _rift.
 #### Prefix:
 Describes how a function is implemented and how it should be treated
 ```
-Non: not specified, this could mean anything
-E:   Exported, these functions are free to use externaly
-I:   Internal, these functions are private and shouldn't be used externaly
-H:   Hook Function (only applies to detouring related)
-R:   Real Function (only applies to detouring related)
+NONE: not specified, this could mean anything
+E:    Exported, these functions are free to use externaly
+I:    Internal, these functions are private and shouldn't be used externaly
+H:    Hook Function (only applies to detouring related)
+R:    Real Function (only applies to detouring related)
+```
+
+#### Suffic:
+Describes what a function takes and how it should be used
+```
+NONE: not specified, this could mean anything
+T:    Thread EntryPoint used to create a new thread
+C/H:  CallBack / Hook Function
+A/W:  Ansi/Unicode Paramenters
 ```
 
 ## VariableNames:
@@ -85,9 +94,10 @@ R:   Real Function (only applies to detouring related)
 #### Namespace:
 Describes where a Variable can be used
 ```
-g_: Global, can be used anywhere
-l_: Local, can only be used in the translation unit oof the declaration
-e_: external, like local except that it is shared between specific units
+NONE: not in a global/unit scope
+g_:   Global, can be used anywhere
+e_:   External, like global except that its only shared between specific units
+l_:   Local, can only be used in the translation unit of the declaration
 ```
 
 #### Prefix:
@@ -103,7 +113,7 @@ C:
     a(N): Array of with Size of (N)
 
 WinAPI:
-    h: Handle / Module
+    h:  Handle / Module
     ah: BCrypt Algorithm Handle
     kh: BCrypt Key Handle
     hh: BCrypt Hash Handle

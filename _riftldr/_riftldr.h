@@ -30,6 +30,7 @@ BOOL ICheckVmPresent();
 
 /* ConsoleHost : Console.c */
 BOOL IOpenConsole();
+STATUS EPrintFW(_In_ PCWSTR pText, _In_opt_ WORD wAttribute, _In_opt_ ...);
 
 /* NT Functions : NT.c */
 BOOL EAdjustPrivilege(_In_ PCWSTR lpszPrivilege, _In_ BOOL bEnablePrivilege);

@@ -55,7 +55,7 @@ NTSTATUS ucmxCreateProcessFromParent(
 	return status;
 }
 
-DLLEX NTSTATUS ucmDebugObjectMethod(
+NTSTATUS ucmDebugObjectMethod(
 	_In_ LPWSTR lpszPayload
 ) {
 	//UINT retryCount = 0;

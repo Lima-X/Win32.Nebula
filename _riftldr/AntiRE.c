@@ -421,13 +421,13 @@ FORCEINLINE BOOL IHashBinaryCheck() {
 			PVOID pHash = 0;
 
 			// Find Hash Signature
-			for (UINT j = 0; j < nSection - MD5_SIZE; j++) {
+			for (UINT j = 0; j < nSection - sizeof(MD5); j++) {
 				bFlag = TRUE;
-				for (UINT8 n = 0; n < MD5_SIZE; n++) {
-					// if (((PBYTE)pSection)[j + n] != e_HashSig) {
+				for (UINT8 n = 0; n < sizeof(MD5); n++) {
+					if (((PBYTE)pSection)[j + n] != ((PBYTE)e_HashSig.pSig)[n]) {
 						bFlag = FALSE;
 						break;
-					// }
+					}
 				} if (bFlag) {
 					pHash = (PVOID)((PTR)pSection + j);
 					break;
@@ -437,22 +437,39 @@ FORCEINLINE BOOL IHashBinaryCheck() {
 			// Hash only Data surrounding the Hash
 			SIZE_T nRDataP1 = (PTR)pHash - (PTR)pSection;
 			BCryptHashData(hh, pSection, nRDataP1, NULL);
-			SIZE_T nRDataP2 = ((PTR)pSection + nSection) - ((PTR)pHash + MD5_SIZE);
-			BCryptHashData(hh, (PUCHAR)((PTR)pHash + MD5_SIZE), nRDataP2, NULL);
+			SIZE_T nRDataP2 = ((PTR)pSection + nSection) - ((PTR)pHash + sizeof(MD5));
+			BCryptHashData(hh, (PUCHAR)((PTR)pHash + sizeof(MD5)), nRDataP2, NULL);
 		} else if (bFlag >= 2)
 			continue;
 		else
 			BCryptHashData(hh, pSection, nSection, NULL);
 	}
 
-	PVOID pMd5 = AllocMemory(MD5_SIZE);
-	BCryptFinishHash(hh, pMd5, MD5_SIZE, NULL);
+	PVOID pMd5 = AllocMemory(sizeof(MD5));
+	BCryptFinishHash(hh, pMd5, sizeof(MD5), NULL);
 	BCryptDestroyHash(hh);
 	BCryptCloseAlgorithmProvider(ah, NULL);
 	BOOL bT = EMd5Compare(pMd5, e_HashSig);
 	FreeMemory(pMd5);
 	return bT;
 }
+
+/* { // Get Section info code
+	WORD wNOS = pFHdr->NumberOfSections;
+	PIMAGE_SECTION_HEADER pSHdr = (PIMAGE_SECTION_HEADER)((PTR)pOHdr + pFHdr->SizeOfOptionalHeader);
+	while (wNOS--) {
+		if (!lstrcmpA(pSHdr->Name, ".reloc\0"))
+			break;
+		pSHdr++;
+	}
+	pSHdr->PointerToRelocations;
+} */
+
+
+/* How it should work:
+   Get
+
+*/
 
 BOOL IHashMappedSection() {
 	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)GetModuleHandleW(NULL);
@@ -465,15 +482,26 @@ BOOL IHashMappedSection() {
 		return FALSE;
 
 	// Temporery
-	INT nRelocDif = pDosHdr - pOHdr->ImageBase;
+	INT nRelocDif = (PTR)pDosHdr - pOHdr->ImageBase;
 
+	// DOESN'T WORK BECAUSE FUCK YOU ~PeLdr
+	// Get Relocationtable Dynamically
+	PIMAGE_DATA_DIRECTORY pDdRt = (PIMAGE_SECTION_HEADER)((PTR)pOHdr + 136);
+	PIMAGE_BASE_RELOCATION pBr = pDdRt->VirtualAddress;
+	typedef struct _IMAGE_RELOCATION_ENTRY {
+		WORD Type : 4;
+		WORD Offset : 16;
+	} IMAGE_RELOCATION_ENTRY, * PIMAGE_RELOCATION_ENTRY;
+	PIMAGE_RELOCATION_ENTRY pRe = pBr + 1;
+
+	return 0;
 }
 
 /* Thread Local Storage (TLS) Callback :
    This will start the Protection Services
    and partially initialize _riftldr       */
 STATIC BOOLEAN l_bTlsFlag = TRUE;
-EXTERN_C CONST BYTE e_SKey[24];
+EXTERN_C CONST BYTE e_IKey[24];
 VOID NTAPI ITlsCb(
 	_In_ PVOID DllHandle,
 	_In_ DWORD dwReason,
@@ -489,8 +517,10 @@ VOID NTAPI ITlsCb(
 			g_PIB->hPH = hPH;
 			HMODULE hP = GetModuleHandleW(NULL);
 			GetModuleFileNameW(hP, g_PIB->sMod.szMFN, MAX_PATH);
-			ECryptBegin(e_SKey, &g_PIB->sCIB.SK);
+			ECryptBegin(e_IKey, &g_PIB->sCIB.SK);
 		}
+
+		// IHashMappedSection();
 
 		l_bTlsFlag = FALSE;
 		BOOL bT = IHashBinaryCheck();

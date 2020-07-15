@@ -64,18 +64,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#include ""winres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "\r\n"
     "\0"
@@ -88,6 +88,7 @@ END
 //
 // RT_RCDATA
 //
+IDR_RIFTTEST            RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTTEST"
 
 IDR_RIFTDLL             RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTDLL"
 
@@ -98,6 +99,7 @@ IDR_RIFTINJECT64        RT_RCDATA               "F:\\Visual Studio Data\\source\
 IDR_RIFTROOT32          RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTROOT32"
 
 IDR_RIFTROOT64          RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTROOT64"
+
 
 
 /////////////////////////////////////////////////////////////////////////////

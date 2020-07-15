@@ -26,6 +26,7 @@ VOID IConvertKeyToBlob(
 	_In_  PUUID pKey,
 	_Out_ PVOID pBlob
 ) {
+	// Actually implement Bcrypt Import and Export instead of doing it like this....
 	CopyMemory(pBlob, &((BCRYPT_KEY_DATA_BLOB_HEADER){ BCRYPT_KEY_DATA_BLOB_MAGIC, BCRYPT_KEY_DATA_BLOB_VERSION1, AES_KEY_SIZE }),
 		sizeof(BCRYPT_KEY_DATA_BLOB_HEADER));
 	CopyMemory((PTR)pBlob + sizeof(BCRYPT_KEY_DATA_BLOB_HEADER), pKey, AES_KEY_SIZE);
@@ -36,9 +37,14 @@ VOID IWrapKey(
 	_Out_ PVOID pBlob
 ) {
 
-
 }
 
+STATUS IValidateKey( // Checks if a Key can decrypt sampledata without opening a plaintext attack
+	_In_ PCIB  cib,  // Key to be evaluated
+	_In_ PVOID pData // Sampledata to Decrypt (has to be 512-Bytes in total)
+) {
+
+}
 
 /* Internal Decryption Subroutine */
 PVOID IAesDecrypt(

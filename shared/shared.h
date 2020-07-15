@@ -7,8 +7,14 @@
 #define FASTCALL   __fastcall
 #define DEPRECATED __declspec(deprecated)
 #define EXTERN       EXTERN_C
-typedef UUID*        PUUID;
-typedef UUID         MD5, * PMD5;
+typedef GUID*        PUUID;
+typedef GUID         MD5, * PMD5;
+
+/* Function Status return Value:
+   x=0 if Successful
+   x<0 if Failure (Errorcode)
+   x>0 reserved for extra Info (also Success) */
+typedef signed long STATUS;
 
 // Raw Pointer Type
 #ifdef _WIN64
@@ -47,9 +53,9 @@ INLINE INT CompareMemory(
 #define CON_ERROR   ((FOREGROUND_RED) | FOREGROUND_INTENSITY)                    // 0b1100
 
 /* BCrypt */
-#define AES_KEY_SIZE  0x10                                                 // 128-Bit
-#define AES_BLOB_SIZE (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
-#define MD5_SIZE      0x10                                                 // 128-Bit
+#define AES_KEY_SIZE    0x10                                                 // 128-Bit
+#define AES_BLOB_SIZE   (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
+#define AES_WARPED_SIZE (8 + AES_KEY_SIZE)                                   // 24-Bytes (Hardcoded)
 
 // Crypto Information Block : Data Structer for Crypto and Hashing
 typedef struct _CIB {
@@ -74,10 +80,10 @@ BOOL EMd5HashData(_In_ PVOID pBuffer, _In_ SIZE_T nBuffer, _Out_ PMD5 pHash);
 
 // Encrypted File/Resource Header
 typedef struct _AESIB {
-	BYTE Key[8 + AES_KEY_SIZE]; // Wrapped Aes128 Key (ew, hardcoded size that is not specified by BCrypt's docs (also fuck BCrypt's docs))
-	BYTE Iv[16];                // Initialization-Vector
-	MD5  Md5;                   // Md5-Checksum of original File
-	BYTE Data[];                // Start of encrypted Data
+	BYTE Key[AES_WARPED_SIZE]; // Wrapped Aes128 Key (ew, hardcoded size that is not specified by BCrypt's docs (also fuck BCrypt's docs))
+	BYTE Iv[16];               // Initialization-Vector
+	MD5  Md5;                  // Md5-Checksum of original File
+	BYTE Data[];               // Start of encrypted Data
 } AESIB, * PAESIB;
 
 /* FileSystem */
@@ -92,7 +98,7 @@ PCSTR EBase64EncodeA(_In_ PVOID pData, _In_ SIZE_T nData, _Out_ PSIZE_T nOut);
 PVOID EBase64DecodeA(_In_ PCSTR pString, _In_ SIZE_T nString, _Out_ PSIZE_T nOut);
 
 #define UUID_STRLEN ((16 * 2) + 5)
-PCSTR EUuidEncodeA(_In_ PUUID pId);
+VOID EUuidEncodeA(_In_ PUUID pId, _Out_ PSTR pString);
 VOID EUuidDecodeA(_In_  PCSTR pString, _Out_ PUUID pId);
 
 typedef struct _SIG { // Signature Block

@@ -7,27 +7,18 @@
 *.zip
 RIFTSKEY
 RIFTWKEY
+RIFTTEST
+RIFTKILL
 RIFTDLL
 RIFTINJECT32
 RIFTINJECT64
 RIFTROOT32
 RIFTROOT64
-
 # _rift specific directories
 .in/
+# 3P Libraries
 /dtBlackBone
-
-# msDetours
-msDetours/bin.X86/
-msDetours/lib.X86/
-msDetours/samples/
-msDetours/src
-msDetours/.gitignore
-msDetours/CREDITS.TXT
-msDetours/LICENSE.md
-msDetours/Makefile
-msDetours/README.md
-msDetours/system.mak
+/msDetours
 
 # User-specific files
 *.rsuser

@@ -9,4 +9,5 @@ if exist _NDEBUG (
 )
 
 _riftTool.exe /gk "..\RIFTWKEY"
+_riftTool.exe /gt "..\RIFTWKEY" "..\RIFTTEST"
 pause
