@@ -69,21 +69,22 @@ PVOID IAesDecrypt(
 }
 
 /* String Decryption */
-PCWSTR EDecryptString(
+// TODO: Use Ansistrings internaly then convert to Unicode
+DEPRECATED PCWSTR EDecryptString(
 	_In_  PCIB    cib,
 	_In_  PCSTR   pString,
 	_Out_ PSIZE_T nResult
 ) {
 	StringCchLengthA(pString, STRSAFE_MAX_CCH, nResult);
-	PVOID pData = EBase64DecodeA(pString, *nResult, nResult);
+	// PVOID pData = EBase64DecodeA(pString, *nResult, nResult);
 
 	PVOID pIv = AllocMemory(16);
 	ZeroMemory(pIv, 16);
-	PCWSTR sz = IAesDecrypt(cib->uHandle.kh, pData, *nResult, pIv, nResult);
+	// PCWSTR sz = IAesDecrypt(cib->uHandle.kh, pData, *nResult, pIv, nResult);
 	FreeMemory(pIv);
-	FreeMemory(pData);
+	// FreeMemory(pData);
 
-	return sz;
+	// return sz;
 }
 
 /* Resource Unpacking */

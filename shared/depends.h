@@ -12,6 +12,7 @@
 
 // Doing it Explicitly instead for Obfuscation
 // #pragma comment(lib, "ntdll.lib")
+#pragma comment(lib, "rpcrt4.lib")
 #pragma comment(lib, "bcrypt.lib")
 #include <bcrypt.h>
 #pragma comment(lib, "cabinet.lib")

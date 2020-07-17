@@ -38,10 +38,10 @@ INLINE INT CompareMemory(
 	_In_ PVOID  pMem2,
 	_In_ SIZE_T nSize
 ) {
-	PBYTE bMem1 = (PBYTE)pMem1, bMem2 = (PBYTE)pMem2;
+	PBYTE pMem1C = (PBYTE)pMem1, pMem2C = (PBYTE)pMem2;
 	while (nSize--) {
-		if (*(bMem1++) != *(bMem2++))
-			return *(--bMem1) < *(--bMem2) ? -1 : 1;
+		if (*pMem1C++ != *pMem2C++)
+			return *--pMem1C < *--pMem2C ? -1 : 1;
 	} return 0;
 }
 
@@ -94,10 +94,10 @@ typedef struct _AESIB {
 // also Hex and Base64 don't need Unicode
 // and it would be stupid to use Unicode outside of the programm anyways,
 // as it would just bloat the data
-PCSTR EBase64EncodeA(_In_ PVOID pData, _In_ SIZE_T nData, _Out_ PSIZE_T nOut);
-PVOID EBase64DecodeA(_In_ PCSTR pString, _In_ SIZE_T nString, _Out_ PSIZE_T nOut);
+STATUS EBase64EncodeA(_In_ PVOID pData, _In_ SIZE_T nData, _Out_opt_ PSTR psz, _In_ PCSTR pTable, _In_ BOOLEAN bPad);
+STATUS EBase64DecodeA(_In_ PCSTR  psz, _In_ SIZE_T nsz, _Out_opt_ PVOID pData, _In_ PUCHAR pTable);
 
-#define UUID_STRLEN ((16 * 2) + 5)
+#define UUID_STRLEN (16 * 2 + 4)
 VOID EUuidEncodeA(_In_ PUUID pId, _Out_ PSTR pString);
 VOID EUuidDecodeA(_In_  PCSTR pString, _Out_ PUUID pId);
 
@@ -106,7 +106,7 @@ typedef struct _SIG { // Signature Block
 	PCSTR  szMask;     // Mask (to ignore certain Bytes)
 	SIZE_T nLength;    // Length of Signature to search
 } SIG, * PSIG;
-PVOID ISigScan(_In_ PVOID pData, _In_ SIZE_T nData, _In_ PSIG sig);
+PVOID ESigScan(_In_ PVOID pData, _In_ SIZE_T nData, _In_ PSIG sig);
 
 /* Utilities and Other : Utils.c */
 PDWORD EGetProcessIdbyName(_In_ PCWSTR pProcessName, _Out_ PSIZE_T nProcesses);

@@ -1,6 +1,6 @@
 #include "_riftldr.h"
 
-typedef STATUS(WINAPI* DllMain)(
+typedef STATUS(WINAPI* DllEntry)(
 	_In_ HINSTANCE hinstDLL,
 	_In_ DWORD fdwReason,
 	_In_ PVOID pvReserved
@@ -23,6 +23,8 @@ STATUS WINAPI wWinMain(
 		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, &g_PIB->sArg.n); // bugy (sometimes causes an excepion)
 	}
 
+	// WCHAR UUid[UUID_STRLEN + 1];
+	// EUidToStringW(&g_PIB->sID.HW, UUid, UUID_STRLEN);
 
 	if (g_PIB->sArg.n > 0) {
 		if (!lstrcmpW(g_PIB->sArg.v[0], L"/i")) { // Start Installation
@@ -77,15 +79,15 @@ STATUS WINAPI wWinMain(
 	if (!pDll)
 		return 0x132d;
 
-#ifndef _DEBUG
+#ifdef _NDEBUG
 	// Implement Manual Mapping using BlackBone
 #else
 	HMODULE dhDll = LoadLibraryExW(L"_riftdll.dll", NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
 	if (!dhDll)
 		return 0x2ab5;
 
-	DllMain rift = (DllMain)GetProcAddress(dhDll, "DllMain");
-	STATUS bTest = rift(NULL, 4, g_PIB);
+	DllEntry DllMain = (DllEntry)GetProcAddress(dhDll, "DllMain");
+	STATUS bTest = DllMain(NULL, 4, g_PIB);
 
 	FreeLibrary(dhDll);
 #endif

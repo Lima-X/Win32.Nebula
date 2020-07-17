@@ -368,7 +368,7 @@ EXTERN_C CONST SIG e_HashSig;
 EXTERN_C CONST CHAR e_pszSections[ANYSIZE_ARRAY][8];
 EXTERN_C CONST SIZE_T e_nSections;
 // Will Redo in Memory
-FORCEINLINE BOOL IHashBinaryCheck() {
+DEPRECATED FORCEINLINE BOOL IHashBinaryCheck() {
 	// Read Binary File
 	SIZE_T nFileSize;
 	PVOID pFile = AllocReadFileW(g_PIB->sMod.szMFN, &nFileSize);
@@ -520,14 +520,10 @@ VOID NTAPI ITlsCb(
 			ECryptBegin(e_IKey, &g_PIB->sCIB.SK);
 		}
 
-		// IHashMappedSection();
+		// Call Anit RE Methods here...
+		// (Anti Debugger, Section Hashing, Function Hooking)
 
 		l_bTlsFlag = FALSE;
-		BOOL bT = IHashBinaryCheck();
-		if (bT)
-			MessageBoxW(0, L"TLS InCorrect", 0, 0);
-		else
-			MessageBoxW(0, L"TLS Correct", 0, 0);
 	}
 }
 
