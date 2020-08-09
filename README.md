@@ -57,7 +57,7 @@ Build utility used to compress/encrypt, obfuscate internal data and patch _rift.
 - Encrypt Dependencies using _riftTool with /ec
 - Build _rift 
 - Patch _rift using _riftTool with /pa\
-  (this will finalize the Application by patching in the proper MD5's)
+  (this will finalize the Application by patching in the proper md5's)
 
 ## Embedding encrypted Strings:
 - Generate Key using _riftTool with /gk
@@ -104,11 +104,11 @@ l_:   Local, can only be used in the translation unit of the declaration
 Describes the Datatype of the Variable in a short from
 ```
 C:
-    b:  BOOL / BYTE
+    b:  BOOL / byte
     w:  WORD
     dw: DWORD
-    p:  Pointer to any Data (PVOID)
-    n:  Size of Data (SIZE_T)
+    p:  Pointer to any Data (void*)
+    n:  Size of Data (size_t)
     sz: ZeroTerminated String (WCHAR/(CHAR) Array)
     a(N): Array of with Size of (N)
 

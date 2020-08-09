@@ -38,7 +38,7 @@
     <ClCompile Include="tyranid.c">
       <Filter>Source Files\UACExploit</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\data.c">
+    <ClCompile Include="..\shared\data.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>

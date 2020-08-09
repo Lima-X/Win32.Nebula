@@ -4,7 +4,7 @@
 // this will be used in order to prevent the loader from accidentally
 // bricking the system in the Incubation period
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK WndProc(HWND hWnd, uint uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_CREATE:
 		break;
@@ -18,15 +18,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 }
 
 DWORD WINAPI thWindowThread(
-	_In_ LPVOID lParam
+	_In_ Lvoid* lParam
 ) {
 	WNDCLASSEXW wc;
-	ZeroMemory((PBYTE)&wc, sizeof(wc));
+	ZeroMemory((Pbyte)&wc, sizeof(wc));
 	wc.cbSize = sizeof(wc);
 	wc.lpfnWndProc = WndProc;
 
-	UINT8 nLength = ERandomIntDistribution(NULL, 8, 255);
-	PCWSTR pName = AllocMemory(nLength);
+	uchar nLength = ERandomIntDistribution(NULL, 8, 255);
+	PCWSTR pName = malloc(nLength);
 
 //	wc.lpszClassName = ;
 
@@ -46,6 +46,6 @@ DWORD WINAPI thWindowThread(
 		}
 	}
 
-	FreeMemory(wc.lpszClassName);
+	free(wc.lpszClassName);
 	return TRUE;
 }

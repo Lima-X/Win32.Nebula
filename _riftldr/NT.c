@@ -50,14 +50,14 @@ typedef struct _OBJECT_ATTRIBUTES {
 	HANDLE          RootDirectory;
 	PUNICODE_STRING ObjectName;
 	ULONG           Attributes;
-	PVOID           SecurityDescriptor;
-	PVOID           SecurityQualityOfService;
+	void*           SecurityDescriptor;
+	void*           SecurityQualityOfService;
 } OBJECT_ATTRIBUTES, * POBJECT_ATTRIBUTES;
 
 VOID SelfDelete() {
 	typedef NTSTATUS(NTAPI* NtDeleteFile)(IN POBJECT_ATTRIBUTES ObjectAttributes);
 	NtDeleteFile ntdf = (NtDeleteFile)(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtDeleteFile"));
-	typedef BOOLEAN(NTAPI* RtlDosPathNameToNtPathName_U)(IN PCWSTR DosName, OUT PUNICODE_STRING NtName, OUT PCWSTR* PartName, OUT PVOID RelativeName);
+	typedef BOOLEAN(NTAPI* RtlDosPathNameToNtPathName_U)(IN PCWSTR DosName, OUT PUNICODE_STRING NtName, OUT PCWSTR* PartName, OUT void* RelativeName);
 	RtlDosPathNameToNtPathName_U rtlius = (RtlDosPathNameToNtPathName_U)GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlDosPathNameToNtPathName_U");
 
 	UNICODE_STRING us;
@@ -72,11 +72,11 @@ VOID SelfDelete2() {
 	typedef NTSTATUS(NTAPI* NtDeleteFile)(POBJECT_ATTRIBUTES ObjectAttributes);
 	NtDeleteFile ntdf = (NtDeleteFile)(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtDeleteFile"));
 
-	PWSTR pFile = AllocMemory((MAX_PATH + 4) * sizeof(WCHAR));
+	PWSTR pFile = malloc((MAX_PATH + 4) * sizeof(WCHAR));
 	CopyMemory(pFile, L"\\??\\", 5 * sizeof(WCHAR));
 	StringCchCat(pFile, MAX_PATH + 4, g_PIB->sMod.szMFN);
 
-	SIZE_T nLen;
+	size_t nLen;
 	StringCchLengthW(pFile, MAX_PATH + 4, &nLen);
 	UNICODE_STRING us;
 	us.Length = (USHORT)nLen * sizeof(WCHAR);

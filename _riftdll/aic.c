@@ -24,7 +24,7 @@ extern "C" {
 		_Ret_maybenull_ _Post_writable_byte_size_(size)
 		void* __RPC_USER MIDL_user_allocate(_In_ size_t size)
 	{
-		return((void __RPC_FAR*) AllocMemory(size, 0));
+		return((void __RPC_FAR*) malloc(size, 0));
 	}
 
 #pragma warning(push)
@@ -32,7 +32,7 @@ extern "C" {
 #pragma warning(disable: 6001)
 	void __RPC_USER MIDL_user_free(_Pre_maybenull_ _Post_invalid_ void* p)
 	{
-		FreeMemory(p);
+		free(p);
 	}
 #pragma warning(pop)
 
@@ -77,7 +77,7 @@ RPC_STATUS AicpCreateBindingHandle(
 		RpcStringFreeW(&StringBinding);
 
 		if (status == RPC_S_OK) {
-			LocalSystemSid = LocalAlloc(LPTR, cbSid);
+			LocalSystemSid = LocalAlloc(Lptr, cbSid);
 			if (LocalSystemSid) {
 				if (CreateWellKnownSid(WinLocalSystemSid, NULL, LocalSystemSid, &cbSid)) {
 					sqos.Version = 3;
@@ -216,7 +216,7 @@ BOOLEAN AicLaunchAdminProcess(
 				CurrentDirectory,
 				WindowStation,
 				&appStartup,
-				(ULONG_PTR)hWnd,
+				(ULONG_ptr)hWnd,
 				Timeout,
 				&procInfo,
 				&elevationType);

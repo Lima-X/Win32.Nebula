@@ -17,10 +17,10 @@
     <ClCompile Include="Utils.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\shared.c">
+    <ClCompile Include="..\shared\data.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\data.c">
+    <ClCompile Include="..\shared\shared.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

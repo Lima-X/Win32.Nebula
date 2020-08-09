@@ -1,5 +1,8 @@
 #include "_riftldr.h"
 
+
+// this has to be checked and fixed, its a terrible mess atm...
+
 static BOOL ICheckVMware() {
 	__try {
 		__asm {
@@ -55,13 +58,18 @@ static BOOL ICheckVirtualPC() {
 
 			pop    ebx
 		}
-	} __except (ICVPCExceptionFilter(GetExceptionInformation())) {
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+		EXCEPTION_POINTERS* ep = GetExceptionInformation();
+		PCONTEXT pCt = ep->ContextRecord;
+		pCt->Ebx = (DWORD)-1; // Not running VPC
+		pCt->Eip += 4; // skip past the "call VPC" opcodes
 		return FALSE;
 	}
 
 	return TRUE;
 }
 
+// wtf
 BOOL ICheckVmPresent() {
 	BOOL bT = ICheckVMware();
 	if (bT)	return TRUE;

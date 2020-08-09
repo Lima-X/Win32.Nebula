@@ -66,6 +66,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <CallingConvention>FastCall</CallingConvention>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -87,6 +88,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <Optimization>MaxSpeed</Optimization>
+      <CallingConvention>FastCall</CallingConvention>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -104,16 +106,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BlackBone.cpp" />
-    <ClCompile Include="..\shared\shared.c" />
-    <ClCompile Include="Console.c" />
-    <ClCompile Include="..\shared\data.c" />
+    <ClCompile Include="..\shared\shared.cpp" />
+    <ClCompile Include="Console.cpp" />
+    <ClCompile Include="..\shared\data.cpp" />
     <ClCompile Include="NT.c" />
-    <ClCompile Include="AntiRE.c" />
-    <ClCompile Include="main.c" />
+    <ClCompile Include="AntiRE.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Process.c" />
-    <ClCompile Include="Random.c" />
-    <ClCompile Include="Crypt.c" />
-    <ClCompile Include="Utils.c" />
+    <ClCompile Include="Random.cpp" />
+    <ClCompile Include="Crypt.cpp" />
+    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="VMDetect.c" />
     <ClCompile Include="Window.c" />
   </ItemGroup>

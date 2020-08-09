@@ -32,44 +32,44 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="VMDetect.c">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="Console.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="NT.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Random.c">
-      <Filter>Source Files\Algorithms</Filter>
-    </ClCompile>
     <ClCompile Include="Process.c">
       <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils.c">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Window.c">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Crypt.c">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="AntiRE.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BlackBone.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\shared.c">
+    <ClCompile Include="..\shared\shared.cpp">
       <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\data.c">
+    <ClCompile Include="Random.cpp">
+      <Filter>Source Files\Algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AntiRE.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\data.cpp">
       <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Crypt.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Console.cpp">
+      <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

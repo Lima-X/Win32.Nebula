@@ -1,7 +1,7 @@
 #include "_riftldr.h"
 
 /* Anti Debugger / Debugger Detection *//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-STATIC HMODULE hNtDll;
+static HMODULE hNtDll;
 
 // Rewrite: Do it manually, by reading the flag directly from the PEB
 static BOOL IBasicDebuggerCheck() {
@@ -24,9 +24,9 @@ static BOOL IBasicDebuggerCheck() {
 // inverse of EPROCESS->NoDebugInherit so (!TRUE == FALSE)
 static BOOL ICheckProcessDebugFlags() {
 	// Much easier in ASM but C/C++ looks so much better
-	typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, UINT, PVOID, ULONG, PULONG);
+	typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint, void*, ULONG, PULONG);
 
-	// Get NtQueryInformationProcess
+	// Instance NtQueryInformationProcess
 	pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
 
 	DWORD NoDebugInherit;
@@ -51,9 +51,9 @@ static BOOL ICheckProcessDebugFlags() {
 // or the process isn't being debugged
 static BOOL IDebugObjectCheck() {
 	// Much easier in ASM but C/C++ looks so much better
-	typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, UINT, PVOID, ULONG, PULONG);
+	typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint, void*, ULONG, PULONG);
 
-	// Get NtQueryInformationProcess
+	// Instance NtQueryInformationProcess
 	pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
 
 	HANDLE hDebugObject;
@@ -79,9 +79,9 @@ static BOOL IDebugObjectCheck() {
 BOOL EHideThread(
 	_In_opt_ HANDLE hThread
 ) {
-	typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, UINT, PVOID, ULONG);
+	typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, uint, void*, ULONG);
 
-	// Get NtSetInformationThread
+	// Instance NtSetInformationThread
 	pNtSetInformationThread fnNtSIT = (pNtSetInformationThread)GetProcAddress(hNtDll, "NtSetInformationThread");
 
 	// Shouldn't fail
@@ -152,12 +152,12 @@ static BOOL IInt2DCheck() {
 //	DWORD dwCsrss = CsrGetProcessId();
 //	PDWORD pCsrss = &dwCsrss;
 //
-//	SIZE_T nProcesses = 1;
+//	size_t nProcesses = 1;
 //	if (!dwCsrss)
 //		pCsrss = EGetProcessIdbyName(L"csrss.exe", &nProcesses);
 //
 //	BOOL bT = FALSE;
-//	for (UINT i = 0; i < nProcesses; i++) {
+//	for (uint i = 0; i < nProcesses; i++) {
 //		HANDLE hCsrss = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pCsrss[i]);
 //		if (hCsrss) {
 //			bT = TRUE;
@@ -167,7 +167,7 @@ static BOOL IInt2DCheck() {
 //	}
 //
 //	if (!dwCsrss)
-//		FreeMemory(pCsrss);
+//		free(pCsrss);
 //
 //	return bT;
 //}
@@ -179,7 +179,7 @@ static BOOL IInt2DCheck() {
 // return false
 static BOOL ICheckCloseHandle() {
 	__try {
-		CloseHandle(0xffffffff);
+		CloseHandle((HANDLE)0xffffffff);
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 		return TRUE;
 	}
@@ -208,7 +208,7 @@ VOID ISehUnhandledException() {
 	// reach this point of execution
 }
 
-static DWORD WINAPI thAntiDebug(_In_ PVOID pParam);
+static DWORD WINAPI thAntiDebug(_In_ void* pParam);
 BOOL IAntiDebug() {
 	hNtDll = GetModuleHandleW(L"ntdll.dll");
 	EHideThread(0);
@@ -217,7 +217,7 @@ BOOL IAntiDebug() {
 }
 
 static DWORD WINAPI thAntiDebug(
-	_In_ PVOID pParam
+	_In_ void* pParam
 ) {
 	UNREFERENCED_PARAMETER(pParam);
 	EHideThread(0);
@@ -254,29 +254,29 @@ static PCWSTR l_szAllowedModules[] = {
 	L"msvcrt.dll"
 };
 DWORD WINAPI thCheckModules(
-	_In_ PVOID pParam
+	_In_ void* pParam
 ) {
 	UNREFERENCED_PARAMETER(pParam);
 	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, GetCurrentProcessId());
 	if (hProcess == INVALID_HANDLE_VALUE)
 		return FALSE;
 
-	// Get a list of all the modules in this process.
+	// Instance a list of all the modules in this process.
 	DWORD nResult;
 	BOOL bs = K32EnumProcessModules(hProcess, NULL, 0, &nResult);
-	HMODULE* hMods = (HMODULE*)AllocMemory(nResult);
+	HMODULE* hMods = (HMODULE*)malloc(nResult);
 	bs = K32EnumProcessModules(hProcess, hMods, sizeof(hMods), &nResult);
 	if (bs)
-		for (UINT8 i = 0; i < nResult / sizeof(HMODULE); i++) {
+		for (uchar i = 0; i < nResult / sizeof(HMODULE); i++) {
 			WCHAR szModuleName[MAX_PATH];
 
-			// Get the full path to the module's file.
+			// Instance the full path to the module's file.
 			if (K32GetModuleFileNameExW(hProcess, hMods[i], szModuleName, MAX_PATH)) {
 
 			}
 		}
 
-	FreeMemory(hMods);
+	free(hMods);
 	CloseHandle(hProcess);
 
 	return 0;
@@ -289,55 +289,49 @@ static PCWSTR l_AllowedLibraries[] = {
 };
 static HMODULE(WINAPI* RLoadLibraryW)(_In_ LPCWSTR lpLibFileName) = LoadLibraryW;
 HMODULE WINAPI HLoadLibraryW(_In_ LPCWSTR lpLibFileName) {
-	for (UINT8 i = 0; i < sizeof(l_AllowedLibraries) / sizeof(PCWSTR); i++)
+	for (uchar i = 0; i < sizeof(l_AllowedLibraries) / sizeof(PCWSTR); i++)
 		if (!StrStrIW(lpLibFileName, l_AllowedLibraries[i]))
 			return RLoadLibraryW(lpLibFileName);
 	return NULL;
 }
 static HMODULE(WINAPI* RLoadLibraryExW)(_In_ LPCWSTR lpLibFileName, _Reserved_ HANDLE hFile, _In_ DWORD dwFlags) = LoadLibraryExW;
 HMODULE WINAPI HLoadLibraryExW(_In_ LPCWSTR lpLibFileName, _Reserved_ HANDLE hFile, _In_ DWORD dwFlags) {
-	for (UINT8 i = 0; i < sizeof(l_AllowedLibraries) / sizeof(PCWSTR); i++)
+	for (uchar i = 0; i < sizeof(l_AllowedLibraries) / sizeof(PCWSTR); i++)
 		if (!StrStrIW(lpLibFileName, l_AllowedLibraries[i]))
 			return RLoadLibraryExW(lpLibFileName, hFile, dwFlags);
 	return NULL;
 }
 BOOL IHookLoadLibrary() {
-	if (DetourTransactionBegin())
-		goto EXIT;
-
 	// Update all Threads
 	HANDLE hTSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 	if (hTSnap == INVALID_HANDLE_VALUE)
-		goto EXIT;
+		return -1;
 	THREADENTRY32 te; te.dwSize = sizeof(te);
 	HANDLE hThread[0x20]; // Allocate Dynamically in the future
-	UINT8 nThread = 0;
+	uchar nThread = 0;
 	if (Thread32First(hTSnap, &te)) {
+		if (DetourTransactionBegin())
+			return -2;
 		do {
 			hThread[nThread] = OpenThread(THREAD_ALL_ACCESS, FALSE, te.th32ThreadID);
 			DetourUpdateThread(hThread[nThread]);
 			nThread++;
 		} while (Thread32Next(hTSnap, &te));
-	}
-	else {
+	} else {
 		CloseHandle(hTSnap);
-		goto EXIT;
+		return -3;
 	}
 
 	// Detour LoadLibrary Functions
-	DetourAttach(&LoadLibraryW, HLoadLibraryW);
-	DetourAttach(&LoadLibraryExW, HLoadLibraryExW);
+	DetourAttach((void**)&LoadLibraryW, HLoadLibraryW);
+	DetourAttach((void**)&LoadLibraryExW, HLoadLibraryExW);
 	DetourTransactionCommit();
 
 	// CleanUp
-	for (UINT8 i = 0; i < nThread; i++)
+	for (uchar i = 0; i < nThread; i++)
 		CloseHandle(hThread[i]);
 	CloseHandle(hTSnap);
 	return TRUE;
-
-EXIT:
-	DetourTransactionAbort();
-	return FALSE;
 }
 
 /* Anti Reverse Engineering *////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -347,9 +341,9 @@ BOOL fnAntiRE() {
 }
 
 DEPRECATED BOOL fnErasePeHeader() {
-	// Get Nt Headers
+	// Instance Nt Headers
 	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)g_PIB->sMod.hMH;
-	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((PTR)pDosHdr + pDosHdr->e_lfanew);
+	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((ptr)pDosHdr + pDosHdr->e_lfanew);
 	if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
 		return FALSE;
 	PIMAGE_OPTIONAL_HEADER pOHdr = &pNtHdr->OptionalHeader;
@@ -357,27 +351,27 @@ DEPRECATED BOOL fnErasePeHeader() {
 		return FALSE;
 
 	DWORD dwProtect;
-	SIZE_T nOHdr = pOHdr->SizeOfHeaders;
+	size_t nOHdr = pOHdr->SizeOfHeaders;
 	VirtualProtect(g_PIB->sMod.hMH, nOHdr, PAGE_EXECUTE_READWRITE, &dwProtect);
 	SecureZeroMemory(g_PIB->sMod.hMH, nOHdr);
 	VirtualProtect(g_PIB->sMod.hMH, nOHdr, dwProtect, &dwProtect);
 	return TRUE;
 }
 
-EXTERN_C CONST SIG e_HashSig;
-EXTERN_C CONST CHAR e_pszSections[ANYSIZE_ARRAY][8];
-EXTERN_C CONST SIZE_T e_nSections;
+EXTERN_C const SIG e_HashSig;
+EXTERN_C const CHAR e_pszSections[ANYSIZE_ARRAY][8];
+EXTERN_C const size_t e_nSections;
 // Will Redo in Memory
 DEPRECATED FORCEINLINE BOOL IHashBinaryCheck() {
 	// Read Binary File
-	SIZE_T nFileSize;
-	PVOID pFile = AllocReadFileW(g_PIB->sMod.szMFN, &nFileSize);
+	size_t nFileSize;
+	void* pFile = AllocReadFileW(g_PIB->sMod.szMFN, &nFileSize);
 	if (!pFile)
 		return 0;
 
-	// Get NT Headers
+	// Instance NT Headers
 	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)pFile;
-	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((PTR)pDosHdr + pDosHdr->e_lfanew);
+	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((ptr)pDosHdr + pDosHdr->e_lfanew);
 	if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
 		return FALSE;
 	PIMAGE_FILE_HEADER pFHdr = &pNtHdr->FileHeader;
@@ -391,17 +385,17 @@ DEPRECATED FORCEINLINE BOOL IHashBinaryCheck() {
 	BCRYPT_HASH_HANDLE hh;
 	BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
 
-	for (UINT8 i = 0; i < pFHdr->NumberOfSections; i++) {
-		// Get Section and Check if Type is accepted
-		PIMAGE_SECTION_HEADER pSHdr = ((PIMAGE_SECTION_HEADER)((PTR)pOHdr + (PTR)pFHdr->SizeOfOptionalHeader) + i);
+	for (uchar i = 0; i < pFHdr->NumberOfSections; i++) {
+		// Instance Section and Check if Type is accepted
+		PIMAGE_SECTION_HEADER pSHdr = ((PIMAGE_SECTION_HEADER)((ptr)pOHdr + (ptr)pFHdr->SizeOfOptionalHeader) + i);
 		if (!((pSHdr->Characteristics & IMAGE_SCN_CNT_CODE) || (pSHdr->Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA)))
 			continue;
 
 		// Check for Special Section
 		BOOLEAN bFlag;
-		for(UINT8 j = 0; j < e_nSections; j++) {
+		for(uchar j = 0; j < e_nSections; j++) {
 			bFlag = TRUE;
-			for (UINT8 n = 0; n < IMAGE_SIZEOF_SHORT_NAME; n++) {
+			for (uchar n = 0; n < IMAGE_SIZEOF_SHORT_NAME; n++) {
 				if (pSHdr->Name[n] != e_pszSections[j][n]) {
 					bFlag = FALSE;
 					break;
@@ -413,50 +407,50 @@ DEPRECATED FORCEINLINE BOOL IHashBinaryCheck() {
 		}
 
 		// Set Section Pointers
-		PVOID pSection = (PVOID)((PTR)pDosHdr + (PTR)pSHdr->PointerToRawData);
-		SIZE_T nSection = pSHdr->SizeOfRawData;
+		void* pSection = (void*)((ptr)pDosHdr + (ptr)pSHdr->PointerToRawData);
+		size_t nSection = pSHdr->SizeOfRawData;
 
 		// Select what to to
 		if (bFlag == 1) {
-			PVOID pHash = 0;
+			void* pHash = 0;
 
 			// Find Hash Signature
-			for (UINT j = 0; j < nSection - sizeof(MD5); j++) {
+			for (uint j = 0; j < nSection - sizeof(md5); j++) {
 				bFlag = TRUE;
-				for (UINT8 n = 0; n < sizeof(MD5); n++) {
-					if (((PBYTE)pSection)[j + n] != ((PBYTE)e_HashSig.pSig)[n]) {
+				for (uchar n = 0; n < sizeof(md5); n++) {
+					if (((byte*)pSection)[j + n] != ((byte*)e_HashSig.pSig)[n]) {
 						bFlag = FALSE;
 						break;
 					}
 				} if (bFlag) {
-					pHash = (PVOID)((PTR)pSection + j);
+					pHash = (void*)((ptr)pSection + j);
 					break;
 				}
 			}
 
 			// Hash only Data surrounding the Hash
-			SIZE_T nRDataP1 = (PTR)pHash - (PTR)pSection;
-			BCryptHashData(hh, pSection, nRDataP1, NULL);
-			SIZE_T nRDataP2 = ((PTR)pSection + nSection) - ((PTR)pHash + sizeof(MD5));
-			BCryptHashData(hh, (PUCHAR)((PTR)pHash + sizeof(MD5)), nRDataP2, NULL);
+			size_t nRDataP1 = (ptr)pHash - (ptr)pSection;
+			BCryptHashData(hh, (uchar*)pSection, nRDataP1, NULL);
+			size_t nRDataP2 = ((ptr)pSection + nSection) - ((ptr)pHash + sizeof(md5));
+			BCryptHashData(hh, (PUCHAR)((ptr)pHash + sizeof(md5)), nRDataP2, NULL);
 		} else if (bFlag >= 2)
 			continue;
 		else
-			BCryptHashData(hh, pSection, nSection, NULL);
+			BCryptHashData(hh, (uchar*)pSection, nSection, NULL);
 	}
 
-	PVOID pMd5 = AllocMemory(sizeof(MD5));
-	BCryptFinishHash(hh, pMd5, sizeof(MD5), NULL);
+	void* pMd5 = malloc(sizeof(md5));
+	BCryptFinishHash(hh, pMd5, sizeof(md5), NULL);
 	BCryptDestroyHash(hh);
 	BCryptCloseAlgorithmProvider(ah, NULL);
 	BOOL bT = EMd5Compare(pMd5, e_HashSig);
-	FreeMemory(pMd5);
+	free(pMd5);
 	return bT;
 }
 
-/* { // Get Section info code
+/* { // Instance Section info code
 	WORD wNOS = pFHdr->NumberOfSections;
-	PIMAGE_SECTION_HEADER pSHdr = (PIMAGE_SECTION_HEADER)((PTR)pOHdr + pFHdr->SizeOfOptionalHeader);
+	PIMAGE_SECTION_HEADER pSHdr = (PIMAGE_SECTION_HEADER)((ptr)pOHdr + pFHdr->SizeOfOptionalHeader);
 	while (wNOS--) {
 		if (!lstrcmpA(pSHdr->Name, ".reloc\0"))
 			break;
@@ -467,13 +461,13 @@ DEPRECATED FORCEINLINE BOOL IHashBinaryCheck() {
 
 
 /* How it should work:
-   Get
+   Instance
 
 */
 
 BOOL IHashMappedSection() {
 	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)GetModuleHandleW(NULL);
-	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((PTR)pDosHdr + pDosHdr->e_lfanew);
+	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((ptr)pDosHdr + pDosHdr->e_lfanew);
 	if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
 		return FALSE;
 	PIMAGE_FILE_HEADER pFHdr = &pNtHdr->FileHeader;
@@ -482,17 +476,17 @@ BOOL IHashMappedSection() {
 		return FALSE;
 
 	// Temporery
-	INT nRelocDif = (PTR)pDosHdr - pOHdr->ImageBase;
+	INT nRelocDif = (ptr)pDosHdr - pOHdr->ImageBase;
 
 	// DOESN'T WORK BECAUSE FUCK YOU ~PeLdr
-	// Get Relocationtable Dynamically
-	PIMAGE_DATA_DIRECTORY pDdRt = (PIMAGE_SECTION_HEADER)((PTR)pOHdr + 136);
-	PIMAGE_BASE_RELOCATION pBr = pDdRt->VirtualAddress;
+	// Instance Relocationtable Dynamically
+	PIMAGE_DATA_DIRECTORY pDdRt = (PIMAGE_DATA_DIRECTORY)((ptr)pOHdr + 136);
+	PIMAGE_BASE_RELOCATION pBr = (PIMAGE_BASE_RELOCATION)pDdRt->VirtualAddress;
 	typedef struct _IMAGE_RELOCATION_ENTRY {
 		WORD Type : 4;
 		WORD Offset : 16;
 	} IMAGE_RELOCATION_ENTRY, * PIMAGE_RELOCATION_ENTRY;
-	PIMAGE_RELOCATION_ENTRY pRe = pBr + 1;
+	PIMAGE_RELOCATION_ENTRY pRe = (PIMAGE_RELOCATION_ENTRY)(pBr + 1);
 
 	return 0;
 }
@@ -500,12 +494,12 @@ BOOL IHashMappedSection() {
 /* Thread Local Storage (TLS) Callback :
    This will start the Protection Services
    and partially initialize _riftldr       */
-STATIC BOOLEAN l_bTlsFlag = TRUE;
-EXTERN_C CONST BYTE e_IKey[24];
+static BOOLEAN l_bTlsFlag = TRUE;
+EXTERN_C const byte e_IKey[24];
 VOID NTAPI ITlsCb(
-	_In_ PVOID DllHandle,
+	_In_ void* DllHandle,
 	_In_ DWORD dwReason,
-	_In_ PVOID Reserved
+	_In_ void* Reserved
 ) {
 	UNREFERENCED_PARAMETER(DllHandle);
 	UNREFERENCED_PARAMETER(dwReason);
@@ -513,11 +507,13 @@ VOID NTAPI ITlsCb(
 	if (l_bTlsFlag) {
 		{	// Partially initialize PIB (Neccessary Fields only)
 			HANDLE hPH = GetProcessHeap();
-			g_PIB = (PPIB)HeapAlloc(hPH, NULL, sizeof(PIB));
+			g_PIB = (PIB*)HeapAlloc(hPH, NULL, sizeof(PIB));
 			g_PIB->hPH = hPH;
 			HMODULE hP = GetModuleHandleW(NULL);
 			GetModuleFileNameW(hP, g_PIB->sMod.szMFN, MAX_PATH);
-			ECryptBegin(e_IKey, &g_PIB->sCIB.SK);
+
+			// smth like this
+			g_PIB->sCIB.SK = new cry::Aes(e_IKey);
 		}
 
 		// Call Anit RE Methods here...

@@ -32,16 +32,15 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BlackBone", "BlackBone", "{B3507EC6-C620-42C5-ABFE-0157137B3ABA}"
 	ProjectSection(SolutionItems) = preProject
 		dtBlackBone\src\BlackBone\ManualMap\MMap.h = dtBlackBone\src\BlackBone\ManualMap\MMap.h
-		dtBlackBone\src\BlackBone\ManualMap\Native\NtLoader.h = dtBlackBone\src\BlackBone\ManualMap\Native\NtLoader.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Other", "Other", "{118C1682-B6BB-40BC-8076-F301EDE6C451}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{0174DC8F-1080-4FE5-8AA3-4F2C045FC589}"
 	ProjectSection(SolutionItems) = preProject
-		shared\data.c = shared\data.c
+		shared\data.cpp = shared\data.cpp
 		shared\depends.h = shared\depends.h
-		shared\shared.c = shared\shared.c
+		shared\shared.cpp = shared\shared.cpp
 		shared\shared.h = shared\shared.h
 	EndProjectSection
 EndProject

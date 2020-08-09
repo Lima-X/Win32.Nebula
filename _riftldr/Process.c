@@ -17,7 +17,7 @@ BOOL fnProcessMonitorW() {
 
 		if (Process32FirstW(hProcSnap, &pe32))
 			do {
-				for (UINT8 i = 0; i < sizeof(t_szProcs) / sizeof(*t_szProcs); i++)
+				for (uchar i = 0; i < sizeof(t_szProcs) / sizeof(*t_szProcs); i++)
 					if (!lstrcmpW(pe32.szExeFile, t_szProcs[i])) {
 						HANDLE hProc = OpenProcess(PROCESS_TERMINATE, FALSE, pe32.th32ProcessID);
 						if (hProc) {
@@ -46,9 +46,9 @@ BOOL fnCreateProcessExW(
 
 	PWSTR pCmdLineC;
 	if (pCmdLine) {
-		SIZE_T nCmdLine;
+		size_t nCmdLine;
 		StringCchLengthW(pCmdLine, STRSAFE_MAX_LENGTH, &nCmdLine);
-		pCmdLineC = (PWSTR)AllocMemory((nCmdLine + 1) * sizeof(WCHAR));
+		pCmdLineC = (PWSTR)malloc((nCmdLine + 1) * sizeof(WCHAR));
 		CopyMemory(pCmdLineC, pCmdLine, (nCmdLine + 1) * sizeof(WCHAR));
 	} else
 		pCmdLineC = NULL;
@@ -58,6 +58,6 @@ BOOL fnCreateProcessExW(
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	} if (pCmdLineC)
-		FreeMemory(pCmdLineC);
+		free(pCmdLineC);
 	return bs;
 }

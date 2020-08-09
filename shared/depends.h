@@ -1,3 +1,6 @@
+// TODO: this needs precomp states, this is the base for virtually all TU's
+
+
 #pragma once
 
 #include <Windows.h>
