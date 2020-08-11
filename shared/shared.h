@@ -28,31 +28,6 @@ typedef unsigned long long ptr;
 typedef unsigned long      ptr;
 #endif
 
-
-#if 0 // deprecated since a long time ago, cause seh was needed (now even more useless because of c++ shit)
-/* NoCRT / this provides replacement Macros for WinAPI Functions that rely on the CRT */
-#undef CopyMemory
-#define CopyMemory(dest, src, size)  __movsb(dest, src, size)
-#undef ZeroMemory
-#define ZeroMemory(dest, size)       __stosb(dest, 0, size)
-#define SetMemory(dest, data, size)  __stosb(dest, data, size)
-
-#define AllocMemory(cbBytes)         HeapAlloc(g_PIB->hPH, NULL, cbBytes)
-#define ReAllocMemory(pMem, cbBytes) HeapReAlloc(g_PIB->hPH, NULL, pMem, cbBytes)
-#define FreeMemory(pMem)             HeapFree(g_PIB->hPH, NULL, pMem)
-INLINE INT CompareMemory(
-	_In_ void*  pMem1,
-	_In_ void*  pMem2,
-	_In_ size_t nSize
-) {
-	Pbyte pMem1C = (Pbyte)pMem1, pMem2C = (Pbyte)pMem2;
-	while (nSize--) {
-		if (*pMem1C++ != *pMem2C++)
-			return *--pMem1C < *--pMem2C ? -1 : 1;
-	} return 0;
-}
-#endif
-
 /* Console */
 #define CON_SUCCESS (FOREGROUND_GREEN)                                           // 0b0010
 #define CON_INFO    (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE)        // 0b0111
@@ -90,7 +65,6 @@ namespace rng {
 		inline VOID IXoshiroNext();
 	};
 }
-
 
 namespace alg { /* Base64 Encoder/Decoder, UUID Converters and SigScanner : shared.c */
 	// why -A suffix, because these functions work with raw data,
@@ -192,7 +166,7 @@ struct PIB {
 		PWSTR* v;  // Argument array (Vector)
 	} sArg;
 #endif
-	HANDLE hPH;                  // Process Heap
+	HANDLE hPh;                  // Process Heap
 	struct {                     // Module Information
 		HMODULE hM;              // Current Module (BaseAddress)
 		WCHAR   szMFN[MAX_PATH]; // Current Module Filename
@@ -204,4 +178,6 @@ extern PIB* g_PIB;
 // this is so ugly, i cant believe i actually have to do this like this, its just horrible but neccassery,
 // because this function declaration requires the struct and a object of that struct to be present
 // and the struct reqires the actual namespace, where this would normaly be defined to be present
+#ifndef _riftTool
 namespace cry { void* EUnpackResource(_In_ word wResID, _Out_ size_t* nData, _In_ Aes* waes = g_PIB->sCry.EK); }
+#endif

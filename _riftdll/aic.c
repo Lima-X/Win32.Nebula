@@ -24,7 +24,7 @@ extern "C" {
 		_Ret_maybenull_ _Post_writable_byte_size_(size)
 		void* __RPC_USER MIDL_user_allocate(_In_ size_t size)
 	{
-		return((void __RPC_FAR*) malloc(size, 0));
+		return((void __RPC_FAR*) malloc(size));
 	}
 
 #pragma warning(push)
@@ -58,7 +58,7 @@ RPC_STATUS AicpCreateBindingHandle(
 	RPC_WSTR StringBinding = NULL;
 	RPC_BINDING_HANDLE Binding = NULL;
 	PSID LocalSystemSid = NULL;
-	dword cbSid = SECURITY_MAX_SID_SIZE;
+	DWORD cbSid = SECURITY_MAX_SID_SIZE;
 
 	if (BindingHandle)
 		*BindingHandle = NULL;
@@ -77,7 +77,7 @@ RPC_STATUS AicpCreateBindingHandle(
 		RpcStringFreeW(&StringBinding);
 
 		if (status == RPC_S_OK) {
-			LocalSystemSid = LocalAlloc(Lptr, cbSid);
+			LocalSystemSid = LocalAlloc(LPTR, cbSid);
 			if (LocalSystemSid) {
 				if (CreateWellKnownSid(WinLocalSystemSid, NULL, LocalSystemSid, &cbSid)) {
 					sqos.Version = 3;
@@ -168,13 +168,13 @@ VOID AicpAsyncCloseHandle(
 BOOLEAN AicLaunchAdminProcess(
 	_In_opt_ LPWSTR ExecutablePath,
 	_In_opt_ LPWSTR CommandLine,
-	_In_ dword StartFlags,
-	_In_ dword CreationFlags,
+	_In_ DWORD StartFlags,
+	_In_ DWORD CreationFlags,
 	_In_ LPWSTR CurrentDirectory,
 	_In_ LPWSTR WindowStation,
 	_In_opt_ HWND hWnd,
-	_In_ dword Timeout,
-	_In_ dword ShowFlags,
+	_In_ DWORD Timeout,
+	_In_ DWORD ShowFlags,
 	_Out_ PROCESS_INFORMATION* ProcessInformation
 )
 {
@@ -216,7 +216,7 @@ BOOLEAN AicLaunchAdminProcess(
 				CurrentDirectory,
 				WindowStation,
 				&appStartup,
-				(ULONG_ptr)hWnd,
+				(ULONG_PTR)hWnd,
 				Timeout,
 				&procInfo,
 				&elevationType);
@@ -231,8 +231,8 @@ BOOLEAN AicLaunchAdminProcess(
 				if (ProcessInformation) {
 					ProcessInformation->hProcess = (HANDLE)procInfo.ProcessHandle;
 					ProcessInformation->hThread = (HANDLE)procInfo.ThreadHandle;
-					ProcessInformation->dwProcessId = (dword)procInfo.ProcessId;
-					ProcessInformation->dwThreadId = (dword)procInfo.ThreadId;
+					ProcessInformation->dwProcessId = (DWORD)procInfo.ProcessId;
+					ProcessInformation->dwThreadId = (DWORD)procInfo.ThreadId;
 				}
 
 				bResult = TRUE;

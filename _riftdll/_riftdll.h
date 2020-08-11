@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\_riftldr\depends.h"
+#include "..\shared\depends.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4005)
@@ -8,14 +8,14 @@
 #pragma warning(pop)
 
 /* RPC DebugObject UAC Bypass/Exploit */
+#ifndef __cplusplus
 #pragma comment(lib, "rpcrt4.lib")
 #include <rpcndr.h>
 #include <rpc.h>
 #include <oaidl.h>
 #include <ocidl.h>
 #include "appinfo32.h"
-
-#include "..\shared\shared.h"
+#endif
 
 // Why did i even bother making this macro for this
 // if this file doesn't get used outside the dll anyways -.-
@@ -25,4 +25,6 @@
 #define DLLEX __declspec(dllimport)
 #endif // _WINDLL
 
-DLLEX BOOL EDllInit(_In_ PPIB pib);
+#ifdef __cplusplus
+DLLEX BOOL EDllInit(_In_ PIB* pib);
+#endif

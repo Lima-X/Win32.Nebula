@@ -15,12 +15,8 @@
 
 #include "_riftTool.h"
 
-extern const SIG e_HashSig;
-extern const CHAR e_pszSections[ANYSIZE_ARRAY][8];
-extern const size_t e_nSections;
-
-INT wmain(
-	_In_     INT    argc,
+int wmain(
+	_In_     int    argc,
 	_In_     PWCHAR argv[],
 	_In_opt_ PWCHAR envp[]
 ) {
@@ -61,7 +57,7 @@ INT wmain(
 			PWSTR szFileName = (PWSTR)malloc(MAX_PATH * sizeof(WCHAR));
 			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
 			size_t nFile;
-			void* pFile = ReadFileCW(szFileName, 0, (SIZE_T*)&nFile);
+			void* pFile = ReadFileCW(szFileName, 0, &nFile);
 			if (!pFile)
 				goto EXIT;
 
@@ -105,7 +101,7 @@ INT wmain(
 				}
 
 				// Set Section Pointers
-				void* pSection = (ptr)pDosHdr + (ptr)pSHdr->PointerToRawData;
+				void* pSection = (void*)((ptr)pDosHdr + (ptr)pSHdr->PointerToRawData);
 				size_t nSection = pSHdr->SizeOfRawData;
 
 				// Select what to to
@@ -113,29 +109,30 @@ INT wmain(
 					for (uint j = 0; j < nSection - sizeof(md5); j++) {
 						bFlag = TRUE;
 						for (uchar n = 0; n < sizeof(md5); n++) {
-							if (((byte*)pSection)[j + n] != ((byte*)(e_HashSig.pSig))[n]) {
+							if (((byte*)pSection)[j + n] != (*(byte**)&e_HashSig)[n]) {
 								bFlag = FALSE;
 								break;
 							}
 						} if (bFlag) {
-							pHash = (ptr)pSection + j;
+							pHash = (void*)((ptr)pSection + j);
 							break;
 						}
 					}
 
 					size_t nRDataP1 = (ptr)pHash - (ptr)pSection;
-					BCryptHashData(hh, pSection, nRDataP1, 0);
+					BCryptHashData(hh, (uchar*)pSection, nRDataP1, 0);
 					size_t nRDataP2 = ((ptr)pSection + nSection) - ((ptr)pHash + sizeof(md5));
-					BCryptHashData(hh, (ptr)pHash + sizeof(md5), nRDataP2, 0);
+					// this is unsafe, i should rather get the size of the sig then to assume it... but idc atm :D
+					BCryptHashData(hh, (uchar*)((ptr)pHash + sizeof(md5)), nRDataP2, 0);
 				} else if (bFlag >= 2)
 					continue;
 				else
-					BCryptHashData(hh, pSection, nSection, 0);
+					BCryptHashData(hh, (uchar*)pSection, nSection, 0);
 			}
 
 			// Finish Hash
 			void* pMd5 = malloc(sizeof(md5));
-			BCryptFinishHash(hh, pMd5, sizeof(md5), 0);
+			BCryptFinishHash(hh, (uchar*)pMd5, sizeof(md5), 0);
 			BCryptDestroyHash(hh);
 			BCryptCloseAlgorithmProvider(ah, 0);
 
@@ -155,7 +152,7 @@ INT wmain(
 			BCRYPT_ALG_HANDLE ahAes, ahRng;
 			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
 			nts = BCryptOpenAlgorithmProvider(&ahRng, BCRYPT_RNG_ALGORITHM, 0, 0);
-			byte* pKey = malloc(AES_KEY_SIZE);
+			byte* pKey = (byte*)malloc(AES_KEY_SIZE);
 			nts = BCryptGenRandom(ahRng, pKey, AES_KEY_SIZE, 0);
 			nts = BCryptCloseAlgorithmProvider(ahRng, 0);
 			BCRYPT_KEY_HANDLE khAes;
@@ -165,19 +162,19 @@ INT wmain(
 			// Export AesBlob
 			size_t nResult;
 			void* pKeyE = malloc(AES_BLOB_SIZE);
-			nts = BCryptExportKey(khAes, 0, BCRYPT_KEY_DATA_BLOB, pKeyE, AES_BLOB_SIZE, &nResult, 0);
+			nts = BCryptExportKey(khAes, 0, BCRYPT_KEY_DATA_BLOB, (uchar*)pKeyE, AES_BLOB_SIZE, (ulong*)&nResult, 0);
 			nts = BCryptDestroyKey(khAes);
 			BCryptCloseAlgorithmProvider(ahAes, 0);
 
 			// Save Aes Blob
-			PWSTR szFileName = malloc(MAX_PATH * sizeof(WCHAR));
+			PWSTR szFileName = (PWSTR)malloc(MAX_PATH * sizeof(WCHAR));
 			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
 			nts = WriteFileCW(szFileName, 0, pKeyE, AES_BLOB_SIZE);
 			free(szFileName);
 			free(pKeyE);
 		} else if (!lstrcmpW(argv[1], L"/gt")) {
 			// Load WrapKey
-			PWSTR szFileName = malloc(MAX_PATH * sizeof(WCHAR));
+			PWSTR szFileName = (PWSTR)malloc(MAX_PATH * sizeof(WCHAR));
 			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
 			size_t nResult;
 			void* pWKey = ReadFileCW(szFileName, 0, &nResult);
@@ -188,29 +185,29 @@ INT wmain(
 			BCRYPT_ALG_HANDLE ahRng;
 			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahRng, BCRYPT_RNG_ALGORITHM, 0, 0);
 			void* pData = malloc(512);
-			BCryptGenRandom(ahRng, (ptr)pData + sizeof(md5), 512 - sizeof(md5), NULL);
+			BCryptGenRandom(ahRng, (uchar*)((ptr)pData + sizeof(md5)), 512 - sizeof(md5), NULL);
 			nts = BCryptCloseAlgorithmProvider(ahRng, 0);
 
 			// Hash Random Data
 			BCRYPT_ALG_HANDLE ahMd5;
 			nts = BCryptOpenAlgorithmProvider(&ahMd5, BCRYPT_MD5_ALGORITHM, 0, 0);
-			nts = BCryptHash(ahMd5, 0, 0, (ptr)pData + sizeof(md5), 512 - sizeof(md5), pData, sizeof(md5));
+			nts = BCryptHash(ahMd5, 0, 0, (uchar*)((ptr)pData + sizeof(md5)), 512 - sizeof(md5), (uchar*)pData, sizeof(md5));
 			BCryptCloseAlgorithmProvider(ahMd5, 0);
 
 			// Import AesWrapKey
 			BCRYPT_ALG_HANDLE ahAes;
 			nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
 			size_t nOL;
-			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), &nResult, 0);
+			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), (ulong*)&nResult, 0);
 			void* pAesObj = malloc(nOL);
 			BCRYPT_KEY_HANDLE khWKey;
-			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, pAesObj, nOL, (PUCHAR)pWKey, AES_BLOB_SIZE, 0);
+			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, (uchar*)pAesObj, nOL, (PUCHAR)pWKey, AES_BLOB_SIZE, 0);
 
 			// initialization-vector and Encrypt
 			void* pIv = malloc(16);
 			ZeroMemory(pIv, 16);
-			nts = BCryptEncrypt(khWKey, (ptr)pData + sizeof(md5), 512 - sizeof(md5),
-				0, pIv, 16, (ptr)pData + sizeof(md5), 512 - sizeof(md5), &nResult, 0);
+			nts = BCryptEncrypt(khWKey, (uchar*)((ptr)pData + sizeof(md5)), 512 - sizeof(md5),
+				0, (uchar*)pIv, 16, (uchar*)((ptr)pData + sizeof(md5)), 512 - sizeof(md5), (ulong*)&nResult, 0);
 			free(pIv);
 
 			// Save TestFile
@@ -222,7 +219,7 @@ INT wmain(
 	} else if (!lstrcmpW(argv[1], L"/ec")) {
 		if (argc == 5) {
 			// Load WrapKey
-			PWSTR szFileName = malloc(MAX_PATH * sizeof(WCHAR));
+			PWSTR szFileName = (PWSTR)malloc(MAX_PATH * sizeof(WCHAR));
 			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[3]);
 			size_t nFile;
 			void* pWKey = ReadFileCW(szFileName, 0, &nFile);
@@ -236,19 +233,19 @@ INT wmain(
 				goto EXIT;
 
 			// allocate info structure and generate Md5 from input
-			PAESIB pAes = malloc(sizeof(AESIB));
+			cry::AESIB* pAes = (cry::AESIB*)malloc(sizeof(cry::AESIB));
 			BCRYPT_ALG_HANDLE ahMd5;
 			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahMd5, BCRYPT_MD5_ALGORITHM, 0, 0);
-			nts = BCryptHash(ahMd5, 0, 0, pFile, nFile, &pAes->Md5, sizeof(md5));
+			nts = BCryptHash(ahMd5, 0, 0, (uchar*)pFile, nFile, (uchar*)&pAes->Md5, sizeof(md5));
 			BCryptCloseAlgorithmProvider(ahMd5, 0);
 
 			// Compress InputFile using LZ
 			COMPRESSOR_HANDLE l_ch;
 			nts = CreateCompressor(COMPRESS_ALGORITHM_LZMS, 0, &l_ch);
 			size_t nResult;
-			nts = Compress(l_ch, pFile, nFile, 0, 0, &nResult);
+			nts = Compress(l_ch, pFile, nFile, 0, 0, (SIZE_T*)&nResult);
 			void* pCompressed = malloc(nResult);
-			nts = Compress(l_ch, pFile, nFile, pCompressed, nResult, &nFile);
+			nts = Compress(l_ch, pFile, nFile, pCompressed, nResult, (SIZE_T*)&nFile);
 			free(pFile);
 			CloseCompressor(l_ch);
 
@@ -256,32 +253,32 @@ INT wmain(
 			BCRYPT_ALG_HANDLE ahRng;
 			nts = BCryptOpenAlgorithmProvider(&ahRng, BCRYPT_RNG_ALGORITHM, 0, 0);
 			void* pKey = malloc(AES_KEY_SIZE);
-			nts = BCryptGenRandom(ahRng, pKey, AES_KEY_SIZE, 0);
+			nts = BCryptGenRandom(ahRng, (uchar*)pKey, AES_KEY_SIZE, 0);
 			BCRYPT_ALG_HANDLE ahAes;
 			nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
 			BCRYPT_KEY_HANDLE khKey;
-			nts = BCryptGenerateSymmetricKey(ahAes, &khKey, 0, 0, pKey, AES_KEY_SIZE, 0);
+			nts = BCryptGenerateSymmetricKey(ahAes, &khKey, 0, 0, (uchar*)pKey, AES_KEY_SIZE, 0);
 
 			// Wrap and export AesKey
 			size_t nOL;
-			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), &nResult, 0);
+			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), (ulong*)&nResult, 0);
 			void* pAesObj = malloc(nOL);
 			BCRYPT_KEY_HANDLE khWKey;
-			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, pAesObj, nOL, (PUCHAR)pWKey, AES_BLOB_SIZE, 0);
-			nts = BCryptExportKey(khKey, khWKey, BCRYPT_AES_WRAP_KEY_BLOB, pAes->Key, sizeof(pAes->Key), &nResult, 0);
+			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, (uchar*)pAesObj, nOL, (PUCHAR)pWKey, AES_BLOB_SIZE, 0);
+			nts = BCryptExportKey(khKey, khWKey, BCRYPT_AES_WRAP_KEY_BLOB, pAes->Key, sizeof(pAes->Key), (ulong*)&nResult, 0);
 			nts = BCryptDestroyKey(khWKey);
 			free(pAesObj);
 
 			// init initialization-vector and copy
 			void* pIv = malloc(16);
-			nts = BCryptGenRandom(ahRng, pIv, 16, 0);
+			nts = BCryptGenRandom(ahRng, (uchar*)pIv, 16, 0);
 			CopyMemory(pAes->Iv, pIv, 16);
 			nts = BCryptCloseAlgorithmProvider(ahRng, 0);
 
 			// Encrypt Data
-			nts = BCryptEncrypt(khKey, pCompressed, nFile, 0, pIv, 16, 0, 0, &nResult, BCRYPT_BLOCK_PADDING);
+			nts = BCryptEncrypt(khKey, (uchar*)pCompressed, nFile, 0, (uchar*)pIv, 16, 0, 0, (ulong*)&nResult, BCRYPT_BLOCK_PADDING);
 			void* pEncrypted = malloc(nResult);
-			nts = BCryptEncrypt(khKey, pCompressed, nFile, 0, pIv, 16, pEncrypted, nResult, &nFile, BCRYPT_BLOCK_PADDING);
+			nts = BCryptEncrypt(khKey, (uchar*)pCompressed, nFile, 0, (uchar*)pIv, 16, (uchar*)pEncrypted, nResult, (ulong*)&nFile, BCRYPT_BLOCK_PADDING);
 			free(pCompressed);
 			nts = BCryptDestroyKey(khKey);
 			nts = BCryptCloseAlgorithmProvider(ahAes, 0);
@@ -292,15 +289,15 @@ INT wmain(
 			HANDLE hFile = CreateFileW(szFileName, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS,
 				(FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ENCRYPTED), 0);
 			if (hFile) {
-				nts = WriteFile(hFile, pAes, sizeof(AESIB), &nResult, 0);
-				nts = WriteFile(hFile, pEncrypted, nFile, &nResult, 0);
+				nts = WriteFile(hFile, pAes, sizeof(cry::AESIB), (dword*)&nResult, 0);
+				nts = WriteFile(hFile, pEncrypted, nFile, (dword*)&nResult, 0);
 				CloseHandle(hFile);
 			}
 			free(pEncrypted);
 			free(pAes);
 		} else if (argc == 4) {
 			// Load AesStringKey
-			PWSTR szFileName = malloc(MAX_PATH * sizeof(WCHAR));
+			PWSTR szFileName = (PWSTR)malloc(MAX_PATH * sizeof(WCHAR));
 			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
 			size_t nFile;
 			void* pSKey = ReadFileCW(szFileName, 0, &nFile);
@@ -311,10 +308,10 @@ INT wmain(
 			BCRYPT_ALG_HANDLE ahAes;
 			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
 			size_t nOL, nResult;
-			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), &nResult, 0);
+			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), (ulong*)&nResult, 0);
 			void* pAesObj = malloc(nOL);
 			BCRYPT_KEY_HANDLE khSKey;
-			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khSKey, pAesObj, nOL, (PUCHAR)pSKey, AES_BLOB_SIZE, 0);
+			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khSKey, (uchar*)pAesObj, nOL, (PUCHAR)pSKey, AES_BLOB_SIZE, 0);
 
 			// Encrypt Data
 			size_t nLen;
@@ -324,9 +321,9 @@ INT wmain(
 			void* pIv = malloc(16);
 			ZeroMemory(pIv, 16);
 
-			nts = BCryptEncrypt(khSKey, argv[3], nLen, 0, pIv, 16, 0, 0, &nResult, BCRYPT_BLOCK_PADDING);
+			nts = BCryptEncrypt(khSKey, (uchar*)argv[3], nLen, 0, (uchar*)pIv, 16, 0, 0, (ulong*)&nResult, BCRYPT_BLOCK_PADDING);
 			void* pEncrypted = malloc(nResult);
-			nts = BCryptEncrypt(khSKey, argv[3], nLen, 0, pIv, 16, pEncrypted, nResult, &nFile, BCRYPT_BLOCK_PADDING);
+			nts = BCryptEncrypt(khSKey, (uchar*)argv[3], nLen, 0, (uchar*)pIv, 16, (uchar*)pEncrypted, nResult, (ulong*)&nFile, BCRYPT_BLOCK_PADDING);
 
 			free(pIv);
 			nts = BCryptDestroyKey(khSKey);
@@ -334,11 +331,15 @@ INT wmain(
 			nts = BCryptCloseAlgorithmProvider(ahAes, 0);
 
 			// Encode Data to Base64 String
-			void* pEncoded = EBase64EncodeA(pEncrypted, nFile, &nFile);
+			alg::Base64 b64;
+			nFile = b64.EBase64EncodeA(pEncrypted, nFile, nullptr, true);
+			void* pEncoded = malloc(nFile);
+			nFile = b64.EBase64EncodeA(pEncrypted, nFile, (PSTR)pEncoded, true);
+
 			free(pEncrypted);
 			SetConsoleTextAttribute(g_hCon, CON_SUCCESS);
-			WriteConsoleA(g_hCon, pEncoded, nFile, &nResult, 0);
-			WriteConsoleW(g_hCon, L"\n", 1, &nResult, 0);
+			WriteConsoleA(g_hCon, pEncoded, nFile, (dword*)&nResult, 0);
+			WriteConsoleW(g_hCon, L"\n", 1, (dword*)&nResult, 0);
 			free(pEncoded);
 		} else
 			PrintF(L"Unknown Command\n", CON_ERROR);

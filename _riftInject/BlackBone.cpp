@@ -15,4 +15,3 @@
 #endif
 #endif
 #include "..\dtBlackBone\src\BlackBone\ManualMap\MMap.h"
-#include"..\dtBlackBone\src\BlackBone\ManualMap\Native\NtLoader.h"

@@ -173,7 +173,7 @@ namespace utl {
 
 	status EDownloadFile(        // Reads Data from Url (downloads File) / returns size read
 		_In_     PCWSTR szUrl,   // Url to read from
-		_In_opt_ INT    nOffset, // Offset to start reading from
+		_In_opt_ int    nOffset, // Offset to start reading from
 		_In_     void*  pBuffer, // Buffer to read to
 		_In_     size_t nSize    // count of Bytes to read (also Buffer size)
 	) {
@@ -219,7 +219,7 @@ namespace utl {
 			EnumSystemFirmwareTables(dwFTPS[i], pTableId, nTableId);
 
 			for (uchar j = 0; j < nTableId / sizeof(dword); j++) {
-				// Instance Table
+				// Get Table
 				size_t nTable = GetSystemFirmwareTable(dwFTPS[i], pTableId[j], nullptr, 0);
 				void* pTable = malloc(nTable);
 				GetSystemFirmwareTable(dwFTPS[i], pTableId[j], pTable, nTable);
@@ -243,7 +243,7 @@ namespace utl {
 	VOID IGenerateHardwareId(
 		_Out_ uuid* pHwId
 	) {
-		// Instance SMBios Table
+		// Get SMBios Table
 		typedef struct _RawSMBIOSData {
 			byte  Used20CallingMethod;
 			byte  SMBIOSMajorVersion;
@@ -264,7 +264,7 @@ namespace utl {
 		BCRYPT_HASH_HANDLE hh;
 		BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
 
-		// Instance First Entry
+		// Get First Entry
 		typedef struct _SMBIOSTableHeader {
 			byte bType;
 			byte nLength;
@@ -275,7 +275,7 @@ namespace utl {
 			// Start of String Table
 			void* pStringTable = (void*)((ptr)pEntry + pEntry->nLength);
 
-			// Instance Entry Size and next Entry Address
+			// Get Entry Size and next Entry Address
 			while (*((PWORD)pStringTable) != (WORD)0x0000)
 				(*(ptr*)&pStringTable)++;
 			size_t nEntry = ((ptr)pStringTable + 2) - (ptr)pEntry;

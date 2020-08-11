@@ -98,7 +98,7 @@ int WINAPI wWinMain(
 	{	// CleanUp
 		rng::Xoshiro::Instance(true);
 		LocalFree(g_PIB->sArg.v);
-		HeapFree(g_PIB->hPH, NULL, g_PIB);
+		HeapFree(g_PIB->hPh, NULL, g_PIB);
 	} return 0;
 }
 

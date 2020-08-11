@@ -1,16 +1,15 @@
 #include "_riftdll.h"
 
-STATUS riftMain() {
+status riftMain() {
 
+	return NULL;
 }
 
-DLLEX STATUS WINAPI DllMain(
+DLLEX status WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,
 	_In_ dword     fdwReason,
 	_In_ void*     pvReserved
 ) {
-	UNREFERENCED_PARAMETER(pvReserved);
-
 	switch (fdwReason) {
 	case DLL_PROCESS_ATTACH:
 	case DLL_THREAD_ATTACH:
@@ -19,9 +18,10 @@ DLLEX STATUS WINAPI DllMain(
 		break;
 
 	case 4: // Execute Stage-2
-		g_PIB = pvReserved;
+		g_PIB = (PIB*)pvReserved;
 		return riftMain();
 	case 5: // System Shutdown
+		;
 	}
 
 	return TRUE;

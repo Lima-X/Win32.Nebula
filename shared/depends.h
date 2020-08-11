@@ -38,4 +38,6 @@
 #include "..\msDetours\include\detours.h"
 
 /* Shared Declarations */
+#ifdef __cplusplus
 #include "shared.h"
+#endif

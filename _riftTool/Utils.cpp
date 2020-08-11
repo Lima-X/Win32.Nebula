@@ -16,14 +16,15 @@ void* ReadFileCW(
 
 	LARGE_INTEGER liFS;
 	BOOL bT = GetFileSizeEx(hFile, &liFS);
+	void* pFile;
 	if (!bT || (liFS.HighPart || !liFS.LowPart))
 		goto EXIT;
 
-	void* pFile = malloc(liFS.LowPart);
+	pFile = malloc(liFS.LowPart);
 	if (!pFile)
 		goto EXIT;
 
-	bT = ReadFile(hFile, pFile, liFS.LowPart, nFileSize, 0);
+	bT = ReadFile(hFile, pFile, liFS.LowPart, (dword*)nFileSize, 0);
 	if (!bT) {
 		free(pFile);
 		goto EXIT;
@@ -46,7 +47,7 @@ BOOL WriteFileCW(
 	HANDLE hFile = CreateFileW(pFileName, GENERIC_RW, FILE_SHARE_READ, 0, CREATE_ALWAYS, dwFileAttribute, 0);
 	if (hFile) {
 		size_t nWritten;
-		BOOL bT = WriteFile(hFile, pBuffer, nBuffer, &nWritten, 0);
+		BOOL bT = WriteFile(hFile, pBuffer, nBuffer, (dword*)&nWritten, 0);
 		CloseHandle(hFile);
 
 		return bT;
@@ -79,12 +80,15 @@ void* GetSectionRaw(
 			}
 		} if (bFlag) {
 			*nSection = pSHdr->SizeOfRawData;
-			return (ptr)pBuffer + (ptr)pSHdr->PointerToRawData;
+			return (void*)((ptr)pBuffer + (ptr)pSHdr->PointerToRawData);
 		}
 	}
 
 	return 0;
 }
+
+
+HANDLE g_hCon;
 
 // shitty debug/info print function
 BOOL PrintF(PCWSTR pText, WORD wAttribute, ...) {
@@ -97,7 +101,7 @@ BOOL PrintF(PCWSTR pText, WORD wAttribute, ...) {
 	StringCchLengthW((STRSAFE_PCNZWCH)hBuf, 0x800, &nBufLen);
 	if (wAttribute)
 		SetConsoleTextAttribute(g_hCon, wAttribute);
-	WriteConsoleW(g_hCon, hBuf, nBufLen, &nBufLen, NULL);
+	WriteConsoleW(g_hCon, hBuf, nBufLen, (dword*)&nBufLen, NULL);
 	free(hBuf);
 
 	va_end(vaArg);

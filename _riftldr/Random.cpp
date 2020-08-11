@@ -1,7 +1,5 @@
 #include "_riftldr.h"
 
-
-extern const CHAR e_Base64Table[64];
 namespace rng {
 	CRITICAL_SECTION Xoshiro::cs;
 	rng::Xoshiro* Xoshiro::xsrInstance;
@@ -53,7 +51,7 @@ namespace rng {
 		IXoshiroNext();
 		return dwT;
 	}
-	// Uniform INT/FLOAT Distribution Functions
+	// Uniform int/FLOAT Distribution Functions
 	uint Xoshiro::ERandomIntDistribution(
 		_In_ uint nMin,
 		_In_ uint nMax
@@ -110,7 +108,7 @@ namespace rng {
 		else
 			xsr = rng::Xoshiro::Instance();
 		for (size_t i = 0; i < n; i++)
-			((PWCHAR)sz)[i] = (WCHAR)e_Base64Table[xsr->ERandomIntDistribution(0, 63)];
+			;//	((PWCHAR)sz)[i] = (WCHAR)e_Base64Table[xsr->ERandomIntDistribution(0, 63)];
 	}
 	VOID EGenRandomPathW(
 		_In_opt_ PDWORD dwState,

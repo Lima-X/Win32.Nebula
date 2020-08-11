@@ -35,7 +35,7 @@ namespace are {
 			// Much easier in ASM but C/C++ looks so much better
 			typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint, void*, ULONG, PULONG);
 
-			// Instance NtQueryInformationProcess
+			// Get NtQueryInformationProcess
 			pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
 
 			dword NoDebugInherit;
@@ -62,7 +62,7 @@ namespace are {
 			// Much easier in ASM but C/C++ looks so much better
 			typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint, void*, ULONG, PULONG);
 
-			// Instance NtQueryInformationProcess
+			// Get NtQueryInformationProcess
 			pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
 
 			HANDLE hDebugObject;
@@ -90,7 +90,7 @@ namespace are {
 		) {
 			typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, uint, void*, ULONG);
 
-			// Instance NtSetInformationThread
+			// Get NtSetInformationThread
 			pNtSetInformationThread fnNtSIT = (pNtSetInformationThread)GetProcAddress(hNtDll, "NtSetInformationThread");
 
 			// Shouldn't fail
@@ -276,7 +276,7 @@ namespace are {
 			if (hProcess == INVALID_HANDLE_VALUE)
 				return FALSE;
 
-			// Instance a list of all the modules in this process.
+			// Get a list of all the modules in this process.
 			dword nResult;
 			BOOL bs = K32EnumProcessModules(hProcess, NULL, 0, &nResult);
 			HMODULE* hMods = (HMODULE*)malloc(nResult);
@@ -285,7 +285,7 @@ namespace are {
 				for (uchar i = 0; i < nResult / sizeof(HMODULE); i++) {
 					WCHAR szModuleName[MAX_PATH];
 
-					// Instance the full path to the module's file.
+					// Get the full path to the module's file.
 					if (K32GetModuleFileNameExW(hProcess, hMods[i], szModuleName, MAX_PATH)) {
 
 					}
@@ -355,7 +355,7 @@ namespace are {
 	/* Anti Reverse Engineering *////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	namespace img {
 		DEPRECATED BOOL fnErasePeHeader() {
-			// Instance Nt Headers
+			// Get Nt Headers
 			PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)g_PIB->sMod.hM;
 			PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((ptr)pDosHdr + pDosHdr->e_lfanew);
 			if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
@@ -380,7 +380,7 @@ namespace are {
 			if (!pFile)
 				return 0;
 
-			// Instance NT Headers
+			// Get NT Headers
 			PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((ptr)pFile + ((PIMAGE_DOS_HEADER)pFile)->e_lfanew);
 			if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
 				return FALSE;
@@ -397,7 +397,7 @@ namespace are {
 			// BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
 
 			for (uchar i = 0; i < pFHdr->NumberOfSections; i++) {
-				// Instance Section and Check if Type is accepted
+				// Get Section and Check if Type is accepted
 				PIMAGE_SECTION_HEADER pSHdr = ((PIMAGE_SECTION_HEADER)((ptr)pOHdr + (ptr)pFHdr->SizeOfOptionalHeader) + i);
 				if (!((pSHdr->Characteristics & IMAGE_SCN_CNT_CODE) || (pSHdr->Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA)))
 					continue;
@@ -466,7 +466,7 @@ namespace are {
 			return bT;
 		}
 
-		/* { // Instance Section info code
+		/* { // Get Section info code
 			WORD wNOS = pFh->NumberOfSections;
 			PIMAGE_SECTION_HEADER pSHdr = (PIMAGE_SECTION_HEADER)((ptr)pOh + pFh->SizeOfOptionalHeader);
 			while (wNOS--) {
@@ -479,48 +479,75 @@ namespace are {
 
 
 		/* How it should work:
-		   Instance
+		   Get
 
 		*/
 
+
+		// NOTE: this function isn't done yet and bearly has been tested,
+		//       it lacks a lot of safety features and sanity checks.
+		//       Only the neccessary checks have been implemented yet !
 		status IHashMappedSection() {
 			HMODULE hMod = GetModuleHandle(nullptr);
 			PIMAGE_NT_HEADERS pNth = (PIMAGE_NT_HEADERS)((ptr)hMod + ((PIMAGE_DOS_HEADER)hMod)->e_lfanew);
 			if (pNth->Signature != IMAGE_NT_SIGNATURE)
-				return FALSE;
-			PIMAGE_OPTIONAL_HEADER pOh = &pNth->OptionalHeader;
-			if (pOh->Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
-				return FALSE;
+				return -1;
+			if (pNth->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
+				return -2;
 
-			// Temporery
-			int deltaReloc = (ptr)hMod - 0x40000;
+			// Calculate reloc delta and first BaseRelocation Block
+			int nRelocDelta = pNth->OptionalHeader.ImageBase - 0x40000;
+			PIMAGE_BASE_RELOCATION pBr = (PIMAGE_BASE_RELOCATION)
+				(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase);
 
-			// DOESN'T WORK BECAUSE FUCK YOU ~PeLdr
-			// Instance Relocationtable Dynamically
-			// maybe i fucked up tho
-			PIMAGE_BASE_RELOCATION pBr = (PIMAGE_BASE_RELOCATION)(pOh->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + (ptr)hMod);
-			struct IMAGE_RELOCATION_ENTRY {
-				word Type : 4;
-				word Offset : 16;
-			} *pRe = (IMAGE_RELOCATION_ENTRY*)(pBr + 1);
-
-
-			int headers = pOh->SizeOfHeaders / 0x1000;
-			if (pOh->SizeOfHeaders % 0x1000)
-				headers += 0x1000;
-			void* pImageCopy = VirtualAlloc(nullptr, pOh->SizeOfImage - headers, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+			// Iterate over Sections
 			PIMAGE_SECTION_HEADER pSh = IMAGE_FIRST_SECTION(pNth);
 			for (char i = 0; i < pNth->FileHeader.NumberOfSections; i++) {
+				// Make copy of mapped Section
+				void* pImageCopy = VirtualAlloc(nullptr, pSh->Misc.VirtualSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+				memcpy(pImageCopy, (void*)(pSh->VirtualAddress + pNth->OptionalHeader.ImageBase), pSh->Misc.VirtualSize);
 
+				if (nRelocDelta) {
+					// Calculate the difference between the section base of the mapped and copied version
+					int nBaseDelta = (ptr)pImageCopy - (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
 
+					// This line is a fucking joke, like seriously WTF did i think i was doing
+					while (((pBr->VirtualAddress + pNth->OptionalHeader.ImageBase)
+						< (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + pSh->Misc.VirtualSize)
+						&& ((ptr)pBr
+							< ((pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase)
+								+ pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size))
+					) {
+						// First Relocation Entry
+						struct IMAGE_RELOCATION_ENTRY {
+							word Offset : 12;
+							word Type : 4;
+						} *pRe = (IMAGE_RELOCATION_ENTRY*)(pBr + 1);
 
+						// iterate over Relocation Entries and apply changes
+						for (word i = 0; i < (pBr->SizeOfBlock - 8) / sizeof(IMAGE_RELOCATION_ENTRY); i++)
+							switch (pRe[i].Type) {
+							case IMAGE_REL_BASED_HIGHLOW:
+								*(ptr*)(((pBr->VirtualAddress + pNth->OptionalHeader.ImageBase) + pRe[i].Offset) + nBaseDelta) -= nRelocDelta;
+								break;
+							case IMAGE_REL_BASED_ABSOLUTE:
+								continue;
+							default:
+								VirtualFree(pImageCopy, 0, MEM_RELEASE);
+								return -3;
+							}
 
+						bool uPad = pBr->SizeOfBlock % 4;
+						*(ptr*)&pBr += pBr->SizeOfBlock; // this would probably be enough, but just to make sure we are on a 32bit boundary
+						if (uPad)
+							*(ptr*)&pBr += 2;
+					}
+				}
+				// TODO: just hashing the sections here
+
+				VirtualFree(pImageCopy, 0, MEM_RELEASE);
 				pSh++;
 			}
-
-
-
-			while (pRe)
 
 			return 0;
 		}
@@ -574,9 +601,12 @@ namespace are {
 		UNREFERENCED_PARAMETER(Reserved);
 		if (l_bTlsFlag) {
 			{	// Partially initialize PIB (Neccessary Fields only)
-				g_PIB = (PIB*)malloc(sizeof(PIB)); // potentially unsafe
-				// g_PIB = (PIB*)HeapAlloc(hPH, NULL, sizeof(PIB));
-				// g_PIB->hPH = hPH;
+				{	// Allocate PIB (manually because crt fails)
+					HANDLE hPh = GetProcessHeap();
+					g_PIB = (PIB*)HeapAlloc(hPh, NULL, sizeof(*g_PIB));
+					g_PIB->hPh = hPh;
+					// g_PIB = (PIB*)malloc(sizeof(PIB)); // potentially unsafe (fails)
+				}
 
 				g_PIB->sMod.hM = GetModuleHandleW(NULL);
 				GetModuleFileNameW(g_PIB->sMod.hM, g_PIB->sMod.szMFN, MAX_PATH);

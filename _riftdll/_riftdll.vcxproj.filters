@@ -26,7 +26,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dllmain.c">
+    <ClCompile Include="..\shared\data.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="aic.c">
@@ -37,9 +40,6 @@
     </ClCompile>
     <ClCompile Include="tyranid.c">
       <Filter>Source Files\UACExploit</Filter>
-    </ClCompile>
-    <ClCompile Include="..\shared\data.cpp">
-      <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

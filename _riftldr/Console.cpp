@@ -36,12 +36,12 @@ BOOL IOpenConsole() {
 		SetConsoleCursorInfo(l_hCO, &cci);
 	}
 
-	// Instance width of riftLogo
+	// Get width of riftLogo
 	size_t nRiftLogo;
 	StringCchLengthW(*l_szRiftLogo, STRSAFE_MAX_LENGTH, &nRiftLogo);
 
 	{	// Set Console Size
-		// Instance width of riftInfo
+		// Get width of riftInfo
 		size_t nRiftInfo = 0;
 		for (uchar i = 0; i < 6; i++) {
 			size_t nT;
@@ -90,13 +90,13 @@ BOOL IOpenConsole() {
 		}
 	}
 
-	// Instance Number of Char's in riftLogo
+	// Get Number of Char's in riftLogo
 	uint uRLC = 0;
 	for (uchar i = 0; i < 6; i++)
 		for (uint j = 0; j < nRiftLogo; j++)
 			if (l_szRiftLogo[i][j] != L' ')
 				uRLC++;
-	// Instance Number of Char's in riftInfo
+	// Get Number of Char's in riftInfo
 	uint uRIC = 0;
 	for (uchar i = 0; i < 6; i++) {
 		size_t nT;
