@@ -106,7 +106,7 @@ Describes the Datatype of the Variable in a short from
 C:
     b:  BOOL / byte
     w:  WORD
-    dw: DWORD
+    dw: dword
     p:  Pointer to any Data (void*)
     n:  Size of Data (size_t)
     sz: ZeroTerminated String (WCHAR/(CHAR) Array)

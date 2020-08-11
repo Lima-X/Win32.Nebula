@@ -72,7 +72,7 @@ VOID SelfDelete2() {
 	typedef NTSTATUS(NTAPI* NtDeleteFile)(POBJECT_ATTRIBUTES ObjectAttributes);
 	NtDeleteFile ntdf = (NtDeleteFile)(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtDeleteFile"));
 
-	PWSTR pFile = malloc((MAX_PATH + 4) * sizeof(WCHAR));
+	PWSTR pFile = (PWSTR)malloc((MAX_PATH + 4) * sizeof(WCHAR));
 	CopyMemory(pFile, L"\\??\\", 5 * sizeof(WCHAR));
 	StringCchCat(pFile, MAX_PATH + 4, g_PIB->sMod.szMFN);
 

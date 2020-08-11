@@ -3,7 +3,7 @@
 // File I/O
 void* ReadFileCW(
 	_In_     PCWSTR  szFileName,
-	_In_opt_ DWORD   dwFileAttribute,
+	_In_opt_ dword   dwFileAttribute,
 	_Out_    size_t* nFileSize
 ) {
 	if (!dwFileAttribute)
@@ -36,7 +36,7 @@ EXIT:
 }
 BOOL WriteFileCW(
 	_In_     PCWSTR pFileName,
-	_In_opt_ DWORD  dwFileAttribute,
+	_In_opt_ dword  dwFileAttribute,
 	_In_     void*  pBuffer,
 	_In_     size_t nBuffer
 ) {
@@ -69,10 +69,10 @@ void* GetSectionRaw(
 		return FALSE;
 
 	// Find Section
-	for (uint8 i = 0; i < pFHdr->NumberOfSections; i++) {
+	for (uchar i = 0; i < pFHdr->NumberOfSections; i++) {
 		PIMAGE_SECTION_HEADER pSHdr = ((PIMAGE_SECTION_HEADER)((ptr)pOHdr + (ptr)pFHdr->SizeOfOptionalHeader) + i);
 		BOOLEAN bFlag = TRUE;
-		for (uint8 j = 0; j < IMAGE_SIZEOF_SHORT_NAME; j++) {
+		for (uchar j = 0; j < IMAGE_SIZEOF_SHORT_NAME; j++) {
 			if (pSHdr->Name[j] != szSection[j]) {
 				bFlag = FALSE;
 				break;

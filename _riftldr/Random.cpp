@@ -1,112 +1,104 @@
 #include "_riftldr.h"
 
-namespace rng {
-	class Xoshiro {
-	public:
-		// Constructor/Destructor and Signleton Initialization
-		Xoshiro(
-			_In_opt_ DWORD* dwState = nullptr
-		) {
-			BCRYPT_ALG_HANDLE cah;
-			if (!BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, nullptr, NULL)) {
-				if (!xsrInstance)
-					InitializeCriticalSection(&cs);
 
-				if (!dwState)
-					BCryptGenRandom(cah, (UCHAR*)&m_dwState, sizeof(DWORD) * 4, NULL);
-				else
-					memcpy(m_dwState, dwState, 16);
-				BCryptCloseAlgorithmProvider(cah, NULL);
-			}
+extern const CHAR e_Base64Table[64];
+namespace rng {
+	CRITICAL_SECTION Xoshiro::cs;
+	rng::Xoshiro* Xoshiro::xsrInstance;
+
+	// Constructor/Destructor and Signleton Initialization
+	Xoshiro::Xoshiro(
+		_In_opt_ dword* dwState // = nullptr
+	) {
+		BCRYPT_ALG_HANDLE cah;
+		if (!BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, nullptr, NULL)) {
+			if (!xsrInstance)
+				InitializeCriticalSection(&cs);
+
+			if (!dwState)
+				BCryptGenRandom(cah, (UCHAR*)&m_dwState, sizeof(dword) * 4, NULL);
+			else
+				memcpy(m_dwState, dwState, 16);
+			BCryptCloseAlgorithmProvider(cah, NULL);
 		}
-		~Xoshiro() {
-			if (this == xsrInstance) {
-				DeleteCriticalSection(&cs);
+	}
+	Xoshiro::~Xoshiro() {
+		if (this == xsrInstance) {
+			DeleteCriticalSection(&cs);
+			xsrInstance = nullptr;
+		}
+	}
+	Xoshiro* Xoshiro::Instance(
+		_In_opt_ bool bDelete // = false
+	) {
+		if (!bDelete) {
+			if (!xsrInstance)
+				xsrInstance = new Xoshiro();
+		} else
+			if (xsrInstance) {
+				delete xsrInstance;
 				xsrInstance = nullptr;
 			}
-		}
-		static Xoshiro* Instance(
-			_In_opt_ bool bDelete = false
-		) {
-			if (!bDelete) {
-				if (!xsrInstance)
-					xsrInstance = new Xoshiro();
-			}
-			else
-				if (xsrInstance) {
-					delete xsrInstance;
-					xsrInstance = nullptr;
-				}
-			return xsrInstance;
-		}
+		return xsrInstance;
+	}
 
-		// Xoshiro Functions
-		DWORD EXoshiroSS() {
-			const DWORD dwT = IRotlDw(m_dwState[1] * 5, 7) * 9;
-			IXoshiroNext();
-			return dwT;
-		}
-		DWORD EXoshiroP() {
-			const DWORD dwT = m_dwState[0] + m_dwState[3];
-			IXoshiroNext();
-			return dwT;
-		}
-		// Uniform INT/FLOAT Distribution Functions
-		uint ERandomIntDistribution(
-			_In_ uint nMin,
-			_In_ uint nMax
-		) {
-			const uint nRange = (nMax - nMin) + 1;
-			const uint nScale = (uint)-1 / nRange;
-			const uint nLimit = nRange * nScale;
+	// Xoshiro Functions
+	dword Xoshiro::EXoshiroSS() {
+		const dword dwT = IRotlDw(m_dwState[1] * 5, 7) * 9;
+		IXoshiroNext();
+		return dwT;
+	}
+	dword Xoshiro::EXoshiroP() {
+		const dword dwT = m_dwState[0] + m_dwState[3];
+		IXoshiroNext();
+		return dwT;
+	}
+	// Uniform INT/FLOAT Distribution Functions
+	uint Xoshiro::ERandomIntDistribution(
+		_In_ uint nMin,
+		_In_ uint nMax
+	) {
+		const uint nRange = (nMax - nMin) + 1;
+		const uint nScale = (uint)-1 / nRange;
+		const uint nLimit = nRange * nScale;
 
-			uint nRet;
-			do {
-				nRet = EXoshiroSS();
-			} while (nRet >= nLimit);
-			nRet /= nScale;
-			return nRet + nMin;
-		}
-		FLOAT ERandomRealDistribution() {
-			// 24 bits resolution: (r >> 8) * 2^(-24)
-			return (EXoshiroP() >> 8) * (1.F / 0x1000000p0F);
-		}
+		uint nRet;
+		do {
+			nRet = EXoshiroSS();
+		} while (nRet >= nLimit);
+		nRet /= nScale;
+		return nRet + nMin;
+	}
+	FLOAT Xoshiro::ERandomRealDistribution() {
+		// 24 bits resolution: (r >> 8) * 2^(-24)
+		return (EXoshiroP() >> 8) * (1.F / 0x1000000p0F);
+	}
 
-	private:
+	// Internal State manipulation Functions
+	inline dword Xoshiro::IRotlDw(
+		_In_ dword dwT,
+		_In_ uchar ui8T
+	) const {
+		return (dwT << ui8T) | (dwT >> ((sizeof(dword) * 8) - ui8T));
+	}
+	inline VOID Xoshiro::IXoshiroNext() {
+		bool bFlag = this == xsrInstance ? 1 : 0;
+		if (bFlag)
+			EnterCriticalSection(&cs);
 
-		// Internal/Global State & Sync Opbject (for Singleton)
-		static Xoshiro* xsrInstance;
-		static CRITICAL_SECTION cs;
-		DWORD m_dwState[4];
+		const dword dwT = m_dwState[1] << 9;
+		m_dwState[2] ^= m_dwState[0];
+		m_dwState[3] ^= m_dwState[1];
+		m_dwState[1] ^= m_dwState[2];
+		m_dwState[0] ^= m_dwState[3];
+		m_dwState[2] ^= dwT;
+		m_dwState[3] = IRotlDw(m_dwState[3], 11);
 
-		// Internal State manipulation Functions
-		inline DWORD IRotlDw(
-			_In_ DWORD dwT,
-			_In_ uchar ui8T
-		) const {
-			return (dwT << ui8T) | (dwT >> ((sizeof(DWORD) * 8) - ui8T));
-		}
-		inline VOID IXoshiroNext() {
-			bool bFlag = this == xsrInstance ? 1 : 0;
-			if (bFlag)
-				EnterCriticalSection(&cs);
-
-			const DWORD dwT = m_dwState[1] << 9;
-			m_dwState[2] ^= m_dwState[0];
-			m_dwState[3] ^= m_dwState[1];
-			m_dwState[1] ^= m_dwState[2];
-			m_dwState[0] ^= m_dwState[3];
-			m_dwState[2] ^= dwT;
-			m_dwState[3] = IRotlDw(m_dwState[3], 11);
-
-			if (bFlag)
-				LeaveCriticalSection(&cs);
-		}
-	};
-
+		if (bFlag)
+			LeaveCriticalSection(&cs);
+	}
 
 	// Random Tools / TODO: fix this mess
-	EXTERN_C const CHAR e_Base64Table[64];
 	VOID EGenRandomB64W(
 		_In_opt_ PDWORD dwState,
 		_Out_    void* sz,
@@ -174,7 +166,7 @@ namespace rng {
 		_Out_    void* pBuffer,
 		_In_     size_t nBuffer
 	) {
-		Xoshiro* xsr = Xoshiro::Instance();
+		rng::Xoshiro* xsr = rng::Xoshiro::Instance();
 		for (uint i = 0; i < (nBuffer / 4); i++) {
 			((PDWORD)pBuffer)[i] = xsr->EXoshiroSS();
 		} for (uint i = (nBuffer / 4) * 4; i < nBuffer; i++) {

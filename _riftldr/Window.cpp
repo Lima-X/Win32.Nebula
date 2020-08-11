@@ -17,16 +17,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, uint uMsg, WPARAM wParam, LPARAM lParam) {
 	return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 }
 
-DWORD WINAPI thWindowThread(
-	_In_ Lvoid* lParam
+dword WINAPI thWindowThread(
+	_In_ void* lParam
 ) {
 	WNDCLASSEXW wc;
-	ZeroMemory((Pbyte)&wc, sizeof(wc));
+	ZeroMemory((byte*)&wc, sizeof(wc));
 	wc.cbSize = sizeof(wc);
 	wc.lpfnWndProc = WndProc;
 
-	uchar nLength = ERandomIntDistribution(NULL, 8, 255);
-	PCWSTR pName = malloc(nLength);
+	uchar nLength = rng::Xoshiro::Instance()->ERandomIntDistribution(8, 255);
+	PCWSTR pName = (PCWSTR)malloc(nLength);
 
 //	wc.lpszClassName = ;
 
@@ -46,6 +46,6 @@ DWORD WINAPI thWindowThread(
 		}
 	}
 
-	free(wc.lpszClassName);
+	free((void*)wc.lpszClassName);
 	return TRUE;
 }

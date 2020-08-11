@@ -94,7 +94,7 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ResourceCompile>
       <Culture />
@@ -109,15 +109,15 @@
     <ClCompile Include="..\shared\shared.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="..\shared\data.cpp" />
-    <ClCompile Include="NT.c" />
+    <ClCompile Include="NT.cpp" />
     <ClCompile Include="AntiRE.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Process.c" />
+    <ClCompile Include="Process.cpp" />
     <ClCompile Include="Random.cpp" />
     <ClCompile Include="Crypt.cpp" />
     <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="VMDetect.c" />
-    <ClCompile Include="Window.c" />
+    <ClCompile Include="VMDetect.cpp" />
+    <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="_rift.rc" />

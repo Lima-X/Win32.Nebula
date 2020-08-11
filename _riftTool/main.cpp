@@ -15,9 +15,9 @@
 
 #include "_riftTool.h"
 
-EXTERN_C const SIG e_HashSig;
-EXTERN_C const CHAR e_pszSections[ANYSIZE_ARRAY][8];
-EXTERN_C const size_t e_nSections;
+extern const SIG e_HashSig;
+extern const CHAR e_pszSections[ANYSIZE_ARRAY][8];
+extern const size_t e_nSections;
 
 INT wmain(
 	_In_     INT    argc,
@@ -26,9 +26,7 @@ INT wmain(
 ) {
 	UNREFERENCED_PARAMETER(envp);
 	{	// Initialize Process Information block
-		HANDLE hPH = GetProcessHeap();
-		g_PIB = (PPIB)HeapAlloc(hPH, 0, sizeof(PIB));
-		g_PIB->hPH = hPH;
+		g_PIB = (PIB*)malloc(sizeof(PIB));
 		GetCurrentDirectoryW(MAX_PATH, g_PIB->sMod.szCD);
 	}
 	g_hCon = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -60,10 +58,10 @@ INT wmain(
 	} else if (argc == 3) {
 		if (!lstrcmpW(argv[1], L"/pa")) {
 			// Load Executable/Image
-			PWSTR szFileName = malloc(MAX_PATH * sizeof(WCHAR));
+			PWSTR szFileName = (PWSTR)malloc(MAX_PATH * sizeof(WCHAR));
 			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
 			size_t nFile;
-			void* pFile = ReadFileCW(szFileName, 0, &nFile);
+			void* pFile = ReadFileCW(szFileName, 0, (SIZE_T*)&nFile);
 			if (!pFile)
 				goto EXIT;
 
@@ -85,7 +83,7 @@ INT wmain(
 
 			// Hash Sections
 			void* pHash = 0;
-			for (uint8 i = 0; i < pFHdr->NumberOfSections; i++) {
+			for (uchar i = 0; i < pFHdr->NumberOfSections; i++) {
 				// Get Section and Check if Type is accepted
 				PIMAGE_SECTION_HEADER pSHdr = ((PIMAGE_SECTION_HEADER)((ptr)pOHdr + (ptr)pFHdr->SizeOfOptionalHeader) + i);
 				if (!((pSHdr->Characteristics & IMAGE_SCN_CNT_CODE) || (pSHdr->Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA)))
@@ -93,9 +91,9 @@ INT wmain(
 
 				// Check for Special Section
 				BOOLEAN bFlag;
-				for (uint8 j = 0; j < e_nSections; j++) {
+				for (uchar j = 0; j < e_nSections; j++) {
 					bFlag = TRUE;
-					for (uint8 n = 0; n < IMAGE_SIZEOF_SHORT_NAME; n++) {
+					for (uchar n = 0; n < IMAGE_SIZEOF_SHORT_NAME; n++) {
 						if (pSHdr->Name[n] != e_pszSections[j][n]) {
 							bFlag = FALSE;
 							break;
@@ -114,8 +112,8 @@ INT wmain(
 				if (bFlag == 1) {
 					for (uint j = 0; j < nSection - sizeof(md5); j++) {
 						bFlag = TRUE;
-						for (uint8 n = 0; n < sizeof(md5); n++) {
-							if (((Pbyte)pSection)[j + n] != ((Pbyte)(e_HashSig.pSig))[n]) {
+						for (uchar n = 0; n < sizeof(md5); n++) {
+							if (((byte*)pSection)[j + n] != ((byte*)(e_HashSig.pSig))[n]) {
 								bFlag = FALSE;
 								break;
 							}
@@ -157,7 +155,7 @@ INT wmain(
 			BCRYPT_ALG_HANDLE ahAes, ahRng;
 			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
 			nts = BCryptOpenAlgorithmProvider(&ahRng, BCRYPT_RNG_ALGORITHM, 0, 0);
-			Pbyte pKey = malloc(AES_KEY_SIZE);
+			byte* pKey = malloc(AES_KEY_SIZE);
 			nts = BCryptGenRandom(ahRng, pKey, AES_KEY_SIZE, 0);
 			nts = BCryptCloseAlgorithmProvider(ahRng, 0);
 			BCRYPT_KEY_HANDLE khAes;

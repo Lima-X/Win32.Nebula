@@ -96,10 +96,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\shared\data.c" />
+    <ClCompile Include="..\shared\data.cpp" />
     <ClCompile Include="..\shared\shared.cpp" />
-    <ClCompile Include="main.c" />
-    <ClCompile Include="Utils.c" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="_riftTool.h" />

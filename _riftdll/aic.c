@@ -58,7 +58,7 @@ RPC_STATUS AicpCreateBindingHandle(
 	RPC_WSTR StringBinding = NULL;
 	RPC_BINDING_HANDLE Binding = NULL;
 	PSID LocalSystemSid = NULL;
-	DWORD cbSid = SECURITY_MAX_SID_SIZE;
+	dword cbSid = SECURITY_MAX_SID_SIZE;
 
 	if (BindingHandle)
 		*BindingHandle = NULL;
@@ -168,13 +168,13 @@ VOID AicpAsyncCloseHandle(
 BOOLEAN AicLaunchAdminProcess(
 	_In_opt_ LPWSTR ExecutablePath,
 	_In_opt_ LPWSTR CommandLine,
-	_In_ DWORD StartFlags,
-	_In_ DWORD CreationFlags,
+	_In_ dword StartFlags,
+	_In_ dword CreationFlags,
 	_In_ LPWSTR CurrentDirectory,
 	_In_ LPWSTR WindowStation,
 	_In_opt_ HWND hWnd,
-	_In_ DWORD Timeout,
-	_In_ DWORD ShowFlags,
+	_In_ dword Timeout,
+	_In_ dword ShowFlags,
 	_Out_ PROCESS_INFORMATION* ProcessInformation
 )
 {
@@ -231,8 +231,8 @@ BOOLEAN AicLaunchAdminProcess(
 				if (ProcessInformation) {
 					ProcessInformation->hProcess = (HANDLE)procInfo.ProcessHandle;
 					ProcessInformation->hThread = (HANDLE)procInfo.ThreadHandle;
-					ProcessInformation->dwProcessId = (DWORD)procInfo.ProcessId;
-					ProcessInformation->dwThreadId = (DWORD)procInfo.ThreadId;
+					ProcessInformation->dwProcessId = (dword)procInfo.ProcessId;
+					ProcessInformation->dwThreadId = (dword)procInfo.ThreadId;
 				}
 
 				bResult = TRUE;

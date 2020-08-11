@@ -34,11 +34,11 @@ static BOOL ICheckVirtualBox() {
 		return FALSE;
 }
 
-static DWORD ICVPCExceptionFilter(
+static dword ICVPCExceptionFilter(
 	_In_ PEXCEPTION_POINTERS ep
 ) {
 	PCONTEXT pCt = ep->ContextRecord;
-	pCt->Ebx = (DWORD)-1; // Not running VPC
+	pCt->Ebx = (dword)-1; // Not running VPC
 	pCt->Eip += 4; // skip past the "call VPC" opcodes
 
 	return EXCEPTION_EXECUTE_HANDLER; // we can safely resume execution since we skipped faulty instruction
@@ -58,11 +58,7 @@ static BOOL ICheckVirtualPC() {
 
 			pop    ebx
 		}
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		EXCEPTION_POINTERS* ep = GetExceptionInformation();
-		PCONTEXT pCt = ep->ContextRecord;
-		pCt->Ebx = (DWORD)-1; // Not running VPC
-		pCt->Eip += 4; // skip past the "call VPC" opcodes
+	} __except (ICVPCExceptionFilter(GetExceptionInformation())) {
 		return FALSE;
 	}
 

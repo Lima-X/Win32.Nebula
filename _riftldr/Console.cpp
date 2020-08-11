@@ -59,9 +59,9 @@ BOOL IOpenConsole() {
 		sr.Bottom = (0 + 7) - 1;
 		if (sr.Right < csbi.srWindow.Right) {
 			SetConsoleWindowInfo(l_hCO, TRUE, &sr);
-			SetConsoleScreenBufferSize(l_hCO, (COORD) { sr.Right + 1, csbi.dwSize.Y });
+			SetConsoleScreenBufferSize(l_hCO, { sr.Right + 1, csbi.dwSize.Y });
 		} else if (sr.Right > csbi.srWindow.Right) {
-			SetConsoleScreenBufferSize(l_hCO, (COORD) { sr.Right + 1, csbi.dwSize.Y });
+			SetConsoleScreenBufferSize(l_hCO, { sr.Right + 1, csbi.dwSize.Y });
 			SetConsoleWindowInfo(l_hCO, TRUE, &sr);
 		} else {
 			SetConsoleWindowInfo(l_hCO, TRUE, &sr);
@@ -71,15 +71,15 @@ BOOL IOpenConsole() {
 
 	{	// Print Boarders
 		SetConsoleTextAttribute(l_hCO, CON_INFO);
-		SetConsoleCursorPosition(l_hCO, (COORD) { 0, 6 });
+		SetConsoleCursorPosition(l_hCO, { 0, 6 });
 		CONSOLE_SCREEN_BUFFER_INFO csbi;
 		GetConsoleScreenBufferInfo(l_hCO, &csbi);
-		DWORD dwWritten;
+		dword dwWritten;
 		for (SHORT i = 0; i < csbi.dwSize.X; i++) {
 			if (i > (nRiftLogo + 2) && i <= (nRiftLogo + 8 * 2) && !((i - (nRiftLogo + 2)) % 2)) {
 				CONSOLE_SCREEN_BUFFER_INFO csbiT;
 				GetConsoleScreenBufferInfo(l_hCO, &csbiT);
-				SetConsoleCursorPosition(l_hCO, (COORD) { nRiftLogo + 2, 6 - ((i - (nRiftLogo + 2)) / 2) });
+				SetConsoleCursorPosition(l_hCO, { (short)nRiftLogo + 2, (short)(6 - ((i - (nRiftLogo + 2)) / 2)) });
 				WriteConsoleW(l_hCO, L"|", 1, &dwWritten, NULL);
 				SetConsoleCursorPosition(l_hCO, csbiT.dwCursorPosition);
 			} if (i == (nRiftLogo + 2))
@@ -131,7 +131,7 @@ BOOL IOpenConsole() {
 
 				if ((riftLogo + (nRiftLogo * y))[x] != L' ') {
 					SetConsoleCursorPosition(l_hCO, { x + 1, y });
-					DWORD dwWritten;
+					dword dwWritten;
 					WriteConsoleW(l_hCO, &(riftLogo + (nRiftLogo * y))[x], 1, &dwWritten, NULL);
 					(riftLogo + (nRiftLogo * y))[x] = L' ';
 					bRetry = FALSE;
@@ -145,11 +145,11 @@ BOOL IOpenConsole() {
 			if (!bFirst)
 				SetConsoleCursorPosition(l_hCO, csbi.dwCursorPosition);
 			else {
-				SetConsoleCursorPosition(l_hCO, { nRiftLogo + 4, 0 });
+				SetConsoleCursorPosition(l_hCO, { (short)nRiftLogo + 4, 0 });
 				bFirst = FALSE;
 			}
 
-			DWORD dwWritten;
+			dword dwWritten;
 			if (riftInfo[uPos] != L'\n')
 				WriteConsoleW(l_hCO, &riftInfo[uPos], 1, &dwWritten, NULL);
 
@@ -179,7 +179,7 @@ BOOL IOpenConsole() {
 		SetConsoleWindowInfo(l_hCO, TRUE, &sr);
 	}
 
-	SetConsoleCursorPosition(l_hCO, (COORD) { 0, 7 });
+	SetConsoleCursorPosition(l_hCO, { 0, 7 });
 	return bT;
 }
 
@@ -190,9 +190,9 @@ VOID fnCLS(
 	if (!GetConsoleScreenBufferInfo(hConsole, &csbi))
 		return;
 
-	DWORD dwConSize = csbi.dwSize.X * csbi.dwSize.Y;
+	dword dwConSize = csbi.dwSize.X * csbi.dwSize.Y;
 	COORD coordScreen = { 0, 0 };
-	DWORD cCharsWritten;
+	dword cCharsWritten;
 	if (!FillConsoleOutputCharacterW(hConsole, L' ', dwConSize, coordScreen, &cCharsWritten))
 		return;
 	if (!GetConsoleScreenBufferInfo(hConsole, &csbi))
