@@ -1,5 +1,5 @@
-# \_rift (PDL)
-Packed(compressed & encryped) Dll Loader.
+# \_rift (PML)
+Packed(compressed & encryped) Module Loader.
 
 ## \_riftldr
 Main Executable containing the Core-Loader (S1) and its packed Resources,
@@ -84,7 +84,7 @@ Describes what a function takes and how it should be used
 ```
 NONE: not specified, this could mean anything
 T:    Thread EntryPoint used to create a new thread
-C/H:  CallBack / Hook Function
+Cb/H: CallBack / Hook Function
 A/W:  Ansi/Unicode Paramenters
 ```
 
@@ -98,25 +98,19 @@ NONE: not in a global/unit scope
 g_:   Global, can be used anywhere
 e_:   External, like global except that its only shared between specific units
 l_:   Local, can only be used in the translation unit of the declaration
+m_:   private Class Member
+p_:   protected Class Member 
 ```
 
 #### Prefix:
 Describes the Datatype of the Variable in a short from
 ```
 C:
-    b:  BOOL / byte
-    w:  WORD
+    b:  bool / byte
+    w:  word
     dw: dword
-    p:  Pointer to any Data (void*)
-    n:  Size of Data (size_t)
-    sz: ZeroTerminated String (WCHAR/(CHAR) Array)
-    a(N): Array of with Size of (N)
-
-WinAPI:
-    h:  Handle / Module
-    ah: BCrypt Algorithm Handle
-    kh: BCrypt Key Handle
-    hh: BCrypt Hash Handle
-    ch: De/Compressor Handle
-    cs: Critical Section Object
+    p:  Pointer to any Data (mostlikely void*, can be anything tho)
+    r:  reference
+    n:  Size of Data (size_t) (can also just be a normal number)
+    sz: ZeroTerminated String (wchar/char Array)
 ```

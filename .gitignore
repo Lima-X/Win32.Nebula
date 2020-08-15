@@ -4,7 +4,6 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 # _rift specific files
-*.zip
 RIFTSKEY
 RIFTWKEY
 RIFTTEST
@@ -16,9 +15,9 @@ RIFTROOT32
 RIFTROOT64
 # _rift specific directories
 .in/
-# 3P Libraries
-/dtBlackBone
-/msDetours
+# 3rd-Party Libraries
+dtBlackBone/
+msDetours/
 
 # User-specific files
 *.rsuser
