@@ -45,15 +45,15 @@ namespace rng {
 		return dwT;
 	}
 	// Uniform int/float Distribution Functions
-	uint Xoshiro::ERandomIntDistribution(
-		_In_ uint nMin,
-		_In_ uint nMax
+	uint32 Xoshiro::ERandomIntDistribution(
+		_In_ uint32 nMin,
+		_In_ uint32 nMax
 	) {
-		const uint nRange = (nMax - nMin) + 1;
-		const uint nScale = (uint)-1 / nRange;
-		const uint nLimit = nRange * nScale;
+		const uint32 nRange = (nMax - nMin) + 1;
+		const uint32 nScale = (uint32)-1 / nRange;
+		const uint32 nLimit = nRange * nScale;
 
-		uint nRet;
+		uint32 nRet;
 		do {
 			nRet = EXoshiroSS();
 		} while (nRet >= nLimit);
@@ -159,9 +159,9 @@ namespace rng {
 		_In_     size_t nBuffer
 	) {
 		rng::Xoshiro* xsr = rng::Xoshiro::Instance();
-		for (uint i = 0; i < (nBuffer / 4); i++) {
+		for (uint32 i = 0; i < (nBuffer / 4); i++) {
 			((PDWORD)pBuffer)[i] = xsr->EXoshiroSS();
-		} for (uint i = (nBuffer / 4) * 4; i < nBuffer; i++) {
+		} for (uint32 i = (nBuffer / 4) * 4; i < nBuffer; i++) {
 			((byte*)pBuffer)[i] = xsr->EXoshiroP() >> (3 * 8);
 		}
 	}

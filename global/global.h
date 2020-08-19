@@ -2,21 +2,41 @@
 // that is virtually included in every File in every Project
 #pragma once
 
+// CRT Specific Defines
+#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NON_CONFORMING_SWPRINTFS
+
+// Windows (NT) Specific Defines
+#define _WIN32_WINNT 0x06010000 // Windows 7
 #include <windows.h>
 
-/* Windows Naming Convention */
-#define DEPRECATED __declspec(deprecated)
-typedef GUID         uuid;
+   #define DEPRECATED      __declspec(deprecated)
+// #define DEPRECATED(str) __declspec(deprecated(str))
 
 // Standard types
-typedef unsigned char  uchar;
-typedef unsigned short wchar;
-typedef unsigned long  ushort;
-typedef unsigned long  ulong;
-typedef unsigned int   uint;
-typedef unsigned char  byte;
-typedef unsigned short word;
-typedef unsigned long  dword;
+typedef unsigned char    uchar;
+typedef          wchar_t wchar;
+// typedef unsigned short   ushort;
+typedef unsigned long    ulong;
+
+// Integer Types
+   typedef          char      int8;
+   typedef unsigned char      uint8;
+   typedef          short     int16;
+   typedef unsigned short     uint16;
+   typedef          int       int32;
+   typedef unsigned int       uint32;
+// typedef          long long int64;
+// typedef unsigned long long uint64;
+
+// CPU Types
+   typedef unsigned char      byte;
+   typedef unsigned short     word;
+   typedef unsigned long      dword;
+// typedef unsigned long long qword
+
+// Special Types
+typedef GUID         uuid;
 
 /* Function Status return Value:
    x=0 if Successful

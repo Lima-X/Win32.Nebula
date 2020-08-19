@@ -36,7 +36,7 @@ namespace alg {
 		_Out_opt_ PSTR   psz,      // Output Buffer to fill / if nul Calculates the neccessary size
 		_In_      bool   bPad      // Enables Padding
 	) {
-		if (nData >= (((uint)-1) / 2) / 4)
+		if (nData >= (((uint32)-1) / 2) / 4)
 			return -1; // Too much Data
 		if (!psz) { // Calculate Neccessary Space if Output is NULL
 			// Raw Space Needed
@@ -97,22 +97,22 @@ namespace alg {
 			cTable[pcTable[i]] = (char)i;
 		cTable['='] = '\0';
 		size_t nC = 0;
-		for (uint i = 0; i < nsz; i++)
+		for (uint32 i = 0; i < nsz; i++)
 			if (cTable[((uchar*)psz)[i]] != 0x80)
 				nC++;
 		if (!nC)
 			return -1; // Invalid Size
 
 		// Calculate Padding (optional: return size of space needed)
-		const uint nEPad = (4 - nC % 4) % 4;
+		const uint32 nEPad = (4 - nC % 4) % 4;
 		if (!pData)
 			return (nC + nEPad) / 4 * 3; // return required space
 		nC = 0;
 
-		uint  nPad = 0;
+		uint32  nPad = 0;
 		byte  bBlock[4];
 		byte* pPos = (byte*)pData;
-		for (uint i = 0; i < nsz + nEPad; i++) {
+		for (uint32 i = 0; i < nsz + nEPad; i++) {
 			// Ignore Padding
 			CHAR bVal;
 			if (i >= nsz)
@@ -187,16 +187,16 @@ namespace alg {
 	) {
 		auto IHexToBinLA = []( // Char to Hexvalue
 			_In_ char c		   // Char to convert
-		) -> byte {
-			if (c >= '0' && c <= '9')
-				return c - '0';
-			if (c >= 'a' && c <= 'f')
-				return c - 'a' + 10;
+			) -> byte {
+				if (c >= '0' && c <= '9')
+					return c - '0';
+				if (c >= 'a' && c <= 'f')
+					return c - 'a' + 10;
 		};
 
 		const char nPart[] = { 4, 2, 2 };
 		for (char i = 0; i < sizeof(nPart); i++) {
-			uint nC = nPart[i];
+			uint32 nC = nPart[i];
 			while (nC--)
 				((byte*)pId)[nC] = (IHexToBinLA(*pString++) << 4) + IHexToBinLA(*pString++);
 			*(ptr*)&pId += nPart[i];

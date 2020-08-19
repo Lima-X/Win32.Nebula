@@ -4,7 +4,7 @@
 // this will be used in order to prevent the loader from accidentally
 // bricking the system in the Incubation period
 
-LRESULT CALLBACK WndProc(HWND hWnd, uint uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK WndProc(HWND hWnd, uint32 uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_CREATE:
 		break;

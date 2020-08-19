@@ -120,7 +120,7 @@ namespace utl {
 	DEPRECATED PCWSTR GetFileNameFromPathW(
 		_In_ PCWSTR pPath
 	) {
-		for (uint i = wcslen(pPath); i > 2; i--)
+		for (uint32 i = wcslen(pPath); i > 2; i--)
 			if (pPath[i - 1] == L'\\')
 				return pPath + i;
 

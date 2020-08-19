@@ -1,0 +1,1144 @@
+Folder PATH listing for volume Data
+Volume serial number is 0FD1-13DC
+F:.
+|   .gitattributes
+|   .gitignore
+|   dir.txt
+|   README.md
+|   _rift.sln
+|   
++---core
+|   +---shared
+|   |       data.cpp
+|   |       depends.h
+|   |       shared.cpp
+|   |       shared.h
+|   |       
+|   +---_riftdll
+|   |   |   aic.c
+|   |   |   appinfo32.c
+|   |   |   appinfo32.h
+|   |   |   dllmain.cpp
+|   |   |   tyranid.c
+|   |   |   _riftdll.h
+|   |   |   _riftdll.vcxproj
+|   |   |   _riftdll.vcxproj.filters
+|   |   |   _riftdll.vcxproj.user
+|   |   |   
+|   |   \---Debug
+|   |       |   dllmain.obj
+|   |       |   pch.obj
+|   |       |   vc142.idb
+|   |       |   vc142.pdb
+|   |       |   _riftdll.log
+|   |       |   _riftdll.pch
+|   |       |   
+|   |       \---_riftdll.tlog
+|   |               CL.command.1.tlog
+|   |               CL.read.1.tlog
+|   |               CL.write.1.tlog
+|   |               link.command.1.tlog
+|   |               link.read.1.tlog
+|   |               link.write.1.tlog
+|   |               _riftdll.lastbuildstate
+|   |               
+|   +---_riftldr
+|   |   |   AntiRE.cpp
+|   |   |   BlackBone.cpp
+|   |   |   Console.cpp
+|   |   |   Crypt.cpp
+|   |   |   main.cpp
+|   |   |   NT.cpp
+|   |   |   Process.cpp
+|   |   |   Random.cpp
+|   |   |   resource.h
+|   |   |   Utils.cpp
+|   |   |   VMDetect.cpp
+|   |   |   Window.cpp
+|   |   |   _rift.aps
+|   |   |   _rift.rc
+|   |   |   _riftldr.h
+|   |   |   _riftldr.vcxproj
+|   |   |   _riftldr.vcxproj.filters
+|   |   |   _riftldr.vcxproj.user
+|   |   |   
+|   |   \---Debug
+|   |       |   main.obj
+|   |       |   pch.obj
+|   |       |   vc142.idb
+|   |       |   vc142.pdb
+|   |       |   _rift.Build.CppClean.log
+|   |       |   _rift.log
+|   |       |   _rift.obj
+|   |       |   _rift.pch
+|   |       |   _rift.vcxproj.FileListAbsolute.txt
+|   |       |   
+|   |       \---_rift.tlog
+|   |               CL.command.1.tlog
+|   |               CL.read.1.tlog
+|   |               CL.write.1.tlog
+|   |               link.command.1.tlog
+|   |               link.read.1.tlog
+|   |               link.write.1.tlog
+|   |               unsuccessfulbuild
+|   |               _rift.lastbuildstate
+|   |               
+|   \---_riftTool
+|       |   main.cpp
+|       |   Utils.cpp
+|       |   _riftTool.h
+|       |   _riftTool.vcxproj
+|       |   _riftTool.vcxproj.filters
+|       |   _riftTool.vcxproj.user
+|       |   
+|       \---Debug
+|               _riftdllCrypt.log
+|               
++---global
+|       global.h
+|       
++---other
+|   +---dtBlackBone
+|   |   |   .gitattributes
+|   |   |   .gitignore
+|   |   |   BlackBone.sln
+|   |   |   LICENSE
+|   |   |   README.md
+|   |   |   
+|   |   +---.github
+|   |   |   \---workflows
+|   |   |           driver.yaml
+|   |   |           lib.yaml
+|   |   |           
+|   |   +---build
+|   |   |   +---Win32
+|   |   |   |   +---Debug
+|   |   |   |   |       BlackBone.lib
+|   |   |   |   |       BlackBone.pdb
+|   |   |   |   |       msdia140.dll
+|   |   |   |   |       symsrv.dll
+|   |   |   |   |       
+|   |   |   |   \---Release
+|   |   |   |           BlackBone.lib
+|   |   |   |           msdia140.dll
+|   |   |   |           symsrv.dll
+|   |   |   |           
+|   |   |   \---x64
+|   |   |       +---Debug
+|   |   |       |       BlackBone.lib
+|   |   |       |       BlackBone.pdb
+|   |   |       |       msdia140.dll
+|   |   |       |       symsrv.dll
+|   |   |       |       
+|   |   |       \---Release
+|   |   |               BlackBone.lib
+|   |   |               msdia140.dll
+|   |   |               symsrv.dll
+|   |   |               
+|   |   +---DIA
+|   |   |   +---Win32
+|   |   |   |       msdia140.dll
+|   |   |   |       symsrv.dll
+|   |   |   |       
+|   |   |   \---x64
+|   |   |           msdia140.dll
+|   |   |           symsrv.dll
+|   |   |           
+|   |   +---obj
+|   |   |   +---Win32
+|   |   |   |   +---Debug
+|   |   |   |   |   \---BlackBone
+|   |   |   |   |       |   AsmHelper32.obj
+|   |   |   |   |       |   AsmHelper64.obj
+|   |   |   |   |       |   assembler.obj
+|   |   |   |   |       |   BlackBone.log
+|   |   |   |   |       |   BlackBone.pdb
+|   |   |   |   |       |   BlackBone.vcxproj.FileListAbsolute.txt
+|   |   |   |   |       |   codegen.obj
+|   |   |   |   |       |   constpool.obj
+|   |   |   |   |       |   containers.obj
+|   |   |   |   |       |   cpuinfo.obj
+|   |   |   |   |       |   cputicks.obj
+|   |   |   |   |       |   DriverControl.obj
+|   |   |   |   |       |   error.obj
+|   |   |   |   |       |   globals.obj
+|   |   |   |   |       |   ImageNET.obj
+|   |   |   |   |       |   InitOnce.obj
+|   |   |   |   |       |   LDasm.obj
+|   |   |   |   |       |   LocalHookBase.obj
+|   |   |   |   |       |   MemBlock.obj
+|   |   |   |   |       |   MExcept.obj
+|   |   |   |   |       |   MMap.obj
+|   |   |   |   |       |   NameResolve.obj
+|   |   |   |   |       |   NativeSubsystem.obj
+|   |   |   |   |       |   NtLoader.obj
+|   |   |   |   |       |   operand.obj
+|   |   |   |   |       |   PatternLoader.obj
+|   |   |   |   |       |   PatternSearch.obj
+|   |   |   |   |       |   PDBHelper.obj
+|   |   |   |   |       |   PEImage.obj
+|   |   |   |   |       |   Process.obj
+|   |   |   |   |       |   ProcessCore.obj
+|   |   |   |   |       |   ProcessMemory.obj
+|   |   |   |   |       |   ProcessModules.obj
+|   |   |   |   |       |   RemoteExec.obj
+|   |   |   |   |       |   RemoteHook.obj
+|   |   |   |   |       |   RemoteLocalHook.obj
+|   |   |   |   |       |   RemoteMemory.obj
+|   |   |   |   |       |   runtime.obj
+|   |   |   |   |       |   string.obj
+|   |   |   |   |       |   SymbolData.obj
+|   |   |   |   |       |   SymbolLoader.obj
+|   |   |   |   |       |   Syscall32.obj
+|   |   |   |   |       |   Thread.obj
+|   |   |   |   |       |   Threads.obj
+|   |   |   |   |       |   TraceHook.obj
+|   |   |   |   |       |   Utils.obj
+|   |   |   |   |       |   vmem.obj
+|   |   |   |   |       |   wow64ext.obj
+|   |   |   |   |       |   Wow64Subsystem.obj
+|   |   |   |   |       |   x86assembler.obj
+|   |   |   |   |       |   x86cpuinfo.obj
+|   |   |   |   |       |   x86inst.obj
+|   |   |   |   |       |   x86operand.obj
+|   |   |   |   |       |   x86operand_regs.obj
+|   |   |   |   |       |   x86Subsystem.obj
+|   |   |   |   |       |   zone.obj
+|   |   |   |   |       |   
+|   |   |   |   |       \---BlackBone.tlog
+|   |   |   |   |               BlackBone.lastbuildstate
+|   |   |   |   |               CL.command.1.tlog
+|   |   |   |   |               CL.read.1.tlog
+|   |   |   |   |               CL.write.1.tlog
+|   |   |   |   |               Lib-link.read.1.tlog
+|   |   |   |   |               Lib-link.write.1.tlog
+|   |   |   |   |               Lib.command.1.tlog
+|   |   |   |   |               Masm.read.1u.tlog
+|   |   |   |   |               Masm.write.1u.tlog
+|   |   |   |   |               
+|   |   |   |   \---Release
+|   |   |   |       \---BlackBone
+|   |   |   |           |   AsmHelper32.obj
+|   |   |   |           |   AsmHelper64.obj
+|   |   |   |           |   assembler.obj
+|   |   |   |           |   BlackBone.log
+|   |   |   |           |   BlackBone.pdb
+|   |   |   |           |   codegen.obj
+|   |   |   |           |   constpool.obj
+|   |   |   |           |   containers.obj
+|   |   |   |           |   cpuinfo.obj
+|   |   |   |           |   cputicks.obj
+|   |   |   |           |   DriverControl.obj
+|   |   |   |           |   error.obj
+|   |   |   |           |   globals.obj
+|   |   |   |           |   ImageNET.obj
+|   |   |   |           |   InitOnce.obj
+|   |   |   |           |   LDasm.obj
+|   |   |   |           |   LocalHookBase.obj
+|   |   |   |           |   MemBlock.obj
+|   |   |   |           |   MExcept.obj
+|   |   |   |           |   MMap.obj
+|   |   |   |           |   NameResolve.obj
+|   |   |   |           |   NativeSubsystem.obj
+|   |   |   |           |   NtLoader.obj
+|   |   |   |           |   operand.obj
+|   |   |   |           |   PatternLoader.obj
+|   |   |   |           |   PatternSearch.obj
+|   |   |   |           |   PDBHelper.obj
+|   |   |   |           |   PEImage.obj
+|   |   |   |           |   Process.obj
+|   |   |   |           |   ProcessCore.obj
+|   |   |   |           |   ProcessMemory.obj
+|   |   |   |           |   ProcessModules.obj
+|   |   |   |           |   RemoteExec.obj
+|   |   |   |           |   RemoteHook.obj
+|   |   |   |           |   RemoteLocalHook.obj
+|   |   |   |           |   RemoteMemory.obj
+|   |   |   |           |   runtime.obj
+|   |   |   |           |   string.obj
+|   |   |   |           |   SymbolData.obj
+|   |   |   |           |   SymbolLoader.obj
+|   |   |   |           |   Syscall32.obj
+|   |   |   |           |   Thread.obj
+|   |   |   |           |   Threads.obj
+|   |   |   |           |   TraceHook.obj
+|   |   |   |           |   Utils.obj
+|   |   |   |           |   vmem.obj
+|   |   |   |           |   wow64ext.obj
+|   |   |   |           |   Wow64Subsystem.obj
+|   |   |   |           |   x86assembler.obj
+|   |   |   |           |   x86cpuinfo.obj
+|   |   |   |           |   x86inst.obj
+|   |   |   |           |   x86operand.obj
+|   |   |   |           |   x86operand_regs.obj
+|   |   |   |           |   x86Subsystem.obj
+|   |   |   |           |   zone.obj
+|   |   |   |           |   
+|   |   |   |           \---BlackBone.tlog
+|   |   |   |                   BlackBone.lastbuildstate
+|   |   |   |                   CL.command.1.tlog
+|   |   |   |                   CL.read.1.tlog
+|   |   |   |                   CL.write.1.tlog
+|   |   |   |                   Lib-link.read.1.tlog
+|   |   |   |                   Lib-link.write.1.tlog
+|   |   |   |                   Lib.command.1.tlog
+|   |   |   |                   Masm.read.1u.tlog
+|   |   |   |                   Masm.write.1u.tlog
+|   |   |   |                   
+|   |   |   \---x64
+|   |   |       +---Debug
+|   |   |       |   \---BlackBone
+|   |   |       |       |   AsmHelper32.obj
+|   |   |       |       |   AsmHelper64.obj
+|   |   |       |       |   assembler.obj
+|   |   |       |       |   BlackBone.log
+|   |   |       |       |   BlackBone.pdb
+|   |   |       |       |   BlackBone.vcxproj.FileListAbsolute.txt
+|   |   |       |       |   codegen.obj
+|   |   |       |       |   constpool.obj
+|   |   |       |       |   containers.obj
+|   |   |       |       |   cpuinfo.obj
+|   |   |       |       |   cputicks.obj
+|   |   |       |       |   DriverControl.obj
+|   |   |       |       |   error.obj
+|   |   |       |       |   globals.obj
+|   |   |       |       |   ImageNET.obj
+|   |   |       |       |   InitOnce.obj
+|   |   |       |       |   LDasm.obj
+|   |   |       |       |   LocalHookBase.obj
+|   |   |       |       |   MemBlock.obj
+|   |   |       |       |   MExcept.obj
+|   |   |       |       |   MMap.obj
+|   |   |       |       |   NameResolve.obj
+|   |   |       |       |   NativeSubsystem.obj
+|   |   |       |       |   NtLoader.obj
+|   |   |       |       |   operand.obj
+|   |   |       |       |   PatternLoader.obj
+|   |   |       |       |   PatternSearch.obj
+|   |   |       |       |   PDBHelper.obj
+|   |   |       |       |   PEImage.obj
+|   |   |       |       |   Process.obj
+|   |   |       |       |   ProcessCore.obj
+|   |   |       |       |   ProcessMemory.obj
+|   |   |       |       |   ProcessModules.obj
+|   |   |       |       |   RemoteExec.obj
+|   |   |       |       |   RemoteHook.obj
+|   |   |       |       |   RemoteLocalHook.obj
+|   |   |       |       |   RemoteMemory.obj
+|   |   |       |       |   runtime.obj
+|   |   |       |       |   string.obj
+|   |   |       |       |   SymbolData.obj
+|   |   |       |       |   SymbolLoader.obj
+|   |   |       |       |   Syscall64.obj
+|   |   |       |       |   Thread.obj
+|   |   |       |       |   Threads.obj
+|   |   |       |       |   TraceHook.obj
+|   |   |       |       |   Utils.obj
+|   |   |       |       |   vmem.obj
+|   |   |       |       |   wow64ext.obj
+|   |   |       |       |   Wow64Subsystem.obj
+|   |   |       |       |   x86assembler.obj
+|   |   |       |       |   x86cpuinfo.obj
+|   |   |       |       |   x86inst.obj
+|   |   |       |       |   x86operand.obj
+|   |   |       |       |   x86operand_regs.obj
+|   |   |       |       |   x86Subsystem.obj
+|   |   |       |       |   zone.obj
+|   |   |       |       |   
+|   |   |       |       \---BlackBone.tlog
+|   |   |       |               BlackBone.lastbuildstate
+|   |   |       |               CL.command.1.tlog
+|   |   |       |               CL.read.1.tlog
+|   |   |       |               CL.write.1.tlog
+|   |   |       |               Lib-link.read.1.tlog
+|   |   |       |               Lib-link.write.1.tlog
+|   |   |       |               Lib.command.1.tlog
+|   |   |       |               Masm.read.1u.tlog
+|   |   |       |               Masm.write.1u.tlog
+|   |   |       |               
+|   |   |       \---Release
+|   |   |           \---BlackBone
+|   |   |               |   AsmHelper32.obj
+|   |   |               |   AsmHelper64.obj
+|   |   |               |   assembler.obj
+|   |   |               |   BlackBone.log
+|   |   |               |   BlackBone.pdb
+|   |   |               |   codegen.obj
+|   |   |               |   constpool.obj
+|   |   |               |   containers.obj
+|   |   |               |   cpuinfo.obj
+|   |   |               |   cputicks.obj
+|   |   |               |   DriverControl.obj
+|   |   |               |   error.obj
+|   |   |               |   globals.obj
+|   |   |               |   ImageNET.obj
+|   |   |               |   InitOnce.obj
+|   |   |               |   LDasm.obj
+|   |   |               |   LocalHookBase.obj
+|   |   |               |   MemBlock.obj
+|   |   |               |   MExcept.obj
+|   |   |               |   MMap.obj
+|   |   |               |   NameResolve.obj
+|   |   |               |   NativeSubsystem.obj
+|   |   |               |   NtLoader.obj
+|   |   |               |   operand.obj
+|   |   |               |   PatternLoader.obj
+|   |   |               |   PatternSearch.obj
+|   |   |               |   PDBHelper.obj
+|   |   |               |   PEImage.obj
+|   |   |               |   Process.obj
+|   |   |               |   ProcessCore.obj
+|   |   |               |   ProcessMemory.obj
+|   |   |               |   ProcessModules.obj
+|   |   |               |   RemoteExec.obj
+|   |   |               |   RemoteHook.obj
+|   |   |               |   RemoteLocalHook.obj
+|   |   |               |   RemoteMemory.obj
+|   |   |               |   runtime.obj
+|   |   |               |   string.obj
+|   |   |               |   SymbolData.obj
+|   |   |               |   SymbolLoader.obj
+|   |   |               |   Syscall64.obj
+|   |   |               |   Thread.obj
+|   |   |               |   Threads.obj
+|   |   |               |   TraceHook.obj
+|   |   |               |   Utils.obj
+|   |   |               |   vmem.obj
+|   |   |               |   wow64ext.obj
+|   |   |               |   Wow64Subsystem.obj
+|   |   |               |   x86assembler.obj
+|   |   |               |   x86cpuinfo.obj
+|   |   |               |   x86inst.obj
+|   |   |               |   x86operand.obj
+|   |   |               |   x86operand_regs.obj
+|   |   |               |   x86Subsystem.obj
+|   |   |               |   zone.obj
+|   |   |               |   
+|   |   |               \---BlackBone.tlog
+|   |   |                       BlackBone.lastbuildstate
+|   |   |                       CL.command.1.tlog
+|   |   |                       CL.read.1.tlog
+|   |   |                       CL.write.1.tlog
+|   |   |                       Lib-link.read.1.tlog
+|   |   |                       Lib-link.write.1.tlog
+|   |   |                       Lib.command.1.tlog
+|   |   |                       Masm.read.1u.tlog
+|   |   |                       Masm.write.1u.tlog
+|   |   |                       
+|   |   +---src
+|   |   |   |   CMakeLists.txt
+|   |   |   |   
+|   |   |   +---3rd_party
+|   |   |   |   |   cor.h
+|   |   |   |   |   CorError.h
+|   |   |   |   |   corhdr.h
+|   |   |   |   |   gchost.h
+|   |   |   |   |   ivalidator.h
+|   |   |   |   |   ivehandler.h
+|   |   |   |   |   metahost.h
+|   |   |   |   |   mscoree.h
+|   |   |   |   |   VersionApi.h
+|   |   |   |   |   winapifamily.h
+|   |   |   |   |   winpackagefamily.h
+|   |   |   |   |   
+|   |   |   |   +---AsmJit
+|   |   |   |   |   |   ApiBegin.h
+|   |   |   |   |   |   ApiEnd.h
+|   |   |   |   |   |   AsmJit.h
+|   |   |   |   |   |   base.h
+|   |   |   |   |   |   Build.h
+|   |   |   |   |   |   Config.h
+|   |   |   |   |   |   host.h
+|   |   |   |   |   |   LICENSE.md
+|   |   |   |   |   |   README.md
+|   |   |   |   |   |   x86.h
+|   |   |   |   |   |   
+|   |   |   |   |   +---base
+|   |   |   |   |   |       assembler.cpp
+|   |   |   |   |   |       assembler.h
+|   |   |   |   |   |       codegen.cpp
+|   |   |   |   |   |       codegen.h
+|   |   |   |   |   |       compiler.cpp
+|   |   |   |   |   |       compiler.h
+|   |   |   |   |   |       constpool.cpp
+|   |   |   |   |   |       constpool.h
+|   |   |   |   |   |       containers.cpp
+|   |   |   |   |   |       containers.h
+|   |   |   |   |   |       context.cpp
+|   |   |   |   |   |       context_p.h
+|   |   |   |   |   |       cpuinfo.cpp
+|   |   |   |   |   |       cpuinfo.h
+|   |   |   |   |   |       cputicks.cpp
+|   |   |   |   |   |       cputicks.h
+|   |   |   |   |   |       error.cpp
+|   |   |   |   |   |       error.h
+|   |   |   |   |   |       globals.cpp
+|   |   |   |   |   |       globals.h
+|   |   |   |   |   |       intutil.cpp
+|   |   |   |   |   |       intutil.h
+|   |   |   |   |   |       lock.h
+|   |   |   |   |   |       logger.cpp
+|   |   |   |   |   |       logger.h
+|   |   |   |   |   |       operand.cpp
+|   |   |   |   |   |       operand.h
+|   |   |   |   |   |       runtime.cpp
+|   |   |   |   |   |       runtime.h
+|   |   |   |   |   |       string.cpp
+|   |   |   |   |   |       string.h
+|   |   |   |   |   |       vectypes.h
+|   |   |   |   |   |       vmem.cpp
+|   |   |   |   |   |       vmem.h
+|   |   |   |   |   |       zone.cpp
+|   |   |   |   |   |       zone.h
+|   |   |   |   |   |       
+|   |   |   |   |   \---x86
+|   |   |   |   |           x86assembler.cpp
+|   |   |   |   |           x86assembler.h
+|   |   |   |   |           x86compiler.cpp
+|   |   |   |   |           x86compiler.h
+|   |   |   |   |           x86context.cpp
+|   |   |   |   |           x86context_p.h
+|   |   |   |   |           x86cpuinfo.cpp
+|   |   |   |   |           x86cpuinfo.h
+|   |   |   |   |           x86inst.cpp
+|   |   |   |   |           x86inst.h
+|   |   |   |   |           x86operand.cpp
+|   |   |   |   |           x86operand.h
+|   |   |   |   |           x86operand_regs.cpp
+|   |   |   |   |           x86scheduler.cpp
+|   |   |   |   |           x86scheduler_p.h
+|   |   |   |   |           
+|   |   |   |   +---BeaEngine
+|   |   |   |   |   |   Warning_for_C_coders.txt
+|   |   |   |   |   |   
+|   |   |   |   |   +---headers
+|   |   |   |   |   |   |   BeaEngine.h
+|   |   |   |   |   |   |   
+|   |   |   |   |   |   \---Includes
+|   |   |   |   |   |           basic_types.h
+|   |   |   |   |   |           export.h
+|   |   |   |   |   |           
+|   |   |   |   |   +---Win32
+|   |   |   |   |   |   +---Dll
+|   |   |   |   |   |   |       BeaEngine.exp
+|   |   |   |   |   |   |       BeaEngine.lib
+|   |   |   |   |   |   |       BeaEngineCheetah.dll
+|   |   |   |   |   |   |       BeaEngineCheetah.exp
+|   |   |   |   |   |   |       BeaEngineCheetah.lib
+|   |   |   |   |   |   |       
+|   |   |   |   |   |   \---Lib
+|   |   |   |   |   |           BeaEngine.lib
+|   |   |   |   |   |           BeaEngineCheetah.lib
+|   |   |   |   |   |           
+|   |   |   |   |   \---Win64
+|   |   |   |   |       +---Dll
+|   |   |   |   |       |       BeaEngine64.dll
+|   |   |   |   |       |       BeaEngine64.exp
+|   |   |   |   |       |       BeaEngine64.lib
+|   |   |   |   |       |       BeaEngineCheetah64.dll
+|   |   |   |   |       |       BeaEngineCheetah64.exp
+|   |   |   |   |       |       BeaEngineCheetah64.lib
+|   |   |   |   |       |       
+|   |   |   |   |       \---Lib
+|   |   |   |   |               BeaEngine64.lib
+|   |   |   |   |               BeaEngineCheetah64.lib
+|   |   |   |   |               
+|   |   |   |   +---DIA
+|   |   |   |   |   |   cvconst.h
+|   |   |   |   |   |   dia2.h
+|   |   |   |   |   |   diacreate.h
+|   |   |   |   |   |   
+|   |   |   |   |   \---lib
+|   |   |   |   |       |   diaguids.lib
+|   |   |   |   |       |   
+|   |   |   |   |       \---amd64
+|   |   |   |   |               diaguids.lib
+|   |   |   |   |               
+|   |   |   |   \---rewolf-wow64ext
+|   |   |   |       |   .gitignore
+|   |   |   |       |   .hgignore
+|   |   |   |       |   lgpl-3.0.txt
+|   |   |   |       |   README.md
+|   |   |   |       |   
+|   |   |   |       +---doc
+|   |   |   |       |       wow64ext.txt
+|   |   |   |       |       
+|   |   |   |       +---sample
+|   |   |   |       |       build.bat
+|   |   |   |       |       main.cpp
+|   |   |   |       |       
+|   |   |   |       \---src
+|   |   |   |               CMemPtr.h
+|   |   |   |               internal.h
+|   |   |   |               resource.h
+|   |   |   |               wow64ext.cpp
+|   |   |   |               wow64ext.h
+|   |   |   |               wow64ext.rc
+|   |   |   |               wow64ext.sln
+|   |   |   |               wow64ext.vcxproj
+|   |   |   |               
+|   |   |   +---BlackBone
+|   |   |   |   |   BlackBone.vcxproj
+|   |   |   |   |   BlackBone.vcxproj.filters
+|   |   |   |   |   BlackBone.vcxproj.user
+|   |   |   |   |   CMakeLists.txt
+|   |   |   |   |   Config.h
+|   |   |   |   |   DllMain.cpp
+|   |   |   |   |   Exports.def
+|   |   |   |   |   
+|   |   |   |   +---Asm
+|   |   |   |   |       AsmFactory.h
+|   |   |   |   |       AsmHelper32.cpp
+|   |   |   |   |       AsmHelper32.h
+|   |   |   |   |       AsmHelper64.cpp
+|   |   |   |   |       AsmHelper64.h
+|   |   |   |   |       AsmStack.hpp
+|   |   |   |   |       AsmVariant.hpp
+|   |   |   |   |       IAsmHelper.h
+|   |   |   |   |       LDasm.c
+|   |   |   |   |       LDasm.h
+|   |   |   |   |       
+|   |   |   |   +---DriverControl
+|   |   |   |   |       DriverControl.cpp
+|   |   |   |   |       DriverControl.h
+|   |   |   |   |       
+|   |   |   |   +---Include
+|   |   |   |   |       ApiSet.h
+|   |   |   |   |       CallResult.h
+|   |   |   |   |       FunctionTypes.h
+|   |   |   |   |       HandleGuard.h
+|   |   |   |   |       Macro.h
+|   |   |   |   |       NativeEnums.h
+|   |   |   |   |       NativeStructures.h
+|   |   |   |   |       Types.h
+|   |   |   |   |       Win7Specific.h
+|   |   |   |   |       Win8Specific.h
+|   |   |   |   |       Winheaders.h
+|   |   |   |   |       WinXPSpecific.h
+|   |   |   |   |       
+|   |   |   |   +---LocalHook
+|   |   |   |   |       HookHandlerCdecl.h
+|   |   |   |   |       HookHandlerFastcall.h
+|   |   |   |   |       HookHandlers.h
+|   |   |   |   |       HookHandlerStdcall.h
+|   |   |   |   |       HookHandlerThiscall.h
+|   |   |   |   |       LocalHook.hpp
+|   |   |   |   |       LocalHookBase.cpp
+|   |   |   |   |       LocalHookBase.h
+|   |   |   |   |       TraceHook.cpp
+|   |   |   |   |       TraceHook.h
+|   |   |   |   |       VTableHook.hpp
+|   |   |   |   |       
+|   |   |   |   +---ManualMap
+|   |   |   |   |   |   MExcept.cpp
+|   |   |   |   |   |   MExcept.h
+|   |   |   |   |   |   MMap.cpp
+|   |   |   |   |   |   MMap.h
+|   |   |   |   |   |   
+|   |   |   |   |   \---Native
+|   |   |   |   |           NtLoader.cpp
+|   |   |   |   |           NtLoader.h
+|   |   |   |   |           
+|   |   |   |   +---Misc
+|   |   |   |   |       DynImport.h
+|   |   |   |   |       InitOnce.cpp
+|   |   |   |   |       InitOnce.h
+|   |   |   |   |       NameResolve.cpp
+|   |   |   |   |       NameResolve.h
+|   |   |   |   |       Thunk.hpp
+|   |   |   |   |       Trace.hpp
+|   |   |   |   |       Utils.cpp
+|   |   |   |   |       Utils.h
+|   |   |   |   |       
+|   |   |   |   +---Patterns
+|   |   |   |   |       PatternSearch.cpp
+|   |   |   |   |       PatternSearch.h
+|   |   |   |   |       
+|   |   |   |   +---PE
+|   |   |   |   |       ImageNET.cpp
+|   |   |   |   |       ImageNET.h
+|   |   |   |   |       PEImage.cpp
+|   |   |   |   |       PEImage.h
+|   |   |   |   |       
+|   |   |   |   +---Process
+|   |   |   |   |   |   MemBlock.cpp
+|   |   |   |   |   |   MemBlock.h
+|   |   |   |   |   |   MultPtr.hpp
+|   |   |   |   |   |   Process.cpp
+|   |   |   |   |   |   Process.h
+|   |   |   |   |   |   ProcessCore.cpp
+|   |   |   |   |   |   ProcessCore.h
+|   |   |   |   |   |   ProcessMemory.cpp
+|   |   |   |   |   |   ProcessMemory.h
+|   |   |   |   |   |   ProcessModules.cpp
+|   |   |   |   |   |   ProcessModules.h
+|   |   |   |   |   |   
+|   |   |   |   |   +---RPC
+|   |   |   |   |   |       RemoteContext.hpp
+|   |   |   |   |   |       RemoteExec.cpp
+|   |   |   |   |   |       RemoteExec.h
+|   |   |   |   |   |       RemoteFunction.hpp
+|   |   |   |   |   |       RemoteHook.cpp
+|   |   |   |   |   |       RemoteHook.h
+|   |   |   |   |   |       RemoteLocalHook.cpp
+|   |   |   |   |   |       RemoteLocalHook.h
+|   |   |   |   |   |       RemoteMemory.cpp
+|   |   |   |   |   |       RemoteMemory.h
+|   |   |   |   |   |       
+|   |   |   |   |   \---Threads
+|   |   |   |   |           Thread.cpp
+|   |   |   |   |           Thread.h
+|   |   |   |   |           Threads.cpp
+|   |   |   |   |           Threads.h
+|   |   |   |   |           
+|   |   |   |   +---Subsystem
+|   |   |   |   |       NativeSubsystem.cpp
+|   |   |   |   |       NativeSubsystem.h
+|   |   |   |   |       Wow64Subsystem.cpp
+|   |   |   |   |       Wow64Subsystem.h
+|   |   |   |   |       x86Subsystem.cpp
+|   |   |   |   |       x86Subsystem.h
+|   |   |   |   |       
+|   |   |   |   +---Symbols
+|   |   |   |   |       PatternLoader.cpp
+|   |   |   |   |       PatternLoader.h
+|   |   |   |   |       PDBHelper.cpp
+|   |   |   |   |       PDBHelper.h
+|   |   |   |   |       SymbolData.cpp
+|   |   |   |   |       SymbolData.h
+|   |   |   |   |       SymbolLoader.cpp
+|   |   |   |   |       SymbolLoader.h
+|   |   |   |   |       
+|   |   |   |   \---Syscalls
+|   |   |   |           Syscall.h
+|   |   |   |           Syscall32.asm
+|   |   |   |           Syscall64.asm
+|   |   |   |           
+|   |   |   +---BlackBoneDrv
+|   |   |   |   |   apiset.h
+|   |   |   |   |   BlackBoneDef.h
+|   |   |   |   |   BlackBoneDrv.c
+|   |   |   |   |   BlackBoneDrv.h
+|   |   |   |   |   BlackBoneDrv.sln
+|   |   |   |   |   BlackBoneDrv.vcxproj
+|   |   |   |   |   BlackBoneDrv.vcxproj.filters
+|   |   |   |   |   Dispatch.c
+|   |   |   |   |   Imports.h
+|   |   |   |   |   Inject.c
+|   |   |   |   |   ldrreloc.c
+|   |   |   |   |   Loader.c
+|   |   |   |   |   Loader.h
+|   |   |   |   |   MMap.c
+|   |   |   |   |   NativeEnums.h
+|   |   |   |   |   NativeStructs.h
+|   |   |   |   |   NativeStructs10.h
+|   |   |   |   |   NativeStructs7.h
+|   |   |   |   |   NativeStructs8.h
+|   |   |   |   |   NativeStructs81.h
+|   |   |   |   |   NotifyRoutine.c
+|   |   |   |   |   PEStructs.h
+|   |   |   |   |   Private.c
+|   |   |   |   |   Private.h
+|   |   |   |   |   Remap.c
+|   |   |   |   |   Remap.h
+|   |   |   |   |   Routines.c
+|   |   |   |   |   Routines.h
+|   |   |   |   |   Utils.c
+|   |   |   |   |   Utils.h
+|   |   |   |   |   VadHelpers.c
+|   |   |   |   |   VadHelpers.h
+|   |   |   |   |   VadRoutines.c
+|   |   |   |   |   VadRoutines.h
+|   |   |   |   |   
+|   |   |   |   \---bin
+|   |   |   |       \---x64
+|   |   |   |           +---Win10Release
+|   |   |   |           |       BlackBoneDrv10.sys
+|   |   |   |           |       
+|   |   |   |           +---Win7Release
+|   |   |   |           |       BlackBoneDrv7.sys
+|   |   |   |           |       
+|   |   |   |           +---Win8.1Release
+|   |   |   |           |       BlackBoneDrv81.sys
+|   |   |   |           |       
+|   |   |   |           \---Win8Release
+|   |   |   |                   BlackBoneDrv8.sys
+|   |   |   |                   
+|   |   |   +---BlackBoneTest
+|   |   |   |       BlackBoneTest.vcxproj
+|   |   |   |       BlackBoneTest.vcxproj.filters
+|   |   |   |       BlackBoneTest.vcxproj.user
+|   |   |   |       Common.h
+|   |   |   |       TestAsmJit.cpp
+|   |   |   |       TestAsmVariant.cpp
+|   |   |   |       TestBasic.cpp
+|   |   |   |       TestDriver.cpp
+|   |   |   |       TestGuard.cpp
+|   |   |   |       TestLocalHook.cpp
+|   |   |   |       TestManualMap.cpp
+|   |   |   |       TestModules.cpp
+|   |   |   |       TestMultiPtr.cpp
+|   |   |   |       TestPatternScan.cpp
+|   |   |   |       TestRemoteCall.cpp
+|   |   |   |       TestRemoteHook.cpp
+|   |   |   |       TestRemoteMemory.cpp
+|   |   |   |       TestSymbols.cpp
+|   |   |   |       TestSyscall.cpp
+|   |   |   |       
+|   |   |   \---Samples
+|   |   |           CMakeLists.txt
+|   |   |           Main.cpp
+|   |   |           ManualMap.cpp
+|   |   |           Samples.vcxproj
+|   |   |           Samples.vcxproj.filters
+|   |   |           Samples.vcxproj.user
+|   |   |           
+|   |   \---Testing
+|   |           TestDll32.dll
+|   |           TestDll64.dll
+|   |           TestHelper32.exe
+|   |           TestHelper64.exe
+|   |           
+|   +---msDetours
+|   |   |   .gitignore
+|   |   |   CREDITS.TXT
+|   |   |   LICENSE.md
+|   |   |   Makefile
+|   |   |   README.md
+|   |   |   system.mak
+|   |   |   
+|   |   +---bin.X86
+|   |   +---include
+|   |   |       detours.h
+|   |   |       detver.h
+|   |   |       
+|   |   +---lib.X86
+|   |   |       detours.lib
+|   |   |       detours.pdb
+|   |   |       
+|   |   +---samples
+|   |   |   |   common.mak
+|   |   |   |   Makefile
+|   |   |   |   README.TXT
+|   |   |   |   
+|   |   |   +---comeasy
+|   |   |   |       comeasy.cpp
+|   |   |   |       Makefile
+|   |   |   |       wrotei.cpp
+|   |   |   |       wrotei.rc
+|   |   |   |       
+|   |   |   +---commem
+|   |   |   |       commem.cpp
+|   |   |   |       Makefile
+|   |   |   |       
+|   |   |   +---cping
+|   |   |   |       cping.cpp
+|   |   |   |       cping.dat
+|   |   |   |       iping.idl
+|   |   |   |       Makefile
+|   |   |   |       ReadMe.Txt
+|   |   |   |       
+|   |   |   +---disas
+|   |   |   |       arm.asm
+|   |   |   |       disas.cpp
+|   |   |   |       ia64.asm
+|   |   |   |       Makefile
+|   |   |   |       unk.cpp
+|   |   |   |       x64.asm
+|   |   |   |       x86.cpp
+|   |   |   |       
+|   |   |   +---dtest
+|   |   |   |       dtarge.cpp
+|   |   |   |       dtarge.h
+|   |   |   |       dtarge.rc
+|   |   |   |       dtest.cpp
+|   |   |   |       Makefile
+|   |   |   |       NORMAL_IA64.TXT
+|   |   |   |       NORMAL_X64.TXT
+|   |   |   |       NORMAL_X86.TXT
+|   |   |   |       
+|   |   |   +---dumpe
+|   |   |   |       dumpe.cpp
+|   |   |   |       Makefile
+|   |   |   |       
+|   |   |   +---dumpi
+|   |   |   |       dumpi.cpp
+|   |   |   |       Makefile
+|   |   |   |       
+|   |   |   +---dynamic_alloc
+|   |   |   |       main.cpp
+|   |   |   |       Makefile
+|   |   |   |       x64.asm
+|   |   |   |       x86.asm
+|   |   |   |       
+|   |   |   +---echo
+|   |   |   |       echofx.cpp
+|   |   |   |       echofx.rc
+|   |   |   |       echonul.cpp
+|   |   |   |       main.cpp
+|   |   |   |       Makefile
+|   |   |   |       
+|   |   |   +---einst
+|   |   |   |       edll1x.cpp
+|   |   |   |       edll2x.cpp
+|   |   |   |       edll3x.cpp
+|   |   |   |       einst.cpp
+|   |   |   |       Makefile
+|   |   |   |       
+|   |   |   +---excep
+|   |   |   |       excep.cpp
+|   |   |   |       firstexc.cpp
+|   |   |   |       firstexc.h
+|   |   |   |       Makefile
+|   |   |   |       
+|   |   |   +---findfunc
+|   |   |   |       extend.cpp
+|   |   |   |       extend.rc
+|   |   |   |       findfunc.cpp
+|   |   |   |       Makefile
+|   |   |   |       symtest.cpp
+|   |   |   |       target.cpp
+|   |   |   |       target.h
+|   |   |   |       target.rc
+|   |   |   |       
+|   |   |   +---impmunge
+|   |   |   |       impmunge.cpp
+|   |   |   |       Makefile
+|   |   |   |       
+|   |   |   +---member
+|   |   |   |       Makefile
+|   |   |   |       member.cpp
+|   |   |   |       
+|   |   |   +---opengl
+|   |   |   |       Makefile
+|   |   |   |       ogldet.cpp
+|   |   |   |       ogldet.rc
+|   |   |   |       testogl.cpp
+|   |   |   |       
+|   |   |   +---region
+|   |   |   |       Makefile
+|   |   |   |       region.cpp
+|   |   |   |       
+|   |   |   +---setdll
+|   |   |   |       Makefile
+|   |   |   |       setdll.cpp
+|   |   |   |       
+|   |   |   +---simple
+|   |   |   |       Makefile
+|   |   |   |       simple.cpp
+|   |   |   |       simple.rc
+|   |   |   |       sleep5.cpp
+|   |   |   |       
+|   |   |   +---slept
+|   |   |   |       dslept.cpp
+|   |   |   |       dslept.rc
+|   |   |   |       Makefile
+|   |   |   |       NORMAL_IA64.TXT
+|   |   |   |       NORMAL_X64.TXT
+|   |   |   |       NORMAL_X86.TXT
+|   |   |   |       sleepbed.cpp
+|   |   |   |       sleepnew.cpp
+|   |   |   |       sleepold.cpp
+|   |   |   |       slept.cpp
+|   |   |   |       slept.h
+|   |   |   |       slept.rc
+|   |   |   |       verify.cpp
+|   |   |   |       
+|   |   |   +---syelog
+|   |   |   |       Makefile
+|   |   |   |       sltest.cpp
+|   |   |   |       sltestp.cpp
+|   |   |   |       syelog.cpp
+|   |   |   |       syelog.h
+|   |   |   |       syelogd.cpp
+|   |   |   |       
+|   |   |   +---talloc
+|   |   |   |       Makefile
+|   |   |   |       NORMAL_IA64.TXT
+|   |   |   |       NORMAL_X64.TXT
+|   |   |   |       talloc.cpp
+|   |   |   |       tdll1x.cpp
+|   |   |   |       tdll2x.cpp
+|   |   |   |       tdll3x.cpp
+|   |   |   |       tdll4x.cpp
+|   |   |   |       tdll5x.cpp
+|   |   |   |       tdll6x.cpp
+|   |   |   |       tdll7x.cpp
+|   |   |   |       tdll8x.cpp
+|   |   |   |       tdll9x.cpp
+|   |   |   |       
+|   |   |   +---traceapi
+|   |   |   |       Makefile
+|   |   |   |       testapi.cpp
+|   |   |   |       trcapi.cpp
+|   |   |   |       trcapi.rc
+|   |   |   |       _win32.cpp
+|   |   |   |       
+|   |   |   +---tracebld
+|   |   |   |       Makefile
+|   |   |   |       tracebld.cpp
+|   |   |   |       tracebld.h
+|   |   |   |       trcbld.cpp
+|   |   |   |       trcbld.rc
+|   |   |   |       
+|   |   |   +---tracelnk
+|   |   |   |       Makefile
+|   |   |   |       trclnk.cpp
+|   |   |   |       trclnk.rc
+|   |   |   |       
+|   |   |   +---tracemem
+|   |   |   |       Makefile
+|   |   |   |       trcmem.cpp
+|   |   |   |       trcmem.rc
+|   |   |   |       
+|   |   |   +---tracereg
+|   |   |   |       Makefile
+|   |   |   |       trcreg.cpp
+|   |   |   |       trcreg.rc
+|   |   |   |       
+|   |   |   +---traceser
+|   |   |   |       Makefile
+|   |   |   |       trcser.cpp
+|   |   |   |       trcser.rc
+|   |   |   |       
+|   |   |   +---tracessl
+|   |   |   |       Makefile
+|   |   |   |       trcssl.cpp
+|   |   |   |       trcssl.rc
+|   |   |   |       
+|   |   |   +---tracetcp
+|   |   |   |       Makefile
+|   |   |   |       trctcp.cpp
+|   |   |   |       trctcp.rc
+|   |   |   |       
+|   |   |   +---tryman
+|   |   |   |       Makefile
+|   |   |   |       managed.cs
+|   |   |   |       size.cpp
+|   |   |   |       tryman.cpp
+|   |   |   |       tstman.cpp
+|   |   |   |       tstman.rc
+|   |   |   |       
+|   |   |   \---withdll
+|   |   |           Makefile
+|   |   |           withdll.cpp
+|   |   |           
+|   |   \---src
+|   |       |   creatwth.cpp
+|   |       |   detours.cpp
+|   |       |   detours.h
+|   |       |   detver.h
+|   |       |   disasm.cpp
+|   |       |   disolarm.cpp
+|   |       |   disolarm64.cpp
+|   |       |   disolia64.cpp
+|   |       |   disolx64.cpp
+|   |       |   disolx86.cpp
+|   |       |   image.cpp
+|   |       |   Makefile
+|   |       |   modules.cpp
+|   |       |   uimports.cpp
+|   |       |   
+|   |       \---obj.X86
+|   |               creatwth.obj
+|   |               detours.obj
+|   |               disasm.obj
+|   |               disolarm.obj
+|   |               disolarm64.obj
+|   |               disolia64.obj
+|   |               disolx64.obj
+|   |               disolx86.obj
+|   |               image.obj
+|   |               modules.obj
+|   |               
+|   \---_riftIcon
+|           _rift x128.png
+|           _rift x16.png
+|           _rift x256.png
+|           _rift x32.png
+|           _rift x48.png
+|           _rift x64.png
+|           _rift x96.png
+|           _rift.ico
+|           _rift.psd
+|           
++---out
+|   |   encrypt.bat
+|   |   generatewrap.bat
+|   |   RIFTDLL
+|   |   RIFTINJECT32
+|   |   RIFTINJECT64
+|   |   RIFTKILL
+|   |   RIFTROOT32
+|   |   RIFTROOT64
+|   |   RIFTSKEY
+|   |   RIFTTEST
+|   |   RIFTWKEY
+|   |   _DEBUG
+|   |   
+|   +---Debug
+|   |       _riftdll.exp
+|   |       _riftdll.lib
+|   |       _riftdll.pdb
+|   |       _riftInject32.exe
+|   |       _riftInject32.ilk
+|   |       _riftInject32.pdb
+|   |       _riftInject64.exe
+|   |       _riftInject64.ilk
+|   |       _riftInject64.pdb
+|   |       _riftldr.exe
+|   |       _riftldr.ilk
+|   |       _riftldr.pdb
+|   |       _riftRoot32.dll
+|   |       _riftRoot32.ilk
+|   |       _riftRoot32.pdb
+|   |       _riftRoot64.dll
+|   |       _riftRoot64.ilk
+|   |       _riftRoot64.pdb
+|   |       _riftTool.pdb
+|   |       
+|   \---Release
+|           _rift.exe
+|           _rift.iobj
+|           _rift.ipdb
+|           _riftdll.dll
+|           _riftdll.exp
+|           _riftdll.iobj
+|           _riftdll.ipdb
+|           _riftdll.lib
+|           _riftInject32.exe
+|           _riftInject32.iobj
+|           _riftInject32.ipdb
+|           _riftInject64.exe
+|           _riftInject64.iobj
+|           _riftInject64.ipdb
+|           _riftldr.exe
+|           _riftldr.iobj
+|           _riftldr.ipdb
+|           _riftldr.pdb
+|           _riftRoot32.dll
+|           _riftRoot32.iobj
+|           _riftRoot32.ipdb
+|           _riftRoot64.dll
+|           _riftRoot64.iobj
+|           _riftRoot64.ipdb
+|           _riftTool.exe
+|           _riftTool.iobj
+|           _riftTool.ipdb
+|           _riftTool.pdb
+|           
+\---root
+    +---_riftInject
+    |       main.cpp
+    |       _riftInject.h
+    |       _riftInject.vcxproj
+    |       _riftInject.vcxproj.filters
+    |       _riftInject.vcxproj.user
+    |       
+    \---_riftRoot
+            dllmain.cpp
+            _riftRoot.h
+            _riftRoot.vcxproj
+            _riftRoot.vcxproj.filters
+            _riftRoot.vcxproj.user
+            

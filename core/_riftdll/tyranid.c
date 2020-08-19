@@ -58,7 +58,7 @@ NTSTATUS ucmxCreateProcessFromParent(
 NTSTATUS ucmDebugObjectMethod(
 	_In_ LPWSTR lpszPayload
 ) {
-	//uint retryCount = 0;
+	//uint32 retryCount = 0;
 	NTSTATUS status = STATUS_ACCESS_DENIED;
 
 	// Spawn initial non elevated victim process under debug.

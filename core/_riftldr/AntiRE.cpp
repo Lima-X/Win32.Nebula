@@ -32,7 +32,7 @@ namespace are { // Anti Reverse Engineering
 		// inverse of EPROCESS->NoDebugInherit so (!TRUE == FALSE)
 		static BOOL ICheckProcessDebugFlags() {
 			// Much easier in ASM but C/C++ looks so much better
-			typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint, void*, ULONG, PULONG);
+			typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint32, void*, ULONG, PULONG);
 
 			// Get NtQueryInformationProcess
 			pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
@@ -59,7 +59,7 @@ namespace are { // Anti Reverse Engineering
 		// or the process isn't being debugged
 		static BOOL IDebugObjectCheck() {
 			// Much easier in ASM but C/C++ looks so much better
-			typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint, void*, ULONG, PULONG);
+			typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint32, void*, ULONG, PULONG);
 
 			// Get NtQueryInformationProcess
 			pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
@@ -87,7 +87,7 @@ namespace are { // Anti Reverse Engineering
 		BOOL EHideThread(
 			_In_opt_ HANDLE hThread
 		) {
-			typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, uint, void*, ULONG);
+			typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, uint32, void*, ULONG);
 
 			// Get NtSetInformationThread
 			pNtSetInformationThread fnNtSIT = (pNtSetInformationThread)GetProcAddress(hNtDll, "NtSetInformationThread");
@@ -465,7 +465,7 @@ namespace are { // Anti Reverse Engineering
 
 					// TODO: replace with SigScanner
 					// Find Hash Signature
-					for (uint j = 0; j < nSection - sizeof(cry::Md5::hash); j++) {
+					for (uint32 j = 0; j < nSection - sizeof(cry::Md5::hash); j++) {
 						bFlag = TRUE;
 						for (uchar n = 0; n < sizeof(cry::Md5::hash); n++) {
 							if (((byte*)pSection)[j + n] != (*(byte**)&e_HashSig)[n]) {
@@ -508,7 +508,7 @@ namespace are { // Anti Reverse Engineering
 		//       it lacks a lot of safety features and sanity checks.
 		//       Only the neccessary checks have been implemented yet !
 		status IHashMappedSection() {
-			HMODULE hMod = GetModuleHandle(nullptr);
+			HMODULE hMod = GetModuleHandleW(nullptr);
 			PIMAGE_NT_HEADERS pNth = (PIMAGE_NT_HEADERS)((ptr)hMod + ((PIMAGE_DOS_HEADER)hMod)->e_lfanew);
 			if (pNth->Signature != IMAGE_NT_SIGNATURE)
 				return -1;

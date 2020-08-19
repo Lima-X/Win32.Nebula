@@ -1,21 +1,388 @@
 #include "_riftldr.h"
 
-static const PCWSTR l_szRiftLogo[] = {
-	L"             __  _____  __   __        ___       ",
-	L"     _______|__|/ ____\\/  |_|  |    __| _/______ ",
-	L"     \\_  __ \\  \\   __\\\\   __\\  |   / __ |\\_  __ \\",
-	L"      |  | \\/  ||  |   |  | |  |__/ /_/ | |  | \\/",
-	L" _____|__|  |__||__|   |__| |____/\\____ | |__|   ",
-	L"/_____/                                \\/        "
-};
-static const PCWSTR l_szRiftInfo[] = {
-	L"[_rift V1] coded by [Lima X]\n",
-	L"\n",
-	L"Special Thanks to:\n",
-	L"[irql](Chris) : helping with Wintrnls\n",
-	L"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
-	L"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
-};
+/* Current ui layout/design:
+    Logo | Info
+   ------+------
+   Text
+
+   -------------------
+
+   New planned design:
+   +-------+-----+
+   | Logo / Info |
+   +-----+-------+
+   | TextText    |
+   | Text        |
+   +-------------+
+
+   Animation points:
+   1>a-----2>----3
+   b      d      e
+   2>c---3>------4
+   | Text        |
+   3>------------5
+
+   a good way would to do this animated would be by making line drawing functions,
+   that take in a callback and giving the those a context about position etc, then letting the callback handle what to do.
+   to do stuff asynchronously i would use threads, each one drawing a specific line,
+   and a hostthread(clock) that would notify all threads when to draw a symbol
+   (the clock would be a bit overkill tho ig and small mismatches wouldn't visible anyways)
+
+   best found solution for async printing is an initial launch of the first line and a "master callback".
+   this master callback is used from every thread and every draw line function,
+   its given context from which fucntion and which part of the animation it was called from,
+   together with this information and the coords of the currect drawing position,
+   the callback will decide on what to do and how to respond.
+   these actions may include: launching extra threads, writing to the CSB and basically anything else.
+
+   WriteConsoleOutput can be used to scroll the text inside the drawn box by repasting the rows
+
+   Full Scale new ui:
+     |--- dynamically calculated at runtime ---------------| |--- dynamically calculated at runtime -----------|
+    +-------------------------------------------------------+---------------------------------------------------+
+	|              __  _____  __   __        ___           / [_rift V1] coded by [Lima X]                       | -
+	|      _______|__|/ ____\/  |_|  |    __| _/______    / A random selected Slogan followed by an empty line  | |
+	|      \_  __ \  \   __\\   __\  |   / __ |\_  __ \  /                                                      | | 6chars semi
+	|       |  | \/  ||  |   |  | |  |__/ /_/ | |  | \/ / Special Thanks to:                                    | | hardcoded
+	|  _____|__|  |__||__|   |__| |____/\____ | |__|   / [irql](Chris) : helping with Wintrnls                  | |
+	| /_____/                                \/       / and a lot more in the future probably :flushed:         | -
+	+------------------------------------------------+----------------------------------------------------------+
+	| Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore | -
+	| et dolore magna aliquyam erat, sed diam voluptua.                                                         | |
+	| At vero eos et accusam et justo duo dolores et ea rebum.                                                  | | definable
+	|                                                                                                           | | in software
+	| Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.                        | |
+	|                                                                                                           | -
+	+-----------------------------------------------------------------------------------------------------------+
+*/
+
+#define LOGOINTERSECT 0
+
+namespace cui {
+	static const char* l_szRiftLogo[] = {
+		"             __  _____  __   __        ___",
+		"     _______|__|/ ____\\/  |_|  |    __| _/______",
+		"     \\_  __ \\  \\   __\\\\   __\\  |   / __ |\\_  __ \\",
+		"      |  | \\/  ||  |   |  | |  |__/ /_/ | |  | \\/",
+		" _____|__|  |__||__|   |__| |____/\\____ | |__|",
+		"/_____/                                \\/"
+	};
+	struct RiftLogoRaw {
+		uint8 nWidth;
+		uint16 nChars;
+		struct riftLogoFormat {
+			char c;
+			struct {
+				uchar x;
+				uchar y;
+			} sPos;
+		} *aData;
+
+		RiftLogoRaw()
+			: nWidth(0), nChars(0)
+		{
+			{	// Get width and number of chars in riftLogo
+				for (uint8 i = 0; i < 6; i++) {
+					uint8 n = strlen(l_szRiftLogo[i]);
+					if (n > nWidth)
+						nWidth = n;
+				}
+				for (uint8 i = 0; i < 6; i++) {
+					uint8 nWidth = strlen(l_szRiftLogo[i]);
+					for (uint8 j = 0; j < nWidth; j++)
+						if (l_szRiftLogo[i][j] != ' ')
+							nChars++;
+				}
+			}
+
+			// Allocate riftLogoInformation Array and Initialize
+			aData = (riftLogoFormat*)malloc(nChars * sizeof(riftLogoFormat));
+			uint16 nIndex = 0;
+			for (uint8 i = 0; i < 6; i++) {
+				uint8 nWidth = strlen(l_szRiftLogo[i]);
+				for (uint8 j = 0; j < nWidth; j++)
+					if (l_szRiftLogo[i][j] != ' ') {
+						aData[nIndex].c = l_szRiftLogo[i][j];
+						aData[nIndex].sPos = { j, i };
+						nIndex++;
+					}
+			}
+
+			// Shuffle Array (20 Rounds)
+			for (uint32 i = 0; i < nIndex * 20; i++) {
+				uint16 n1 = rng::Xoshiro::Instance()->ERandomIntDistribution(0, nIndex - 1);
+				uint16 n2 = rng::Xoshiro::Instance()->ERandomIntDistribution(0, nIndex - 1);
+				if (n1 == n2) // might remove this, branching might just make it slower
+					continue;
+
+				{	// Swap Elements
+					riftLogoFormat rlf = aData[n1];
+					aData[n1] = aData[n2];
+					aData[n2] = rlf;
+				}
+			}
+		}
+		~RiftLogoRaw() {
+			free(aData);
+		}
+	};
+
+	static const char* l_szRiftSlogan[] = {
+		"A very bad UX.",
+		"Come at me, I know you won't.",
+		"nyan nyan nyan nyan nyan",
+		"std::string == bytearray ~gui",
+		"You will regret this...",
+		"batch and vbs == real shit!",
+		"I was here before I think, wasn't I ?",
+		"Im your systems DooM :D",
+		"Thank your for choosing _rift !",
+		"You fell for it, YOU IDIOT !",
+		"Fucking your system 24/7",
+		"listen here you little fag.",
+		"0xC0000374, your favourite Error.",
+		"Ima snipp of your Foreskin !",
+		"Segmentation fault. (core dumped)",
+		"A randomly selected Slogan",
+		"Rush B, CUNT",
+		"This is a Nightmare, but for your System.",
+
+	};
+	static const char* l_szRiftInfo[] = {
+		"[_rift V1] coded by [Lima X]\n",
+		// A random selected Slogan followed by an empty line
+		"Special Thanks to:\n"
+		"[irql](Chris) : helping with Wintrnls\n"
+		"and a lot more in the future probably :flushed:"
+	};
+	struct RiftInfoRaw {
+		uint8 nWidth;
+		uint16 nLength;
+		char* aData;
+
+		RiftInfoRaw()
+			: nLength(0)
+		{
+			// Choose Random Slogan
+			uint8 iSlogan = rng::Xoshiro::Instance()->ERandomIntDistribution(0, (sizeof(l_szRiftSlogan) / sizeof(*l_szRiftSlogan)) - 1);
+
+			// Get Maximum width (-slant) of riftInfo
+			nWidth = strlen(l_szRiftInfo[0]) - 1; // minus newline char
+			{
+				uint8 n = strlen(l_szRiftSlogan[iSlogan]);
+				if (n - 1 > nWidth) // account for slant
+					nWidth = n - 1;
+			}
+			for (uchar i = 0; i < 3; i++) {
+				static uint16 offset = 0;
+				for (uint8 j = 0; *(l_szRiftInfo[1] + offset) != '\n' && *(cui::l_szRiftInfo[1] + offset) != '\0'; j++) {
+					if (j - (i + 3) > nWidth) // account for slant
+						nWidth = j - (i + 3);
+					offset += j + 1;
+				}
+			}
+
+			// Get length, allocate and generate raw Data
+			nLength = strlen(l_szRiftInfo[0]);
+			nLength += strlen(l_szRiftSlogan[iSlogan]) + 2;
+			nLength += strlen(l_szRiftInfo[1]);
+			aData = (char*)malloc(nLength + 1);
+			strcpy(aData, l_szRiftInfo[0]);
+			strcat(aData, l_szRiftSlogan[iSlogan]);
+			strcat(aData, "\n\n");
+			strcat(aData, l_szRiftInfo[1]);
+		}
+		~RiftInfoRaw() {
+			free(aData);
+		}
+	};
+
+	struct RawContext {
+		RiftLogoRaw* rlr;
+		RiftInfoRaw* rir;
+	};
+
+	namespace cgl {
+		struct GContext {
+			HANDLE hConOut;
+			enum gType {
+				HORIZONTAL,
+				VERTICAL,
+				LEFTSLANT,
+				// RIGHTSLANT not to be implemented, as it is not needed
+			} call;
+			COORD cord1;
+			short p2;
+			wchar(*Callback)(
+				_In_ COORD     cord,
+				_In_ GContext& ctx
+				);
+			void* ctx;
+			bool bRead = false; // this Flag is set to true after the thread created a local copy
+		};
+
+		// This fucntion seriously has to be cleaned up
+		dword WINAPI DrawLine(
+			_In_ void* pParm
+		) {
+			GContext ctx = *(GContext*)pParm;
+			((GContext*)pParm)->bRead = true;
+
+			auto PrintCharWL = [&](
+				_In_ COORD cord,
+				_In_ wchar c
+				) {
+					if (!c) {
+						switch (ctx.call) {
+						case GContext::gType::HORIZONTAL:
+							if (cord.X != ctx.cord1.X && cord.X != ctx.p2)
+								c = L'-';
+							break;
+						case GContext::gType::VERTICAL:
+							if (cord.Y != ctx.cord1.Y && cord.Y != ctx.p2)
+								c = L'|';
+							break;
+						case GContext::gType::LEFTSLANT:
+							if (cord.Y != ctx.cord1.Y && cord.Y != ctx.p2)
+								c = L'/';
+						}
+						if (!c)
+							c = L'+';
+					}
+					dword dw;
+					WriteConsoleOutputCharacterW(ctx.hConOut, &c, 1, cord, &dw);
+			};
+
+			switch (ctx.call) {
+			case GContext::gType::HORIZONTAL: // Left to Right
+				for (short i = ctx.cord1.X; i <= ctx.p2; i++)
+					PrintCharWL({ i , ctx.cord1.Y }, ctx.Callback({ i , ctx.cord1.Y }, ctx));
+				break;
+			case GContext::gType::VERTICAL: // Top to Bottom
+				for (short i = ctx.cord1.Y; i <= ctx.p2; i++)
+					PrintCharWL({ ctx.cord1.X, i }, ctx.Callback({ ctx.cord1.X, i }, ctx));
+				break;
+			case GContext::gType::LEFTSLANT: // Bottom to Top
+				for (short i = ctx.cord1.Y; i >= ctx.p2; i--)
+					PrintCharWL({ (ctx.cord1.X + (ctx.cord1.Y - ctx.p2)) - i , i }, ctx.Callback({ (ctx.cord1.X + (ctx.cord1.Y - ctx.p2)) - i , i }, ctx));
+				break;
+			default:
+				return 1; // Indicate Error
+			}
+			return 0;
+		}
+
+#if 0 // Deprecated use DrawLine
+		dword WINAPI DrawHorizontalLine(
+			_In_ GContext* ctx
+		) {
+			for (short i = ctx->cord.X; i < ctx->x2; i++) {
+				wchar wc = ctx->Callback({ i , ctx->cord.Y }, ctx->Context);
+				dword dw;
+				WriteConsoleOutputCharacterW(ctx->hConOut, &wc, 1, { i , ctx->cord.Y }, &dw);
+			}
+			return 0;
+		}
+		dword WINAPI DrawVerticalLine(
+			_In_ GContext* ctx
+		) {
+			for (short i = ctx->cord.Y; i < ctx->y2; i++) {
+				wchar wc = ctx->Callback({ ctx->cord.X, i }, ctx->Context);
+				dword dw;
+				WriteConsoleOutputCharacterW(ctx->hConOut, &wc, 1, { ctx->cord.X, i }, &dw);
+			}
+			return 0;
+		}
+		dword WINAPI DrawSlantLeftLine(
+			_In_ GContext* ctx
+		) {
+			for (short i = ctx->cord.Y; i < ctx->y2; i++) {
+				wchar wc = ctx->Callback({ ctx->cord.X - i , i }, ctx->Context);
+				dword dw;
+				WriteConsoleOutputCharacterW(ctx->hConOut, &wc, 1, { ctx->cord.X - i , i }, &dw);
+			}
+			return 0;
+		}
+#endif
+
+		wchar GLCallBack(
+			_In_ COORD     cord,
+			_In_ GContext& ctx
+		) {
+			RawContext* uctx = (RawContext*)ctx.ctx;
+
+			const COORD points[] = {
+				{ uctx->rlr->nWidth - LOGOINTERSECT, 7 },
+				{ 0, 7 },
+				{ uctx->rlr->nWidth + uctx->rir->nWidth + 4 - LOGOINTERSECT, 0 },
+				{ 0, 20 },
+			};
+			uint8 iIndex = -1;
+			for (uint8 i = 0; i < sizeof(points) / sizeof(*points); i++)
+				if (*(dword*)&cord == *(dword*)&points[i]) {
+					iIndex = i;
+					break;
+				}
+
+			if (ctx.call == GContext::gType::HORIZONTAL)
+				Sleep(50);
+			else
+				Sleep(100);
+
+			switch (iIndex) {
+			case 0: {
+				if (ctx.call != GContext::gType::HORIZONTAL)
+					return 0;
+				GContext a = ctx;
+				a.call = a.LEFTSLANT;
+				a.cord1 = points[iIndex];
+				a.p2 = 0;
+				HANDLE hThread = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)DrawLine, &a, NULL, nullptr);
+				while (!a.bRead);
+				CloseHandle(hThread);
+			} break;
+			case 1: {
+				if (ctx.call != GContext::gType::VERTICAL)
+					return 0;
+				GContext a = ctx;
+				a.call = a.HORIZONTAL;
+				a.cord1 = points[iIndex];
+				a.p2 = uctx->rlr->nWidth + uctx->rir->nWidth + 4 - LOGOINTERSECT;
+				HANDLE hThread = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)DrawLine, &a, NULL, nullptr);
+				while (!a.bRead);
+				CloseHandle(hThread);
+				return L'x';
+			}
+			case 2: {
+				if (ctx.call != GContext::gType::HORIZONTAL)
+					return 0;
+				GContext a = ctx;
+				a.call = a.VERTICAL;
+				a.cord1 = points[iIndex];
+				a.p2 = 20;
+				HANDLE hThread = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)DrawLine, &a, NULL, nullptr);
+				while (!a.bRead);
+				CloseHandle(hThread);
+				return L'y';
+			}
+			case 3: {
+				if (ctx.call != GContext::gType::VERTICAL)
+					return 0;
+				GContext a = ctx;
+				a.call = a.HORIZONTAL;
+				a.cord1 = points[iIndex];
+				a.p2 = uctx->rlr->nWidth + uctx->rir->nWidth + 4 - LOGOINTERSECT;
+				HANDLE hThread = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)DrawLine, &a, NULL, nullptr);
+				while (!a.bRead);
+				CloseHandle(hThread);
+				return L'z';
+			}
+			}
+			return 0;
+		}
+
+	}
+}
 
 class Console {
 public:
@@ -31,39 +398,32 @@ public:
 	}
 
 	enum class Attributes : byte { // most significant bit indecates error type
-		CON_SUCCESS = FOREGROUND_GREEN,                                            // 0b00000010
-		CON_INFO = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,         // 0b00000111
-		CON_QUEST = 0x40 | FOREGROUND_BLUE | FOREGROUND_INTENSITY,                      // 0b01001001
-		CON_ERROR = 0x80 | (FOREGROUND_RED | FOREGROUND_INTENSITY),                     // 0b10001100
-		CON_WARNING = 0x80 | ((FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY) // 0b10001110
+		CON_SUCCESS =         FOREGROUND_GREEN,                                         // 0b00000010
+		CON_INFO    =         FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,      // 0b00000111
+		CON_QUEST   = 0x40 |  FOREGROUND_BLUE | FOREGROUND_INTENSITY,                   // 0b01001001
+		CON_ERROR   = 0x80 |  FOREGROUND_RED | FOREGROUND_INTENSITY,                    // 0b10001100
+		CON_WARNING = 0x80 | (FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY // 0b10001110
 	};
 
 	void PrintIntro() {
 		{	// Make Cursor invisible
 			CONSOLE_CURSOR_INFO cci;
 			GetConsoleCursorInfo(m_hConOut, &cci);
-			cci.bVisible = FALSE;
+			// cci.bVisible = FALSE;                  disabled for debugging purposes
 			SetConsoleCursorInfo(m_hConOut, &cci);
 		}
 
-		// Get width of riftLogo
-		size_t nRiftLogo = wcslen(*l_szRiftLogo);
+		// Initialize print data
+		cui::RiftLogoRaw riftLogo;
+		cui::RiftInfoRaw riftInfo;
 
-		{	// Get width of riftInfo by getting the longest line
-			size_t nRiftInfo = 0;
-			for (uchar i = 0; i < 6; i++) {
-				size_t nT = wcslen(l_szRiftInfo[i]);
-				if (nT > nRiftInfo)
-					nRiftInfo = nT;
-			}
-
-			// Create Rect Info Structure
+		{	// Create Rect Info Structure
 			CONSOLE_SCREEN_BUFFER_INFO csbi;
 			GetConsoleScreenBufferInfo(m_hConOut, &csbi);
 			SMALL_RECT sr;
 			ZeroMemory(&sr, sizeof(SHORT) * 2);
-			sr.Right = (nRiftLogo + nRiftInfo + 4);
-			sr.Bottom = (0 + 7) - 1; // 7 Lines
+			sr.Right = (riftLogo.nWidth + riftInfo.nWidth + 4) - LOGOINTERSECT;
+			sr.Bottom = (20 + 7) - 1; // 7 Lines
 
 			// Set Console Window Size
 			if (sr.Right < csbi.srWindow.Right) {
@@ -77,57 +437,74 @@ public:
 			}
 		}
 
+
+
+		cui::RawContext b;
+		b.rlr = &riftLogo;
+		b.rir = &riftInfo;
+
+		cui::cgl::GContext a;
+		a.hConOut = m_hConOut;
+		a.ctx = &b;
+		a.Callback = cui::cgl::GLCallBack;
+
+		a.cord1 = { 0, 0 };
+		a.p2 = riftLogo.nWidth + riftInfo.nWidth + 4 - LOGOINTERSECT;
+		a.call = a.HORIZONTAL;
+		HANDLE hThread[2];
+		hThread[0] = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)cui::cgl::DrawLine, &a, NULL, nullptr);
+		while (!a.bRead);
+
+		a.bRead = false;
+		a.p2 = 20;
+		a.call = a.VERTICAL;
+		hThread[1] = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)cui::cgl::DrawLine, &a, NULL, nullptr);
+		WaitForMultipleObjects(2, hThread, true, INFINITE);
+		for (uint8 i = 0; i < 2; i++)
+			CloseHandle(hThread[i]);
+
+
+		Sleep(INFINITE);
+#if 0
 		{	// Print Layout Boarders
 			SetConsoleTextAttribute(m_hConOut, (word)Attributes::CON_INFO & 0xf);
 			SetConsoleCursorPosition(m_hConOut, { 0, 6 });
 			CONSOLE_SCREEN_BUFFER_INFO csbi;
 			GetConsoleScreenBufferInfo(m_hConOut, &csbi);
 			dword dwWritten;
-			for (ushort i = 0; i < csbi.dwSize.X; i++) {
-				if (i > (nRiftLogo + 2) && i <= (nRiftLogo + 8 * 2) && !((i - (nRiftLogo + 2)) % 2)) {
+			for (uint16 i = 0; i < csbi.dwSize.X; i++) {
+				if (i > (riftLogo.nWidth + 2) && i <= (riftLogo.nWidth + 8 * 2) && !((i - (riftLogo.nWidth + 2)) % 2)) {
 					// Print vertical Line asynchronously
 					CONSOLE_SCREEN_BUFFER_INFO csbiT;
 					GetConsoleScreenBufferInfo(m_hConOut, &csbiT);
-					SetConsoleCursorPosition(m_hConOut, { (short)nRiftLogo + 2, (short)(6 - ((i - (nRiftLogo + 2)) / 2)) });
-					WriteConsoleW(m_hConOut, L"|", 1, &dwWritten, NULL);
+					SetConsoleCursorPosition(m_hConOut, { riftLogo.nWidth + 2, (short)(6 - ((i - (riftLogo.nWidth + 2)) / 2)) });
+					WriteConsoleA(m_hConOut, "|", 1, &dwWritten, NULL);
 					SetConsoleCursorPosition(m_hConOut, csbiT.dwCursorPosition);
-				} if (i == (nRiftLogo + 2))
-					WriteConsoleW(m_hConOut, L"+", 1, &dwWritten, NULL); // Print Splitpoint
+				} if (i == (riftLogo.nWidth + 2))
+					WriteConsoleA(m_hConOut, "+", 1, &dwWritten, NULL); // Print Splitpoint
 				else
-					WriteConsoleW(m_hConOut, L"-", 1, &dwWritten, NULL); // Print horizontal line
+					WriteConsoleA(m_hConOut, "-", 1, &dwWritten, NULL); // Print horizontal line
 				Sleep(10);
 			}
 		}
 
-		ushort uRLC = 0, uRIC = 0;
-		{	// Get Number of Char's in riftLogo
-			for (uchar i = 0; i < 6; i++)
-				for (ushort j = 0; j < nRiftLogo; j++)
-					if (l_szRiftLogo[i][j] != L' ')
-						uRLC++;
-			// Get Number of Char's in riftInfo
-			for (uchar i = 0; i < 6; i++)
-				uRIC += wcslen(l_szRiftInfo[i]);
-		}
 
-		wchar* riftLogo = (wchar*)malloc((6 * nRiftLogo) * sizeof(WCHAR)),
-			* riftInfo = (wchar*)malloc(uRIC * sizeof(WCHAR));
-		{	// Copy riftLogo into rawDataFormat
-			for (uchar i = 0; i < 6; i++)
-				memcpy(riftLogo + (nRiftLogo * i), l_szRiftLogo[i], nRiftLogo * sizeof(WCHAR));
+
+		wchar* riftInfo = (wchar*)malloc(riftInfo.nLength * sizeof(WCHAR));
+		{
 			// Copy riftInfo into rawDataFormat
 			wchar* riftInfoC = riftInfo;
 			for (uchar i = 0; i < 6; i++) {
-				size_t nT = wcslen(l_szRiftInfo[i]);
+				size_t nT = strlen(l_szRiftInfo[i]);
 				memcpy(riftInfoC, l_szRiftInfo[i], nT * sizeof(WCHAR));
 				riftInfoC += nT;
 			}
 		}
 
 		// Print Logo and Infotext asynchronously
-		for (uint i = 0; i < uRLC * uRIC; i++) {
+		for (uint32 i = 0; i < riftLogo.nChars * riftInfo.nLength; i++) {
 			uchar bSleep = 0;
-			if (!(i % uRIC)) { // Print riftLogo
+			if (!(i % riftInfo.nLength)) { // Print riftLogo
 				SetConsoleTextAttribute(m_hConOut, FOREGROUND_RED | FOREGROUND_BLUE); // Purple
 				bool bRetry = true;
 
@@ -135,28 +512,25 @@ public:
 				// probably the best way would be to generate an Array of Blocks containing the char and its position,
 				// then shuffling the array (by swapping elements), i might implement this at somepoint,
 				// but i dont care about performance here anyways for obvious reasons...
-				do {
-					short x = rng::Xoshiro::Instance()->ERandomIntDistribution(0, nRiftLogo - 1);
-					short y = rng::Xoshiro::Instance()->ERandomIntDistribution(0, 5);
-
-					if ((riftLogo + (nRiftLogo * y))[x] != L' ') {
-						SetConsoleCursorPosition(m_hConOut, { x + 1, y });
-						dword dwWritten;
-						WriteConsoleW(m_hConOut, &(riftLogo + (nRiftLogo * y))[x], 1, &dwWritten, NULL);
-						(riftLogo + (nRiftLogo * y))[x] = L' ';
-						bRetry = false;
-					}
-				} while (bRetry);
+#if 0
+				if ((riftLogo.aData + (nRiftLogoWidth * y))[x] != ' ') {
+					SetConsoleCursorPosition(m_hConOut, { x + 1, y });
+					dword dwWritten;
+					WriteConsoleW(m_hConOut, &(riftLogo.aData + (nRiftLogoWidth * y))[x], 1, &dwWritten, NULL);
+					(riftLogo.aData + (nRiftLogoWidth * y))[x] = ' ';
+					bRetry = false;
+				}
+#endif
 				bSleep += 10;
-			} if (!(i % (uRLC + 0))) { // Print riftInfo
+			} if (!(i % riftLogo.nChars)) { // Print riftInfo
 				SetConsoleTextAttribute(m_hConOut, (word)Attributes::CON_ERROR & 0xf);
 				static bool bFirst = true; // probably not the best solution, but this is neccessary to set the start position for the Infotext correctly
-				static ushort uPos = 0;
+				static uint16 uPos = 0;
 				static CONSOLE_SCREEN_BUFFER_INFO csbi;
 				if (!bFirst)
 					SetConsoleCursorPosition(m_hConOut, csbi.dwCursorPosition);
 				else {
-					SetConsoleCursorPosition(m_hConOut, { (short)nRiftLogo + 4, 0 });
+					SetConsoleCursorPosition(m_hConOut, { (short)nRiftLogoWidth + 4, 0 });
 					bFirst = false;
 				}
 
@@ -168,7 +542,7 @@ public:
 				if (riftInfo[uPos] == L'\n') {
 					if (csbi.dwCursorPosition.Y < 5)
 						csbi.dwCursorPosition.Y++;
-					csbi.dwCursorPosition.X = nRiftLogo + 4;
+					csbi.dwCursorPosition.X = nRiftLogoWidth + 4;
 				}
 
 				uPos++;
@@ -176,7 +550,7 @@ public:
 			} if (bSleep)
 				Sleep(bSleep);
 		}
-		free(riftLogo);
+		free(riftLogo.aData);
 		free(riftInfo);
 
 		{	// Extend Window
@@ -189,7 +563,7 @@ public:
 			sr.Bottom = (10 + 7);
 			SetConsoleWindowInfo(m_hConOut, true, &sr);
 		}
-
+#endif
 		SetConsoleCursorPosition(m_hConOut, { 0, 7 });
 	}
 
@@ -230,8 +604,8 @@ public:
 		va_list vaArg;
 		va_start(vaArg, wAttribute);
 
-		vswprintf((wchar_t*)m_pBuffer, (wchar_t*)pText, vaArg);
-		m_nBuffer = wcslen((wchar_t*)m_pBuffer);
+		vswprintf((wchar*)m_pBuffer, pText, vaArg);
+		m_nBuffer = wcslen((wchar*)m_pBuffer);
 
 		va_end(vaArg);
 		return m_nBuffer;
@@ -263,12 +637,11 @@ Console* Console::conInstance = nullptr;
 BOOL IOpenConsole() {
 	Console* con = Console::Instance();
 
-	con->PrintFW(L"Test", Console::Attributes::CON_ERROR);
-	con->PrintFW(L"Test, default");
+	// con->PrintFW(L"Test", Console::Attributes::CON_ERROR);
+	// con->PrintFW(L"Test, default");
 	con->CLS();
 	con->PrintIntro();
 	con->~Console();
 
 	return 0;
 }
-

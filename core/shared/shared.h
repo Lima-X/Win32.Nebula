@@ -23,7 +23,7 @@ namespace rng {
 		dword EXoshiroSS();
 		dword EXoshiroP();
 		// Uniform int/float Distribution Functions
-		uint ERandomIntDistribution(_In_ uint nMin, _In_ uint nMax);
+		uint32 ERandomIntDistribution(_In_ uint32 nMin, _In_ uint32 nMax);
 		float ERandomRealDistribution();
 	private:
 		// Internal/Global State & Sync Opbject (for Singleton)

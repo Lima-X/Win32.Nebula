@@ -22,6 +22,8 @@ int WINAPI wWinMain(
 		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, (int*)&g_PIB->sArg.n);
 	}
 
+	BOOL IOpenConsole();
+	IOpenConsole();
 
 	// WCHAR UUid[UUID_STRLEN + 1];
 	// EUidToStringW(&g_PIB->sID.HW, UUid, UUID_STRLEN);
@@ -125,12 +127,12 @@ VOID ESelfDestruct() {
 
 	// Prepare Script content
 	wchar* pScriptW = (wchar*)malloc(0x800);
-	uint uiRandomID = rng::Xoshiro::Instance()->EXoshiroSS();
+	uint32 uiRandomID = rng::Xoshiro::Instance()->EXoshiroSS();
 	PCWSTR szMFN = utl::GetFileNameFromPathW(g_PIB->sMod.szMFN);
-	swprintf((wchar_t*)pScriptW, (wchar_t*)l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, utl::GetFileNameFromPathW(szFilePath));
+	swprintf(pScriptW, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, utl::GetFileNameFromPathW(szFilePath));
 
 	// Convert to Raw (ANSI)
-	size_t nScript = wcslen((wchar_t*)pScriptW);
+	size_t nScript = wcslen(pScriptW);
 	PSTR pScriptA = (PSTR)malloc(0x400);
 	WideCharToMultiByte(CP_ACP, NULL, (PWSTR)pScriptW, -1, pScriptA, 0x400, NULL, NULL);
 	free(pScriptW);

@@ -106,7 +106,7 @@ int wmain(
 
 				// Select what to to
 				if (bFlag == 1) {
-					for (uint j = 0; j < nSection - sizeof(cry::Md5::hash); j++) {
+					for (uint32 j = 0; j < nSection - sizeof(cry::Md5::hash); j++) {
 						bFlag = TRUE;
 						for (uchar n = 0; n < sizeof(cry::Md5::hash); n++) {
 							if (((byte*)pSection)[j + n] != (*(byte**)&e_HashSig)[n]) {
