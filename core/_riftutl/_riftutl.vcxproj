@@ -14,9 +14,9 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{708DC70C-D97D-4E1F-B214-5259D3E2C669}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>riftTool</RootNamespace>
+    <RootNamespace>riftutl</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>_riftTool</ProjectName>
+    <ProjectName>_riftutl</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -97,13 +97,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\shared\console.cpp" />
     <ClCompile Include="..\shared\data.cpp" />
     <ClCompile Include="..\shared\shared.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="_riftTool.h" />
+    <ClInclude Include="_riftutl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

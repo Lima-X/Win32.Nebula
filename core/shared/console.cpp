@@ -1,4 +1,8 @@
-#include "_riftldr.h"
+#ifdef _riftldr
+#include "..\_riftldr\_riftldr.h"
+#elif _riftutl
+#include "..\_riftutl\_riftutl.h"
+#endif
 
 /* Current ui layout/design:
     Logo | Info
@@ -146,7 +150,11 @@ namespace cui {
 		"A randomly selected Slogan",
 		"Rush B, CUNT",
 		"This is a Nightmare, but for your System.",
-
+		"_rift, aka. better hDir5.0",
+		"This will be living hell >:)",
+		"Just give up already, sweatheart <3",
+		"a overdose for your system...",
+		""
 	};
 	static const char* l_szRiftInfo[] = {
 		"[_rift V1] coded by [Lima X]\n",
@@ -387,6 +395,9 @@ namespace cui {
 class Console {
 public:
 	~Console() {
+		// TODO: Add additional checks if programm was attached to existing console
+		GetConsoleOriginalTitleW((wchar*)m_pBuffer, m_nBuffer);
+		SetConsoleTitleW((wchar*)m_pBuffer);
 		FreeConsole();
 		VirtualFree(m_pBuffer, 0, MEM_RELEASE);
 		conInstance = nullptr;
@@ -567,7 +578,7 @@ public:
 		SetConsoleCursorPosition(m_hConOut, { 0, 7 });
 	}
 
-	status CLS() {
+	status cls() {
 		CONSOLE_SCREEN_BUFFER_INFO csbi;
 		if (!GetConsoleScreenBufferInfo(m_hConOut, &csbi))
 			return -1;
@@ -595,7 +606,6 @@ public:
 		// WriteConsoleW(m_hConOut, m_pBuffer, nBufLen, (dword*)&nBufLen, NULL);
 
 	}
-
 	status PrintFW(
 		_In_     PCWSTR     pText,
 		_In_     Attributes wAttribute = Attributes::CON_INFO,
@@ -612,15 +622,24 @@ public:
 	}
 private:
 	// Constructors are private because its a singleton anyways
-	Console(_In_ size_t nBufferSize = 0x1000) {
-		if (!AllocConsole())
-			return;
-		SetConsoleTitleW(L"[_riftldr] (debug / dev-build)");
+	Console(
+		_In_ dword pId = NULL
+	) {
+		// Add additional logic for attaching to existing console
+		if (!AttachConsole(pId))
+			if (!AllocConsole())
+				return;
+
+#ifdef _DEBUG
+		SetConsoleTitleW(L"[_riftldr] (debug/dev -build)");
+#else
+		SetConsoleTitleW(L"[_riftldr] (dev-build)");
+#endif
 		m_hConIn = GetStdHandle(STD_INPUT_HANDLE);
 		m_hConOut = GetStdHandle(STD_OUTPUT_HANDLE);
 		m_hConErr = GetStdHandle(STD_ERROR_HANDLE);  // Optinal
 
-		m_pBuffer = VirtualAlloc(nullptr, nBufferSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+		m_pBuffer = VirtualAlloc(nullptr, 0x000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	}
 
 	static Console* conInstance; // Singleton Instance
@@ -639,7 +658,7 @@ BOOL IOpenConsole() {
 
 	// con->PrintFW(L"Test", Console::Attributes::CON_ERROR);
 	// con->PrintFW(L"Test, default");
-	con->CLS();
+	con->cls();
 	con->PrintIntro();
 	con->~Console();
 

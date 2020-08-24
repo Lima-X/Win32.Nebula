@@ -1,4 +1,4 @@
-#include "_riftRoot.h"
+#include "_rifturk.h"
 
 BOOL WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,

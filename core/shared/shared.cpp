@@ -1,7 +1,7 @@
 #ifdef _riftldr
 #include "..\_riftldr\_riftldr.h"
-#elif _riftTool
-#include "..\_riftTool\_riftTool.h"
+#elif _riftutl
+#include "..\_riftutl\_riftutl.h"
 #endif
 
 namespace alg {

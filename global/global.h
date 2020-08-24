@@ -8,16 +8,17 @@
 
 // Windows (NT) Specific Defines
 #define _WIN32_WINNT 0x06010000 // Windows 7
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
    #define DEPRECATED      __declspec(deprecated)
 // #define DEPRECATED(str) __declspec(deprecated(str))
 
 // Standard types
-typedef unsigned char    uchar;
-typedef          wchar_t wchar;
+   typedef unsigned char    uchar;
+   typedef          wchar_t wchar;
 // typedef unsigned short   ushort;
-typedef unsigned long    ulong;
+   typedef unsigned long    ulong;
 
 // Integer Types
    typedef          char      int8;
@@ -36,13 +37,19 @@ typedef unsigned long    ulong;
 // typedef unsigned long long qword
 
 // Special Types
-typedef GUID         uuid;
+typedef GUID uuid;
 
 /* Function Status return Value:
    x=0 if Successful
    x<0 if Failure (Errorcode)
    x>0 reserved for extra Info (also Success) */
 typedef signed long status;
+/*
+struct status {
+	ulong uCode  : 31;
+	ulong fError :  1;
+};
+*/
 
 // Raw Pointer Type
 #ifdef _WIN64

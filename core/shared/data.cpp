@@ -2,15 +2,15 @@
 #include "..\_riftldr\_riftldr.h"
 #elif _riftdll
 #include "..\_riftdll\_riftdll.h"
-#elif _riftTool
-#include "..\_riftTool\_riftTool.h"
+#elif _riftutl
+#include "..\_riftutl\_riftutl.h"
 #endif
 
 // Global Process Information Block
 PIB* g_PIB;
 
 /* Contains the expected Hash of Section in the Image.
-   This is only a Signature and has to be patched out with _riftTool. */
+   This is only a Signature and has to be patched out with _riftutl. */
 const cry::Md5::hash e_HashSig = *(cry::Md5::hash*)&".SectionHashSig";
 
 #if 0 // Obsolete

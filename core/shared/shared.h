@@ -91,7 +91,7 @@ namespace cry {
 		static size_t             s_nObj;
 		       BCRYPT_HASH_HANDLE m_hh;
 		       void*              m_pObj;
-		       hash                m_pMd5;
+		       hash               m_pMd5;
 	};
 
 	class Aes {
@@ -143,7 +143,7 @@ PDWORD EGetProcessIdbyName(_In_ PCWSTR pProcessName, _Out_ size_t* nProcesses);
 
 /* Process Information Block (replacment for Global Data) */
 struct PIB {
-#ifndef _riftTool
+#ifndef _riftutl
 	struct {     // Hardware and Session ID's
 		uuid HW; // Hardware ID (linked to specific SMBIOS Entries)
 		uuid SE; // Session ID (linked to ACPI, FIRM and SMBIOS Information)
@@ -169,6 +169,6 @@ extern PIB* g_PIB;
 // this is so ugly, i cant believe i actually have to do this like this, its just horrible but neccassery,
 // because this function declaration requires the struct and a object of that struct to be present
 // and the struct reqires the actual namespace, where this would normaly be defined to be present
-#ifndef _riftTool
+#ifndef _riftutl
 namespace cry { void* EUnpackResource(_In_ word wResID, _Out_ size_t* nData, _In_ Aes* waes = g_PIB->sCry.EK); }
 #endif

@@ -26,17 +26,16 @@ namespace utl {
 			if (hgData) {
 				void* lpBuffer = LockResource(hgData);
 				if (!lpBuffer)
-					return NULL;
+					return nullptr;
 
-				*nBufferSize = SizeofResource(NULL, hResInfo);
-				if (!*nBufferSize)
-					return NULL;
+				if (!(*nBufferSize = SizeofResource(NULL, hResInfo)))
+					return nullptr;
 
 				return lpBuffer;
 			}
 		}
 
-		return NULL;
+		return nullptr;
 	}
 
 	PDWORD EGetProcessIdbyName(

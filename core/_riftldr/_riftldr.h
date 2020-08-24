@@ -1,7 +1,8 @@
 #pragma once
-#include "resource.h"
 #include "..\..\global\global.h"
 #include "..\shared\depends.h"
+#include "resource.h"
+#include <shellapi.h>
 
 /* WinMain : main.c */
 VOID ESelfDestruct();

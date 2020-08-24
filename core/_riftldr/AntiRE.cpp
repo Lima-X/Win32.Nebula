@@ -516,7 +516,7 @@ namespace are { // Anti Reverse Engineering
 				return -2;
 
 			// Calculate reloc delta and first BaseRelocation Block
-			int nRelocDelta = pNth->OptionalHeader.ImageBase - 0x40000;
+			int nRelocDelta = pNth->OptionalHeader.ImageBase - 0x400000;
 			PIMAGE_BASE_RELOCATION pBr = (PIMAGE_BASE_RELOCATION)
 				(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase);
 

@@ -40,7 +40,7 @@ The RootKit Dll that will primarily hide Processes and Files.
 - [ ] Hook NtQueryDirectoryFile
 - [ ] Hook NtQuerySystemInformation
 
-## \_riftTool
+## \_riftutl
 Build utility used to compress/encrypt, obfuscate internal data and patch _rift.
 
 #### Features:
@@ -53,16 +53,16 @@ Build utility used to compress/encrypt, obfuscate internal data and patch _rift.
 # Build Instructions
 ## Building the Excutable:
 - Build all Second Stage Dependencies
-- Generate Wrap Key using _riftTool with /gk
-- Encrypt Dependencies using _riftTool with /ec
+- Generate Wrap Key using _riftutl with /gk
+- Encrypt Dependencies using _riftutl with /ec
 - Build _rift 
-- Patch _rift using _riftTool with /pa\
+- Patch _rift using _riftutl with /pa\
   (this will finalize the Application by patching in the proper md5's)
 
 ## Embedding encrypted Strings:
-- Generate Key using _riftTool with /gk
+- Generate Key using _riftutl with /gk
 - Embed the exported Base64 Key in the sourcecode
-- Encrypt and Encode all strings using _riftTool with /ec\
+- Encrypt and Encode all strings using _riftutl with /ec\
   and embed the encoded strings in the source
 
 # Style/Naming Convention

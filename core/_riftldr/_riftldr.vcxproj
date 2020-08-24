@@ -106,19 +106,17 @@
     <ClInclude Include="_riftldr.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BlackBone.cpp" />
+    <ClCompile Include="..\shared\console.cpp" />
     <ClCompile Include="..\shared\shared.cpp" />
-    <ClCompile Include="Console.cpp" />
     <ClCompile Include="..\shared\data.cpp" />
-    <ClCompile Include="NT.cpp" />
-    <ClCompile Include="AntiRE.cpp" />
+    <ClCompile Include="nt.cpp" />
+    <ClCompile Include="antire.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Process.cpp" />
+    <ClCompile Include="process.cpp" />
     <ClCompile Include="Random.cpp" />
-    <ClCompile Include="Crypt.cpp" />
-    <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="VMDetect.cpp" />
-    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="crypt.cpp" />
+    <ClCompile Include="utils.cpp" />
+    <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="_rift.rc" />

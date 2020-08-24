@@ -6,6 +6,105 @@ typedef status(WINAPI* DllEntry)(
 	_In_ void*     pvReserved
 );
 
+// Tempoerery test fucntion
+status IHashMappedSection2() {
+	// Raw Image
+	size_t nFile;
+	void* pfile = utl::AllocReadFileW(g_PIB->sMod.szMFN, &nFile);
+	PIMAGE_NT_HEADERS pNthR = (PIMAGE_NT_HEADERS)((ptr)pfile + ((PIMAGE_DOS_HEADER)pfile)->e_lfanew);
+	if (pNthR->Signature != IMAGE_NT_SIGNATURE)
+		return -1;
+	if (pNthR->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
+		return -2;
+
+	// executive image
+	HMODULE hMod = GetModuleHandleW(nullptr);
+	PIMAGE_NT_HEADERS pNth = (PIMAGE_NT_HEADERS)((ptr)hMod + ((PIMAGE_DOS_HEADER)hMod)->e_lfanew);
+	if (pNth->Signature != IMAGE_NT_SIGNATURE)
+		return -3;
+	if (pNth->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
+		return -4;
+
+	// Calculate reloc delta and first BaseRelocation Block
+	int nRelocDelta = pNth->OptionalHeader.ImageBase - 0x400000;
+	PIMAGE_BASE_RELOCATION pBr = (PIMAGE_BASE_RELOCATION)
+		(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase);
+
+	cry::Md5 hashR;
+	cry::Md5 hash;
+
+	// Iterate over Sections
+	PIMAGE_SECTION_HEADER pShR = IMAGE_FIRST_SECTION(pNthR);
+	PIMAGE_SECTION_HEADER pSh = IMAGE_FIRST_SECTION(pNth);
+	for (char i = 0; i < pNth->FileHeader.NumberOfSections; i++) {
+		// Make copy of mapped Section
+		void* pImageCopyR = VirtualAlloc(nullptr, pShR->SizeOfRawData, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+		memcpy(pImageCopyR, (void*)(pShR->PointerToRawData + (ptr)pfile), pShR->SizeOfRawData);
+		void* pImageCopy = VirtualAlloc(nullptr, pSh->Misc.VirtualSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+		memcpy(pImageCopy, (void*)(pSh->VirtualAddress + pNth->OptionalHeader.ImageBase), pSh->Misc.VirtualSize);
+
+		if (nRelocDelta) {
+			// Calculate the difference between the section base of the mapped and copied version
+			int nBaseDeltaR = (ptr)pImageCopyR - (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
+			int nBaseDelta = (ptr)pImageCopy - (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
+
+			// This line is a fucking joke, like seriously WTF did i think i was doing
+			while (((pBr->VirtualAddress + pNth->OptionalHeader.ImageBase)
+				< (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + pSh->Misc.VirtualSize)
+				&& ((ptr)pBr
+					< ((pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase)
+						+ pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size))
+				) {
+				// First Relocation Entry
+				struct IMAGE_RELOCATION_ENTRY {
+					word Offset : 12;
+					word Type : 4;
+				} *pRe = (IMAGE_RELOCATION_ENTRY*)(pBr + 1);
+
+				// iterate over Relocation Entries and apply changes
+				for (word i = 0; i < (pBr->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOCATION_ENTRY); i++)
+					switch (pRe[i].Type) {
+					case IMAGE_REL_BASED_HIGHLOW:
+						*(ptr*)(((pBr->VirtualAddress + pNth->OptionalHeader.ImageBase) + pRe[i].Offset) + nBaseDelta) -= nRelocDelta;
+						break;
+					case IMAGE_REL_BASED_ABSOLUTE:
+						continue;
+					default:
+						VirtualFree(pImageCopy, 0, MEM_RELEASE);
+						return -3;
+					}
+
+				// this would probably be enough, but just to make sure we are on a 32bit boundary
+				// note: after testing i found out that this is enough, as SizeOfBlock includes the paded Entry
+				*(ptr*)&pBr += pBr->SizeOfBlock;
+			}
+		}
+
+		// So this is quiet shitty for debugging, basically i just realized that the debugger works by replacing instructions
+		// with int3 interrupts (0xcc), so this basically fucks up the calculations if run under a debugger.
+		// (as a nice sideeffect this might also catch a debugger if it places breakpoints)
+		for (ptr i = 0; i < pShR->SizeOfRawData; i++)
+			if (((byte*)pImageCopy)[i] != ((byte*)pImageCopyR)[(ptr)i])
+				DebugBreak();
+
+		// TODO: just hashing the sections here
+		if (pImageCopyR) {
+			hashR.EHashData(pImageCopyR, pShR->SizeOfRawData);
+			hash.EHashData(pImageCopy, pSh->Misc.VirtualSize);
+		}
+
+		VirtualFree(pImageCopy, 0, MEM_RELEASE);
+		VirtualFree(pImageCopyR, 0, MEM_RELEASE);
+		pSh++, pShR++;
+	}
+
+	status test = hash.EFnialize();
+	test = hashR.EFnialize();
+
+	return 0;
+}
+
+
 int WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -21,6 +120,10 @@ int WINAPI wWinMain(
 		utl::IGenerateSessionId(&g_PIB->sID.SE);
 		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, (int*)&g_PIB->sArg.n);
 	}
+
+	IHashMappedSection2();
+
+
 
 	BOOL IOpenConsole();
 	IOpenConsole();
