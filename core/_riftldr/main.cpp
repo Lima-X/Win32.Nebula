@@ -7,7 +7,9 @@ typedef status(WINAPI* DllEntry)(
 );
 
 // Tempoerery test fucntion
-status IHashMappedSection2() {
+status IHashMappedSection2(
+	_Out_ cry::Md5::hash& md5
+) {
 	// Raw Image
 	size_t nFile;
 	void* pfile = utl::AllocReadFileW(g_PIB->sMod.szMFN, &nFile);
@@ -25,84 +27,141 @@ status IHashMappedSection2() {
 	if (pNth->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
 		return -4;
 
-	// Calculate reloc delta and first BaseRelocation Block
+	// Calculate reloc delta
 	int nRelocDelta = pNth->OptionalHeader.ImageBase - 0x400000;
-	PIMAGE_BASE_RELOCATION pBr = (PIMAGE_BASE_RELOCATION)
-		(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase);
 
-	cry::Md5 hashR;
-	cry::Md5 hash;
+	// Prepare Hashing
+	BCRYPT_ALG_HANDLE ah;
+	BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, NULL, NULL);
+	BCRYPT_HASH_HANDLE hh;
+	BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
 
 	// Iterate over Sections
-	PIMAGE_SECTION_HEADER pShR = IMAGE_FIRST_SECTION(pNthR);
 	PIMAGE_SECTION_HEADER pSh = IMAGE_FIRST_SECTION(pNth);
 	for (char i = 0; i < pNth->FileHeader.NumberOfSections; i++) {
+		// Skip if Section is not code_seg or const_seg
+		if (!(pSh->Characteristics & IMAGE_SCN_CNT_CODE || pSh->Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA))
+			continue;
+
 		// Make copy of mapped Section
-		void* pImageCopyR = VirtualAlloc(nullptr, pShR->SizeOfRawData, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-		memcpy(pImageCopyR, (void*)(pShR->PointerToRawData + (ptr)pfile), pShR->SizeOfRawData);
 		void* pImageCopy = VirtualAlloc(nullptr, pSh->Misc.VirtualSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 		memcpy(pImageCopy, (void*)(pSh->VirtualAddress + pNth->OptionalHeader.ImageBase), pSh->Misc.VirtualSize);
 
 		if (nRelocDelta) {
 			// Calculate the difference between the section base of the mapped and copied version
-			int nBaseDeltaR = (ptr)pImageCopyR - (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
 			int nBaseDelta = (ptr)pImageCopy - (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
 
-			// This line is a fucking joke, like seriously WTF did i think i was doing
-			while (((pBr->VirtualAddress + pNth->OptionalHeader.ImageBase)
-				< (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + pSh->Misc.VirtualSize)
-				&& ((ptr)pBr
-					< ((pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase)
-						+ pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size))
-				) {
-				// First Relocation Entry
-				struct IMAGE_RELOCATION_ENTRY {
-					word Offset : 12;
-					word Type : 4;
-				} *pRe = (IMAGE_RELOCATION_ENTRY*)(pBr + 1);
+			PIMAGE_BASE_RELOCATION pBrC = (PIMAGE_BASE_RELOCATION)(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase);
+			while ((ptr)pBrC < ((pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase)
+				+ pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size)
+			) {
+				if ((ptr)pBrC >= pSh->VirtualAddress && (ptr)pBrC <= pSh->VirtualAddress + pSh->Misc.VirtualSize) {
+					// First Relocation Entry
+					struct IMAGE_RELOCATION_ENTRY {
+						word Offset : 12;
+						word Type : 4;
+					} *pRe = (IMAGE_RELOCATION_ENTRY*)(pBrC + 1);
 
-				// iterate over Relocation Entries and apply changes
-				for (word i = 0; i < (pBr->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOCATION_ENTRY); i++)
-					switch (pRe[i].Type) {
-					case IMAGE_REL_BASED_HIGHLOW:
-						*(ptr*)(((pBr->VirtualAddress + pNth->OptionalHeader.ImageBase) + pRe[i].Offset) + nBaseDelta) -= nRelocDelta;
-						break;
-					case IMAGE_REL_BASED_ABSOLUTE:
-						continue;
-					default:
-						VirtualFree(pImageCopy, 0, MEM_RELEASE);
-						return -3;
-					}
+					// iterate over Relocation Entries and apply changes
+					for (word i = 0; i < (pBrC->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOCATION_ENTRY); i++)
+						switch (pRe[i].Type) {
+						case IMAGE_REL_BASED_HIGHLOW:
+							*(ptr*)(((pBrC->VirtualAddress + pNth->OptionalHeader.ImageBase) + pRe[i].Offset) + nBaseDelta) -= nRelocDelta;
+							break;
+						case IMAGE_REL_BASED_ABSOLUTE:
+							continue;
+						default:
+							VirtualFree(pImageCopy, 0, MEM_RELEASE);
+							return -3;
+						}
 
-				// this would probably be enough, but just to make sure we are on a 32bit boundary
-				// note: after testing i found out that this is enough, as SizeOfBlock includes the paded Entry
-				*(ptr*)&pBr += pBr->SizeOfBlock;
+					// this would probably be enough, but just to make sure we are on a 32bit boundary
+					// note: after testing i found out that this is enough, as SizeOfBlock includes the paded Entry
+					*(ptr*)&pBrC += pBrC->SizeOfBlock;
+				}
 			}
 		}
 
 		// So this is quiet shitty for debugging, basically i just realized that the debugger works by replacing instructions
 		// with int3 interrupts (0xcc), so this basically fucks up the calculations if run under a debugger.
 		// (as a nice sideeffect this might also catch a debugger if it places breakpoints)
-		for (ptr i = 0; i < pShR->SizeOfRawData; i++)
-			if (((byte*)pImageCopy)[i] != ((byte*)pImageCopyR)[(ptr)i])
-				DebugBreak();
 
-		// TODO: just hashing the sections here
-		if (pImageCopyR) {
-			hashR.EHashData(pImageCopyR, pShR->SizeOfRawData);
-			hash.EHashData(pImageCopy, pSh->Misc.VirtualSize);
+		// Special Handling
+
+		const struct ignore {
+			char name[8];
+
+
+		} list[] = {
+			{ ".rdata", }
+		};
+		static const char* szSec[] = {
+			".rdata",
+			".rscs",
+		};
+
+		int8 j;
+		for (j = 0; j < sizeof(szSec) / sizeof(*szSec); j++)
+			if (!memcmp(pSh->Name, szSec[j], 8)) {
+				j |= 1 << 7; break;
+			}
+
+		switch (j) {
+		case 0:
+		default:
+			BCryptHashData(hh, (uchar*)pSh->VirtualAddress, pSh->Misc.VirtualSize, NULL);
 		}
 
+
+		// TODO: just hashing the sections here
 		VirtualFree(pImageCopy, 0, MEM_RELEASE);
-		VirtualFree(pImageCopyR, 0, MEM_RELEASE);
-		pSh++, pShR++;
+		pSh++;
 	}
 
-	status test = hash.EFnialize();
-	test = hashR.EFnialize();
-
+	BCryptFinishHash(hh, (uchar*)&md5, sizeof(md5), NULL);
+	BCryptDestroyHash(hh);
+	BCryptCloseAlgorithmProvider(ah, NULL);
 	return 0;
 }
+
+class HexConv {
+public:
+	HexConv() {
+		// Setup HexTable
+		m_HexTable = (char*)malloc(16);
+		for (uint8 i = 0; i < 10; i++)
+			m_HexTable[i] = (char)i + '0';
+		for (uint8 i = 0; i < 6; i++)
+			m_HexTable[i + 10] = (char)i + 'a';
+	}
+	void ToHex(
+		_In_  void* pData,
+		_In_  size_t nData,
+		_Out_ char* sz
+	) {
+		for (int i = 0; i < nData; i++) {
+			sz[i * 2] = m_HexTable[((unsigned char*)pData)[i] >> 4];
+			sz[(i * 2) + 1] = m_HexTable[((unsigned char*)pData)[i] & 0xf];
+		}
+		sz[nData * 2] = '\0';
+	}
+	void ConvertToBin(
+		char* sz,
+		void* pOut
+	) {
+		auto LHexToBinA = []( // Char to Hexvalue
+			char c            // Char to convert
+			) -> unsigned char {
+				return (c - '0') - (('a' - '0') * (c / 'a'));
+		};
+
+		while (*sz != '\0')
+			*(*(unsigned char**)&pOut)++ = (LHexToBinA(*sz++) << 4) + LHexToBinA(*sz++);
+	}
+
+private:
+	char* m_HexTable;
+};
 
 
 int WINAPI wWinMain(
@@ -121,7 +180,32 @@ int WINAPI wWinMain(
 		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, (int*)&g_PIB->sArg.n);
 	}
 
-	IHashMappedSection2();
+
+	HexConv hc;
+
+
+	const int a = 1024 * 1024 * 256;
+	rng::Xoshiro xsr;
+
+	byte* data = (byte*)malloc(a);
+	for (int i = 0; i < a; i++)
+		data[i] = rng::Xoshiro::Instance()->EXoshiroSS();
+	for (int i = 0; i < a; i++)
+		data[i] = xsr.EXoshiroSS();
+
+
+	char* string = (char*)malloc(a * 2 + 1);
+	hc.ToHex(data, a, string);
+
+	byte* data2 = (byte*)malloc(a);
+	hc.ConvertToBin(string, data2);
+
+	__debugbreak();
+
+
+
+
+	// IHashMappedSection2();
 
 
 

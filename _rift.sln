@@ -33,6 +33,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftmmi", "root\_riftmmi\_
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Global", "Global", "{F3992298-2A79-4104-B206-FD12AF5D5B55}"
 	ProjectSection(SolutionItems) = preProject
+		global\global.cpp = global\global.cpp
 		global\global.h = global\global.h
 	EndProjectSection
 EndProject

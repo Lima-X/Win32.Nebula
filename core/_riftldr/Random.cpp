@@ -2,18 +2,17 @@
 
 namespace rng {
 #pragma region Xoshiro
-	CRITICAL_SECTION Xoshiro::cs;
+	CRITICAL_SECTION Xoshiro::cs = { 0 };
 	rng::Xoshiro* Xoshiro::s_xsrInstance = nullptr;
 
 	// Constructor/Destructor and Signleton Initialization
 	Xoshiro::Xoshiro(
 		_In_opt_ dword* dwState // = nullptr
-	) {
+	)
+		: m_Trampoline(&Xoshiro::IXoshiroNext)
+	{
 		BCRYPT_ALG_HANDLE cah;
 		if (!BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, nullptr, NULL)) {
-			if (!s_xsrInstance)
-				InitializeCriticalSection(&cs);
-
 			if (!dwState)
 				BCryptGenRandom(cah, (UCHAR*)&m_dwState, sizeof(dword) * 4, NULL);
 			else
@@ -26,24 +25,51 @@ namespace rng {
 			DeleteCriticalSection(&cs);
 			s_xsrInstance = nullptr;
 		}
+		free(m_dwState);
 	}
 	Xoshiro* Xoshiro::Instance() {
-		if (!s_xsrInstance)
+		if (!s_xsrInstance) {
 			s_xsrInstance = new Xoshiro();
+			s_xsrInstance->m_Trampoline = &Xoshiro::IThreadSafeNext;
+			InitializeCriticalSection(&cs);
+		}
 		return s_xsrInstance;
+	}
+
+	// Internal State manipulation Functions
+	inline dword Xoshiro::IRotlDw(
+		_In_ dword dwT,
+		_In_ uchar ui8T
+	) const {
+		return (dwT << ui8T) | (dwT >> ((sizeof(dword) * 8) - ui8T));
+	}
+	inline void Xoshiro::IXoshiroNext() {
+		const dword dwT = m_dwState[1] << 9;
+		m_dwState[2] ^= m_dwState[0];
+		m_dwState[3] ^= m_dwState[1];
+		m_dwState[1] ^= m_dwState[2];
+		m_dwState[0] ^= m_dwState[3];
+		m_dwState[2] ^= dwT;
+		m_dwState[3] = IRotlDw(m_dwState[3], 11);
+	}
+	inline void Xoshiro::IThreadSafeNext() {
+		EnterCriticalSection(&cs);
+		IXoshiroNext();
+		LeaveCriticalSection(&cs);
 	}
 
 	// Xoshiro Functions
 	dword Xoshiro::EXoshiroSS() {
 		const dword dwT = IRotlDw(m_dwState[1] * 5, 7) * 9;
-		IXoshiroNext();
+		(this->*m_Trampoline)();
 		return dwT;
 	}
 	dword Xoshiro::EXoshiroP() {
 		const dword dwT = m_dwState[0] + m_dwState[3];
-		IXoshiroNext();
+		(this->*m_Trampoline)();
 		return dwT;
 	}
+
 	// Uniform int/float Distribution Functions
 	uint32 Xoshiro::ERandomIntDistribution(
 		_In_ uint32 nMin,
@@ -63,30 +89,6 @@ namespace rng {
 	float Xoshiro::ERandomRealDistribution() {
 		// 24 bits resolution: (r >> 8) * 2^(-24)
 		return (EXoshiroP() >> 8) * (1.F / 0x1000000p0F);
-	}
-
-	// Internal State manipulation Functions
-	inline dword Xoshiro::IRotlDw(
-		_In_ dword dwT,
-		_In_ uchar ui8T
-	) const {
-		return (dwT << ui8T) | (dwT >> ((sizeof(dword) * 8) - ui8T));
-	}
-	inline VOID Xoshiro::IXoshiroNext() {
-		bool bFlag = this == s_xsrInstance ? 1 : 0;
-		if (bFlag)
-			EnterCriticalSection(&cs);
-
-		const dword dwT = m_dwState[1] << 9;
-		m_dwState[2] ^= m_dwState[0];
-		m_dwState[3] ^= m_dwState[1];
-		m_dwState[1] ^= m_dwState[2];
-		m_dwState[0] ^= m_dwState[3];
-		m_dwState[2] ^= dwT;
-		m_dwState[3] = IRotlDw(m_dwState[3], 11);
-
-		if (bFlag)
-			LeaveCriticalSection(&cs);
 	}
 #pragma endregion
 

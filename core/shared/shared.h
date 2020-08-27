@@ -29,11 +29,13 @@ namespace rng {
 		// Internal/Global State & Sync Opbject (for Singleton)
 		static Xoshiro* s_xsrInstance;
 		static CRITICAL_SECTION cs;
+		void(Xoshiro::*m_Trampoline)();
 		dword m_dwState[4];
 
 		// Internal State manipulation Functions
 		inline dword IRotlDw(_In_ dword dwT, _In_ uchar ui8T) const;
-		inline VOID IXoshiroNext();
+		inline void IThreadSafeNext();
+		inline void IXoshiroNext();
 	};
 }
 

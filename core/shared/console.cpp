@@ -61,6 +61,9 @@
 */
 
 #define LOGOINTERSECT 0
+#define LOGOHEIGHT 6
+#define CUIHEIGHT 25
+#define ANIMATION_BASESLEEPTIME 25
 
 namespace cui {
 	static const char* l_szRiftLogo[] = {
@@ -205,6 +208,26 @@ namespace cui {
 		}
 	};
 
+	static const char l_szRiftTerms[] = {
+		"The Software you are about to run is considered to be Malware !\n"
+		"This Malware is capable to and will make changes to the operating System,"
+		"these changes include modifications of Files, Registry-Key's, Processes(Memory) and more.\n"
+		"THE CREATOR(Lima X) IS NOT RESPONSIBLE FOR ANY HARM/DAMAGE DONE USING THIS SOFTWARE,\n"
+		"THE CREATOR IS ALSO NOT RESONSIBLE FOR ANY MODIFICATIONS TO THIS SOFTWARE,\n"
+		"THESE MODIFICATIONS MAY INCLUDE THE SUBSEQUENT REMOVAL OF THESE TERMS AND OTHERS.\n"
+		"BY RUNNING THIS SOFTWARE YOU AUTOMATICALLY AGREE TO THESE TERMS !\n\n"
+
+		"Note to Cybersecurity-Specialists: This software is melicous and intended only as a Demonstration.\n"
+		"                                   If you come across this please just move on and flag it !"
+	};
+	static const char l_szRiftDisclaimer[] = {
+		"This software has been protected through obfuscation, encryption and more.\n"
+		"In order to run this please enter in the activation Key (form of a UUID),\n"
+		"this will also automatically run this Software without the further possibility of stoping it !\n"
+		"If you dont know what this is please close this window to exit,\n"
+		"If you do know what this is and know the consequenzes involved feel free to continue."
+	};
+
 	struct RawContext {
 		RiftLogoRaw* rlr;
 		RiftInfoRaw* rir;
@@ -240,19 +263,16 @@ namespace cui {
 				_In_ COORD cord,
 				_In_ wchar c
 				) {
+					if (c == (wchar)-1)
+						return;
 					if (!c) {
 						switch (ctx.call) {
 						case GContext::gType::HORIZONTAL:
-							if (cord.X != ctx.cord1.X && cord.X != ctx.p2)
-								c = L'-';
-							break;
+							if (cord.X != ctx.cord1.X && cord.X != ctx.p2) c = L'-'; break;
 						case GContext::gType::VERTICAL:
-							if (cord.Y != ctx.cord1.Y && cord.Y != ctx.p2)
-								c = L'|';
-							break;
+							if (cord.Y != ctx.cord1.Y && cord.Y != ctx.p2) c = L'|'; break;
 						case GContext::gType::LEFTSLANT:
-							if (cord.Y != ctx.cord1.Y && cord.Y != ctx.p2)
-								c = L'/';
+							if (cord.Y != ctx.cord1.Y && cord.Y != ctx.p2) c = L'/';
 						}
 						if (!c)
 							c = L'+';
@@ -280,115 +300,47 @@ namespace cui {
 			return 0;
 		}
 
-#if 0 // Deprecated use DrawLine
-		dword WINAPI DrawHorizontalLine(
-			_In_ GContext* ctx
-		) {
-			for (short i = ctx->cord.X; i < ctx->x2; i++) {
-				wchar wc = ctx->Callback({ i , ctx->cord.Y }, ctx->Context);
-				dword dw;
-				WriteConsoleOutputCharacterW(ctx->hConOut, &wc, 1, { i , ctx->cord.Y }, &dw);
-			}
-			return 0;
-		}
-		dword WINAPI DrawVerticalLine(
-			_In_ GContext* ctx
-		) {
-			for (short i = ctx->cord.Y; i < ctx->y2; i++) {
-				wchar wc = ctx->Callback({ ctx->cord.X, i }, ctx->Context);
-				dword dw;
-				WriteConsoleOutputCharacterW(ctx->hConOut, &wc, 1, { ctx->cord.X, i }, &dw);
-			}
-			return 0;
-		}
-		dword WINAPI DrawSlantLeftLine(
-			_In_ GContext* ctx
-		) {
-			for (short i = ctx->cord.Y; i < ctx->y2; i++) {
-				wchar wc = ctx->Callback({ ctx->cord.X - i , i }, ctx->Context);
-				dword dw;
-				WriteConsoleOutputCharacterW(ctx->hConOut, &wc, 1, { ctx->cord.X - i , i }, &dw);
-			}
-			return 0;
-		}
-#endif
-
 		wchar GLCallBack(
 			_In_ COORD     cord,
 			_In_ GContext& ctx
 		) {
-			RawContext* uctx = (RawContext*)ctx.ctx;
+			if (ctx.call == GContext::gType::HORIZONTAL)
+				Sleep(ANIMATION_BASESLEEPTIME);
+			else
+				Sleep(ANIMATION_BASESLEEPTIME * 2);
 
-			const COORD points[] = {
-				{ uctx->rlr->nWidth - LOGOINTERSECT, 7 },
-				{ 0, 7 },
-				{ uctx->rlr->nWidth + uctx->rir->nWidth + 4 - LOGOINTERSECT, 0 },
-				{ 0, 20 },
+			RawContext* uctx = (RawContext*)ctx.ctx;
+			static const struct Special {
+				COORD cord1;
+				short p2;
+				GContext::gType call;
+			} points[] = {
+				{ { uctx->rlr->nWidth - LOGOINTERSECT, (LOGOHEIGHT + 2) - 1 }, 0, GContext::gType::LEFTSLANT },
+				{ { 0, (LOGOHEIGHT + 2) - 1 },	uctx->rlr->nWidth + uctx->rir->nWidth + 4 - LOGOINTERSECT, GContext::gType::HORIZONTAL },
+				{ { uctx->rlr->nWidth + uctx->rir->nWidth + 4 - LOGOINTERSECT, 0 }, CUIHEIGHT - 1, GContext::gType::VERTICAL },
+				{ { uctx->rlr->nWidth + uctx->rir->nWidth + 4 - LOGOINTERSECT, (LOGOHEIGHT + 2) - 1 }, NULL, (GContext::gType)NULL },
+				{ { 0, CUIHEIGHT - 1 }, uctx->rlr->nWidth + uctx->rir->nWidth + 4 - LOGOINTERSECT, GContext::gType::HORIZONTAL }
 			};
-			uint8 iIndex = -1;
 			for (uint8 i = 0; i < sizeof(points) / sizeof(*points); i++)
-				if (*(dword*)&cord == *(dword*)&points[i]) {
-					iIndex = i;
-					break;
+				if (*(dword*)&cord == *(dword*)&points[i].cord1) {
+					if (ctx.call == points[i].call)
+						return 0;
+					if (i == 3)
+						return L'+';
+
+					GContext a = ctx;
+					a.call = points[i].call;
+					a.cord1 = points[i].cord1;
+					a.p2 = points[i].p2;
+					HANDLE hThread = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)DrawLine, &a, NULL, nullptr);
+					while (!a.bRead)
+						Sleep(1);
+					CloseHandle(hThread);
+					return -1; // do Nothing
 				}
 
-			if (ctx.call == GContext::gType::HORIZONTAL)
-				Sleep(50);
-			else
-				Sleep(100);
-
-			switch (iIndex) {
-			case 0: {
-				if (ctx.call != GContext::gType::HORIZONTAL)
-					return 0;
-				GContext a = ctx;
-				a.call = a.LEFTSLANT;
-				a.cord1 = points[iIndex];
-				a.p2 = 0;
-				HANDLE hThread = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)DrawLine, &a, NULL, nullptr);
-				while (!a.bRead);
-				CloseHandle(hThread);
-			} break;
-			case 1: {
-				if (ctx.call != GContext::gType::VERTICAL)
-					return 0;
-				GContext a = ctx;
-				a.call = a.HORIZONTAL;
-				a.cord1 = points[iIndex];
-				a.p2 = uctx->rlr->nWidth + uctx->rir->nWidth + 4 - LOGOINTERSECT;
-				HANDLE hThread = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)DrawLine, &a, NULL, nullptr);
-				while (!a.bRead);
-				CloseHandle(hThread);
-				return L'x';
-			}
-			case 2: {
-				if (ctx.call != GContext::gType::HORIZONTAL)
-					return 0;
-				GContext a = ctx;
-				a.call = a.VERTICAL;
-				a.cord1 = points[iIndex];
-				a.p2 = 20;
-				HANDLE hThread = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)DrawLine, &a, NULL, nullptr);
-				while (!a.bRead);
-				CloseHandle(hThread);
-				return L'y';
-			}
-			case 3: {
-				if (ctx.call != GContext::gType::VERTICAL)
-					return 0;
-				GContext a = ctx;
-				a.call = a.HORIZONTAL;
-				a.cord1 = points[iIndex];
-				a.p2 = uctx->rlr->nWidth + uctx->rir->nWidth + 4 - LOGOINTERSECT;
-				HANDLE hThread = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)DrawLine, &a, NULL, nullptr);
-				while (!a.bRead);
-				CloseHandle(hThread);
-				return L'z';
-			}
-			}
 			return 0;
 		}
-
 	}
 }
 
@@ -432,18 +384,17 @@ public:
 			CONSOLE_SCREEN_BUFFER_INFO csbi;
 			GetConsoleScreenBufferInfo(m_hConOut, &csbi);
 			SMALL_RECT sr;
-			ZeroMemory(&sr, sizeof(SHORT) * 2);
+			memset(&sr, 0, sizeof(SHORT) * 2);
 			sr.Right = (riftLogo.nWidth + riftInfo.nWidth + 4) - LOGOINTERSECT;
-			sr.Bottom = (20 + 7) - 1; // 7 Lines
+			sr.Bottom = CUIHEIGHT - 1;
 
 			// Set Console Window Size
-			if (sr.Right < csbi.srWindow.Right) {
+			if (sr.Right <= csbi.srWindow.Right) {
 				SetConsoleWindowInfo(m_hConOut, true, &sr);
-				SetConsoleScreenBufferSize(m_hConOut, { sr.Right + 1, csbi.dwSize.Y });
+				SetConsoleScreenBufferSize(m_hConOut, { sr.Right + 1, sr.Bottom + 1 });
+				SetConsoleWindowInfo(m_hConOut, true, &sr);
 			} else if (sr.Right > csbi.srWindow.Right) {
-				SetConsoleScreenBufferSize(m_hConOut, { sr.Right + 1, csbi.dwSize.Y });
-				SetConsoleWindowInfo(m_hConOut, true, &sr);
-			} else {
+				SetConsoleScreenBufferSize(m_hConOut, { sr.Right + 1, sr.Bottom + 1 });
 				SetConsoleWindowInfo(m_hConOut, true, &sr);
 			}
 		}
@@ -467,7 +418,7 @@ public:
 		while (!a.bRead);
 
 		a.bRead = false;
-		a.p2 = 20;
+		a.p2 = CUIHEIGHT;
 		a.call = a.VERTICAL;
 		hThread[1] = CreateThread(nullptr, 0, (PTHREAD_START_ROUTINE)cui::cgl::DrawLine, &a, NULL, nullptr);
 		WaitForMultipleObjects(2, hThread, true, INFINITE);
@@ -582,18 +533,15 @@ public:
 		CONSOLE_SCREEN_BUFFER_INFO csbi;
 		if (!GetConsoleScreenBufferInfo(m_hConOut, &csbi))
 			return -1;
-
-		dword dwConSize = csbi.dwSize.X * csbi.dwSize.Y;
-		COORD coordScreen = { 0, 0 };
-		dword cCharsWritten;
-		if (!FillConsoleOutputCharacterW(m_hConOut, L' ', dwConSize, coordScreen, &cCharsWritten))
+		dword dw;
+		if (!FillConsoleOutputCharacterW(m_hConOut, L' ', csbi.dwSize.X * csbi.dwSize.Y, { 0, 0 }, &dw))
 			return -2;
 		if (!GetConsoleScreenBufferInfo(m_hConOut, &csbi))
 			return -3;
-		if (!FillConsoleOutputAttribute(m_hConOut, csbi.wAttributes, dwConSize, coordScreen, &cCharsWritten))
+		if (!FillConsoleOutputAttribute(m_hConOut, csbi.wAttributes, csbi.dwSize.X * csbi.dwSize.Y, { 0, 0 }, &dw))
 			return -4;
-
-		SetConsoleCursorPosition(m_hConOut, coordScreen);
+		if (!SetConsoleCursorPosition(m_hConOut, { 0, 0 }))
+			return -5;
 		return 0;
 	}
 
@@ -637,7 +585,13 @@ private:
 #endif
 		m_hConIn = GetStdHandle(STD_INPUT_HANDLE);
 		m_hConOut = GetStdHandle(STD_OUTPUT_HANDLE);
-		m_hConErr = GetStdHandle(STD_ERROR_HANDLE);  // Optinal
+
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		GetConsoleScreenBufferInfo(m_hConOut, &csbi);
+		csbi.wAttributes &= 0xff00;
+		csbi.wAttributes |= (word)Attributes::CON_INFO;
+		SetConsoleTextAttribute(m_hConOut, csbi.wAttributes);
+		cls();
 
 		m_pBuffer = VirtualAlloc(nullptr, 0x000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	}
@@ -649,7 +603,6 @@ private:
 	// Console Input/Output(/Error) Handle
 	HANDLE m_hConIn;
 	HANDLE m_hConOut;
-	HANDLE m_hConErr; // Optinal
 };
 Console* Console::conInstance = nullptr;
 

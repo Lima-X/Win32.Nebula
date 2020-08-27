@@ -165,6 +165,66 @@ namespace alg {
 			((char*)pTable)[ext[i] & 0xff] = ext[i] >> 8;
 	}
 #pragma endregion
+#pragma endregion Out of Service
+
+#pragma region Hex
+	class HexConv {
+	public:
+		HexConv() {
+			// Setup HexTable
+			m_HexTable = (char*)malloc(16);
+			for (uint8 i = 0; i < 10; i++)
+				m_HexTable[i] = (char)i + '0';
+			for (uint8 i = 0; i < 6; i++)
+				m_HexTable[i + 10] = (char)i + 'a';
+		}
+		void ToHex(
+			_In_  void*  pData,
+			_In_  size_t nData,
+			_Out_ char*  sz
+		) {
+			for (int i = 0; i < nData; i++) {
+				sz[i * 2] = m_HexTable[((unsigned char*)pData)[i] >> 4];
+				sz[(i * 2) + 1] = m_HexTable[((unsigned char*)pData)[i] & 0xf];
+			}
+		}
+		void ConvertToBin(
+			char* sz,
+			void* pOut
+		) {
+			auto LHexToBinA = []( // Char to Hexvalue
+				char c            // Char to convert
+				) -> unsigned char {
+					return (c - '0') - ('a' * (c / 'a'));
+			};
+
+			while (*sz != '\0')
+				*(*(unsigned char**)&pOut)++ = (LHexToBinA(*sz++) << 4) + LHexToBinA(*sz++);
+		}
+
+
+	private:
+		char* m_HexTable;
+	};
+
+
+	void ConvertToBin(
+		char* sz,
+		void* pOut
+	) {
+		auto LHexToBinA = []( // Char to Hexvalue
+			char c            // Char to convert
+			) -> unsigned char {
+				if (c >= '0' && c <= '9')
+					return c - '0';
+				if (c >= 'a' && c <= 'f')
+					return c - 'a' + 10;
+		};
+
+		while (*sz != '\0')
+			*((*(unsigned char**)&pOut)++) = (LHexToBinA(*sz++) << 4) + LHexToBinA(*sz++);
+	}
+
 #pragma endregion
 
 #pragma region Uuid

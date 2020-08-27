@@ -68,6 +68,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <CallingConvention>FastCall</CallingConvention>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -113,7 +114,7 @@
     <ClCompile Include="antire.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="process.cpp" />
-    <ClCompile Include="Random.cpp" />
+    <ClCompile Include="random.cpp" />
     <ClCompile Include="crypt.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="window.cpp" />
