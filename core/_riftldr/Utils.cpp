@@ -1,15 +1,15 @@
 #include "_riftldr.h"
 
 namespace utl {
-	BOOL IIsUserAdmin() {
-		PSID pSId;
-		SID_IDENTIFIER_AUTHORITY ia = SECURITY_NT_AUTHORITY;
-		BOOL bSId = AllocateAndInitializeSid(&ia, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pSId);
+	bool IIsUserAdmin() {
+		SID* pSid;
+		SID_IDENTIFIER_AUTHORITY sia = SECURITY_NT_AUTHORITY;
+		BOOL bSId = AllocateAndInitializeSid(&sia, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, (PSID*)&pSid);
 		if (bSId) {
-			if (!CheckTokenMembership(NULL, pSId, &bSId))
+			if (!CheckTokenMembership(NULL, pSid, &bSId))
 				bSId = FALSE;
 
-			FreeSid(pSId);
+			FreeSid(pSid);
 		}
 
 		return bSId;
@@ -69,7 +69,7 @@ namespace utl {
 		return pProcesses;
 	}
 
-	void* AllocReadFileW(
+	DEPRECATED void* AllocReadFileW( // Use FileMap Class instead
 		_In_  PCWSTR  szFileName,
 		_Out_ size_t* nFileSize
 	) {
@@ -111,8 +111,7 @@ namespace utl {
 			BOOL bT = WriteFile(hFile, pBuffer, nBuffer, &dwT, NULL);
 			CloseHandle(hFile);
 			return bT;
-		}
-		else
+		} else
 			return FALSE;
 	}
 
@@ -126,7 +125,7 @@ namespace utl {
 		return nullptr;
 	}
 
-	DEPRECATED BOOL EExtractResource(
+	DEPRECATED BOOL EExtractResource( // Useless Wrapper
 		_In_ PCWSTR szFileName,
 		_In_ WORD   wResID
 	) {
@@ -137,69 +136,53 @@ namespace utl {
 		return bT;
 	}
 
-	// Only Test rn but might be implemented further
-	DEPRECATED void* IDownloadKey() {
-		PCWSTR szAgent = rng::EAllocRandomBase64StringW(NULL, 8, 16);
-		HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
-		if (!hNet)
-			return NULL;
-		free((void*)szAgent);
 
-		PCSTR szB64URL = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL0xpbWEtWC1Db2RpbmcvV2luMzIuX3JpZnQvbWFzdGVyL19yaWZ0L21haW4uYz90b2tlbj1BSVNMVElGQkxFWE5IREJIWDZaMkZPUzYzUUozVQA=";
-		size_t nURL;
-		// PCSTR szURL = EBase64DecodeA(szB64URL, 156, &nURL);
-		// HINTERNET hUrl = InternetOpenUrlA(hNet, szURL, NULL, 0, NULL, NULL);
-		// if (!hUrl)
-		return NULL;
-		// free(szURL);
-
-		void* pBuffer = malloc(AES_BLOB_SIZE);
-		size_t nRead;
-		// InternetReadFile(hUrl, pBuffer, AES_BLOB_SIZE, &nRead);
-
-		// InternetCloseHandle(hUrl);
-		InternetCloseHandle(hNet);
-		if ((nRead != AES_BLOB_SIZE) || ((dword)pBuffer != 0x4d42444b)) {
-			free(pBuffer);
-			return NULL;
+	class WinNet {
+	public:
+		WinNet(
+			_In_ const wchar* szAgent = nullptr
+		) {
+			if (InternetAttemptConnect(NULL))
+				return;
+			if (!szAgent)
+				szAgent = L"_rift/v0.xxy (WinINet_riftldrFileDownloader)"; // Use String Obfuscation here
+			hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, nullptr, nullptr, NULL);
+		}
+		~WinNet() {
+			InternetCloseHandle(hNet);
 		}
 
-		return pBuffer;
-	}
+		status DownloadFile(                      // returns actuall size read if successful
+			_In_     const wchar* szUrl,          // Url to download from
+			_Out_          void*  pBuffer,        // Output Buffer to fill
+			_In_           size_t nSize,          // Size of data to read
+			_In_opt_       ptr    fpOffset = NULL // Startposition to read from
+		) {
+			status s = InternetCheckConnectionW(szUrl, NULL, NULL);
+			if (!s)
+				return -1; // Couldn't connect to Url/Server
 
-	status EDownloadFile(        // Reads Data from Url (downloads File) / returns size read
-		_In_     PCWSTR szUrl,   // Url to read from
-		_In_opt_ int    nOffset, // Offset to start reading from
-		_In_     void*  pBuffer, // Buffer to read to
-		_In_     size_t nSize    // count of Bytes to read (also Buffer size)
-	) {
-		BOOL s = InternetCheckConnectionW(szUrl, NULL, NULL);
-		if (!s)
-			return -1; // Couldn't connect to Url/Server
-		PCWSTR szAgent = rng::EAllocRandomBase64StringW(NULL, 8, 16);
-		HINTERNET hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
-		free((void*)szAgent);
-		if (!hNet)
-			return -2; // Couldn't start Internet-Services
-		HINTERNET hUrl = InternetOpenUrlW(hNet, szUrl, NULL, 0, NULL, NULL);
-		if (!hUrl)
-			return -3; // Couldn't open Url
+			HINTERNET hUrl = InternetOpenUrlW(hNet, szUrl, nullptr, 0, NULL, NULL);
+			if (!hUrl)
+				return -2; // Couldn't open Url
 
-		if (nOffset)
-			InternetSetFilePointer(hUrl, nOffset, NULL, FILE_BEGIN, NULL);
-		s = InternetReadFile(hUrl, pBuffer, nSize, (dword*)&nSize);
-		BOOL sT = s;
-		s = InternetCloseHandle(hUrl);
-		s = InternetCloseHandle(hNet);
-		if (!sT)
-			return -4; // Couldn't read File
-		return nSize;
-	}
+			if (fpOffset)
+				InternetSetFilePointer(hUrl, fpOffset, nullptr, FILE_BEGIN, NULL);
+			s = InternetReadFile(hUrl, pBuffer, nSize, (dword*)&nSize);
+			status s2 = s;
+			s = InternetCloseHandle(hUrl);
+			if (!s2)
+				return -3; // Couldn't read File
+			return nSize;
+		}
+	private:
+		HINTERNET hNet;
+	};
 
-	// so apperently every kind of data im grabbing is different
-	// so fuck me in the ass, this is basically a session id now
+	// so apperently all data im grabbing is different
+	// so fuck me, this is basically a session Id now
 	VOID IGenerateSessionId(
-		_Out_ uuid* pSId
+		_Out_ cry::Md5::hash* pSId
 	) {
 		// Prepare Hashing
 		BCRYPT_ALG_HANDLE ah;
@@ -207,8 +190,8 @@ namespace utl {
 		BCRYPT_HASH_HANDLE hh;
 		BCryptCreateHash(ah, &hh, nullptr, 0, nullptr, 0, NULL);
 
-		const dword dwFTPS[] = { 'ACPI', 'FIRM', 'RSMB' };
-		for (char i = 0; i < sizeof(dwFTPS) / sizeof(dword); i++) {
+		static const dword dwFTPS[] = { 'ACPI', 'FIRM', 'RSMB' };
+		for (uint8 i = 0; i < sizeof(dwFTPS) / sizeof(dword); i++) {
 			// Enumerate Table Entries
 			size_t nTableId = EnumSystemFirmwareTables(dwFTPS[i], nullptr, 0);
 			dword* pTableId = (dword*)malloc(nTableId);
@@ -234,10 +217,10 @@ namespace utl {
 		BCryptCloseAlgorithmProvider(ah, NULL);
 	}
 
-	// this generates a true hardware id by parsing the table
+	// this generates a true hardware Id by parsing the table
 	// and only hashing specific entries (also avoiding specific fields)
 	VOID IGenerateHardwareId(
-		_Out_ uuid* pHwId
+		_Out_ cry::Md5::hash* pHwId
 	) {
 		// Get SMBios Table
 		typedef struct _RawSMBIOSData {

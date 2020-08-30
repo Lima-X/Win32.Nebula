@@ -1,10 +1,20 @@
-/* Most of the Code in this file gets executed before the CRT is (fully) initialized (TLS Callback),
-   therefore the usage of CRT features might be unsafe */
-#include "_riftldr.h"
+/* Most of the Code in this File gets executed before the CRT is initialized (TLS Callback),
+   therefore the usage of CRT features "might" be unsafe.
+   This basically means that everything in here is to be treated as unsafe/unstable
+   and has the potential to cause unwanted behaviour such as crashes.
+   (I guess thats what you get for abusing "undocumented" features :P)
 
-extern const cry::Md5::hash e_HashSig;
-extern const CHAR e_pszSections[ANYSIZE_ARRAY][8];
-extern const size_t e_nSections;
+   NOTE: As of v0.28 this will be isolated from the main programm as it has its own "entrypoint"
+   and therefore should also be treated as technically its own programm.
+   This means that everything in here is specifically made for here only
+   and everything outside of this file should NOT be used here.
+   Inoder to still communicate/inform the main ldr code, they will be linked through a small "interface" */
+#include "_riftldr.h"
+namespace dat {
+	extern const cry::Md5::hash e_HashSig;
+	extern const CHAR e_pszSections[ANYSIZE_ARRAY][8];
+	extern const size_t e_nSections;
+}
 
 namespace are { // Anti Reverse Engineering
 	namespace dbg { // Anti Debugging/Debugger (Detection)
@@ -20,8 +30,7 @@ namespace are { // Anti Reverse Engineering
 					return bDP;
 				else
 					return FALSE;
-			}
-			else
+			} else
 				return bT;
 		}
 
@@ -442,10 +451,10 @@ namespace are { // Anti Reverse Engineering
 
 				// Check for Special Section
 				BOOLEAN bFlag;
-				for (uchar j = 0; j < e_nSections; j++) {
+				for (uchar j = 0; j < dat::e_nSections; j++) {
 					bFlag = TRUE;
 					for (uchar n = 0; n < IMAGE_SIZEOF_SHORT_NAME; n++) {
-						if (pSHdr->Name[n] != e_pszSections[j][n]) {
+						if (pSHdr->Name[n] != dat::e_pszSections[j][n]) {
 							bFlag = FALSE;
 							break;
 						}
@@ -468,7 +477,7 @@ namespace are { // Anti Reverse Engineering
 					for (uint32 j = 0; j < nSection - sizeof(cry::Md5::hash); j++) {
 						bFlag = TRUE;
 						for (uchar n = 0; n < sizeof(cry::Md5::hash); n++) {
-							if (((byte*)pSection)[j + n] != (*(byte**)&e_HashSig)[n]) {
+							if (((byte*)pSection)[j + n] != (*(byte**)&dat::e_HashSig)[n]) {
 								bFlag = FALSE;
 								break;
 							}
@@ -494,7 +503,7 @@ namespace are { // Anti Reverse Engineering
 			}
 
 			hash.EFnialize();
-			bool bT = hash.pMd5 == e_HashSig;
+			bool bT = hash.pMd5 == dat::e_HashSig;
 			// void* pMd5 = malloc(sizeof(hash));
 			// BCryptFinishHash(hh, (uchar*)pMd5, sizeof(hash), NULL);
 			// BCryptDestroyHash(hh);

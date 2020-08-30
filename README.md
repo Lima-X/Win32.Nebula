@@ -1,6 +1,20 @@
 # \_rift (PML)
 Packed(compressed & encryped) Module Loader.
 
+#### Note:
+Basically most of the shit standing here is deprecated or inaccurate as it probably already has changed,
+so... dont trust this readme and rather refer to the sourcecode and its comments I left.\
+(i could actually just delete this file but whatever, idrc.)
+
+Incase this ever gets public I have decided so because I probably just wanted to do so..\
+or maybe some other dumb reason, I mean there is nothing what imo would really prevent me from doing so,
+there is alot of other shit public...\
+Besides that, I programmed this (still do) just for fun and to learn to code an generally getting better,
+other than that this project doesn't really serve a purpose besides being a showoff thing atmost.\
+so this might basically serve as a learning resource for others about malware development.\
+On top of that this might also be the last malware that i will be making for the time being,
+as I plan on constantly updating and working on it, I hope... (I might do some side projects here and there).\
+
 ## \_riftldr
 Main Executable containing the Core-Loader (S1) and its packed Resources,
 as well as many other Features.
@@ -13,7 +27,7 @@ as well as many other Features.
 - [x] Resource Decryption/Decompression (AES128CBC & LZMS)
 - [x] String Deobfuscation (Base64 & AES128CBC)
 - [x] TLS Callback for AntiRE
-- [ ] Memory Section Hashing (reversing relocs)
+- [x] Memory Section Hashing (reversing relocs)
 
 ## \_riftdll
 Main Payload Dll also containing the Loader-Stub (S2).\
@@ -23,9 +37,9 @@ after initializazion Controll will be given to this
 - [ ] Stub
   - [ ] Autostart (Registry Key)
 - [x] UAC Bypass (RAiLaunchAdminProcess & DebugObject)
-- [ ] Executable "Infector" (Packing as Resource)
+- [ ] Executable "Infector" (Appending the executable to with shellcode and extracting it)
 
-## \_riftInject
+## \_riftmmi
 Dll Injector used to inject the RootKit Dll.\
 (Using parts of BlackBone/Xenos by DarthTon)
 
@@ -33,7 +47,7 @@ Dll Injector used to inject the RootKit Dll.\
 - [ ] Unlink Module
 - [ ] Erase PE Header
 
-## \_riftRoot
+## \_rifturk
 The RootKit Dll that will primarily hide Processes and Files.
 
 #### Features:

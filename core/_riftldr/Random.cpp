@@ -2,48 +2,52 @@
 
 namespace rng {
 #pragma region Xoshiro
-	CRITICAL_SECTION Xoshiro::cs = { 0 };
+	CRITICAL_SECTION Xoshiro::cs;
 	rng::Xoshiro* Xoshiro::s_xsrInstance = nullptr;
 
 	// Constructor/Destructor and Signleton Initialization
 	Xoshiro::Xoshiro(
 		_In_opt_ dword* dwState // = nullptr
 	)
-		: m_Trampoline(&Xoshiro::IXoshiroNext)
+		: m_Trampoline(&Xoshiro::INext)
 	{
-		BCRYPT_ALG_HANDLE cah;
-		if (!BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, nullptr, NULL)) {
-			if (!dwState)
+		if (!dwState) {
+			BCRYPT_ALG_HANDLE cah;
+			if (!BCryptOpenAlgorithmProvider(&cah, BCRYPT_RNG_ALGORITHM, nullptr, NULL)) {
 				BCryptGenRandom(cah, (UCHAR*)&m_dwState, sizeof(dword) * 4, NULL);
-			else
-				memcpy(m_dwState, dwState, 16);
-			BCryptCloseAlgorithmProvider(cah, NULL);
-		}
+				BCryptCloseAlgorithmProvider(cah, NULL);
+			}
+		} else
+			memcpy(m_dwState, dwState, 16);
 	}
 	Xoshiro::~Xoshiro() {
-		if (this == s_xsrInstance) {
-			DeleteCriticalSection(&cs);
-			s_xsrInstance = nullptr;
-		}
+		// this is only semi safe but should do
+		if (this == s_xsrInstance)
+			EnterCriticalSection(&cs);
 		free(m_dwState);
+		if (this == s_xsrInstance) {
+			s_xsrInstance = nullptr;
+			LeaveCriticalSection(&cs);
+			DeleteCriticalSection(&cs);
+		}
 	}
 	Xoshiro* Xoshiro::Instance() {
 		if (!s_xsrInstance) {
 			s_xsrInstance = new Xoshiro();
-			s_xsrInstance->m_Trampoline = &Xoshiro::IThreadSafeNext;
+			s_xsrInstance->m_Trampoline = &Xoshiro::INext2;
 			InitializeCriticalSection(&cs);
 		}
 		return s_xsrInstance;
 	}
 
 	// Internal State manipulation Functions
-	inline dword Xoshiro::IRotlDw(
-		_In_ dword dwT,
-		_In_ uchar ui8T
+	dword __forceinline Xoshiro::IRotlDw(
+		_In_ dword dw,
+		_In_ uint8 sh
 	) const {
-		return (dwT << ui8T) | (dwT >> ((sizeof(dword) * 8) - ui8T));
+		return (dw << sh) | (dw >> ((sizeof(dword) * 8) - sh));
 	}
-	inline void Xoshiro::IXoshiroNext() {
+	inline void Xoshiro::INext() {
 		const dword dwT = m_dwState[1] << 9;
 		m_dwState[2] ^= m_dwState[0];
 		m_dwState[3] ^= m_dwState[1];
@@ -52,9 +56,9 @@ namespace rng {
 		m_dwState[2] ^= dwT;
 		m_dwState[3] = IRotlDw(m_dwState[3], 11);
 	}
-	inline void Xoshiro::IThreadSafeNext() {
+	inline void Xoshiro::INext2() { // Thread safe call to NextState function
 		EnterCriticalSection(&cs);
-		IXoshiroNext();
+		INext();
 		LeaveCriticalSection(&cs);
 	}
 
@@ -91,6 +95,8 @@ namespace rng {
 		return (EXoshiroP() >> 8) * (1.F / 0x1000000p0F);
 	}
 #pragma endregion
+
+	// TODO: Rewrite all this bullshit, as it is needed
 
 	// Random Tools / TODO: fix this mess
 	VOID EGenRandomB64W(

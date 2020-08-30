@@ -26,35 +26,45 @@ namespace rng {
 		uint32 ERandomIntDistribution(_In_ uint32 nMin, _In_ uint32 nMax);
 		float ERandomRealDistribution();
 	private:
-		// Internal/Global State & Sync Opbject (for Singleton)
+		// State, Sync Opbject (for Singleton) & internal Trampoline
 		static Xoshiro* s_xsrInstance;
 		static CRITICAL_SECTION cs;
 		void(Xoshiro::*m_Trampoline)();
 		dword m_dwState[4];
 
 		// Internal State manipulation Functions
-		inline dword IRotlDw(_In_ dword dwT, _In_ uchar ui8T) const;
-		inline void IThreadSafeNext();
-		inline void IXoshiroNext();
+		dword __forceinline IRotlDw(_In_ dword dw, _In_ uint8 sh) const;
+		inline void INext2();
+		inline void INext();
 	};
 }
 
-namespace alg { /* Base64 Encoder/Decoder, UUID Converters and SigScanner : shared.c */
+namespace alg { /* Base64A Encoder/Decoder, UUID Converters and SigScanner : shared.c */
 	// why -A suffix, because these functions work with raw data,
-	// also Hex and Base64 don't need Unicode
+	// also Hex and Base64A don't need Unicode
 	// and it would be stupid to use Unicode outside of the programm anyways,
 	// as it would just bloat the data
-	class Base64 {
+	class Base64A {
 	public:
-		Base64(_In_opt_ void(*TableConstructorCbA)(_In_ void *pTable) = nullptr);
-		~Base64();
-		status EBase64EncodeA(_In_ void* pData, _In_ size_t nData, _Out_opt_ PSTR psz, _In_ bool bPad);
-		status EBase64DecodeA(_In_ PCSTR psz, _In_ size_t nsz, _Out_opt_ void* pData);
+		Base64A(_In_opt_ void(*TableConstructorCbA)(_In_ void *pTable) = nullptr);
+		~Base64A();
+		status EBase64Encode(_In_ void* pData, _In_ size_t nData, _Out_opt_ PSTR psz, _In_ bool bPad);
+		status EBase64Decode(_In_ PCSTR psz, _In_ size_t nsz, _Out_opt_ void* pData);
 	private:
 		char* pcTable;
 	};
 
 	void IBase64ObfuscatedTableCbA(_In_ void* pTable);
+
+	class HexConvA {
+	public:
+		HexConvA();
+		void BinToHex(_In_ void* pData, _In_ size_t nData, _Out_ char* sz);
+		void HexToBin(_In_ char* sz, _Out_ void* pOut);
+
+	private:
+		char* m_HexTable;
+	};
 }
 
 namespace utl {
@@ -144,6 +154,9 @@ void* ESigScan(_In_ void* pData, _In_ size_t nData, _In_ PSIG sig);
 PDWORD EGetProcessIdbyName(_In_ PCWSTR pProcessName, _Out_ size_t* nProcesses);
 
 /* Process Information Block (replacment for Global Data) */
+// This is kinda deprected now because im using the crt now
+// this means i shoudl remove all this NoCRT shit i had before
+// and keep everything that is run at Tls-time seperately
 struct PIB {
 #ifndef _riftutl
 	struct {     // Hardware and Session ID's

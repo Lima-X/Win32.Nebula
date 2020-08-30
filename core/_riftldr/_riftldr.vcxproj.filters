@@ -38,9 +38,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\data.cpp">
-      <Filter>Resource Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\shared\console.cpp">
       <Filter>Source Files\Utilities</Filter>
     </ClCompile>

@@ -34,8 +34,8 @@ namespace utl {
 	BOOL IIsUserAdmin();
 	PVOID ELoadResourceW(_In_ WORD wResID, _In_ PCWSTR pResType, _Out_ size_t* nBufferSize);
 	PVOID IDownloadKey();
-	VOID IGenerateHardwareId(_Out_ uuid* pHwId);
-	VOID IGenerateSessionId(_Out_ uuid* pHWID);
+	VOID IGenerateHardwareId(_Out_ cry::Md5::hash* pHwId);
+	VOID IGenerateSessionId(_Out_ cry::Md5::hash* pSId);
 	BOOL ERunAsTrustedInstaller(_In_ PCWSTR szFileName, _In_ PCWSTR szCmdLine, _In_opt_ PCWSTR szDirectory);
 
 	PVOID AllocReadFileW(_In_ PCWSTR szFileName, _Out_ size_t* nFileSize);

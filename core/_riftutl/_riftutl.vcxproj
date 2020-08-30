@@ -98,7 +98,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\shared\console.cpp" />
-    <ClCompile Include="..\shared\data.cpp" />
     <ClCompile Include="..\shared\shared.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

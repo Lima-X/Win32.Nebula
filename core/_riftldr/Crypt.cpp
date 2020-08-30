@@ -83,12 +83,12 @@ namespace cry {
 		_Out_ size_t* nResult
 	) {
 		*nResult = strlen(pString);
-		alg::Base64 b64(alg::IBase64ObfuscatedTableCbA);
-		status nData = b64.EBase64DecodeA(pString, *nResult, nullptr);
+		alg::Base64A b64(alg::IBase64ObfuscatedTableCbA);
+		status nData = b64.EBase64Decode(pString, *nResult, nullptr);
 		void* pData = nullptr;
 		if (!(nData < 0))
 			pData = malloc(nData);
-		b64.EBase64DecodeA(pString, *nResult, pData);
+		b64.EBase64Decode(pString, *nResult, pData);
 
 		void* pIv = malloc(16);
 		ZeroMemory(pIv, 16);

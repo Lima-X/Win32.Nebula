@@ -109,7 +109,6 @@
   <ItemGroup>
     <ClCompile Include="..\shared\console.cpp" />
     <ClCompile Include="..\shared\shared.cpp" />
-    <ClCompile Include="..\shared\data.cpp" />
     <ClCompile Include="nt.cpp" />
     <ClCompile Include="antire.cpp" />
     <ClCompile Include="main.cpp" />

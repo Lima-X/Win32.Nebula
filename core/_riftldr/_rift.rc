@@ -88,17 +88,6 @@ END
 //
 // RT_RCDATA
 //
-IDR_RIFTTEST            RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTTEST"
-
-IDR_RIFTDLL             RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTDLL"
-
-IDR_RIFTINJECT32        RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTINJECT32"
-
-IDR_RIFTINJECT64        RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTINJECT64"
-
-IDR_RIFTROOT32          RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTROOT32"
-
-IDR_RIFTROOT64          RT_RCDATA               "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\out\\RIFTROOT64"
 
 
 

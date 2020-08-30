@@ -1,19 +1,46 @@
 #ifdef _riftldr
 #include "..\_riftldr\_riftldr.h"
+#elif _riftdll
+#include "..\_riftdll\_riftdll.h"
 #elif _riftutl
 #include "..\_riftutl\_riftutl.h"
 #endif
 
+#pragma region Data
+// Global Process Information Block
+PIB* g_PIB;
+
+namespace dat {
+	/* Contains the expected Hash of Section in the Image.
+	   This is only a Signature and has to be patched out with _riftutl. */
+	const cry::Md5::hash e_HashSig = *(cry::Md5::hash*) & ".SectionHashSig";
+
+	/* The Current AesInternalKey used to decrypt Internal Data,
+	   this Key is hardcoded and should not be changed.
+	   Changing this Key would requirer to reencrypt all Data that is based on this Key,
+	   this includes all obfuscated Strings and even external Resources. */
+	const byte e_IKey[AES_KEY_SIZE] = {
+		0xd9, 0xbf, 0x99, 0x27, 0x18, 0xca, 0x6a, 0xf6,
+		0xb4, 0xd5, 0xd4, 0x67,	0x4e, 0xf5, 0xf9, 0x01
+	};
+	// KillSwitch Data Hash
+	DEPRECATED const byte e_KillSwitchHash[sizeof(cry::Md5::hash)] = {
+		0xc5, 0xc9, 0x2b, 0x4e, 0xe2, 0xc4, 0x61, 0x8f,
+		0x65, 0x59, 0xf1, 0x98, 0x48, 0xae, 0xf5, 0x3b
+	};
+}
+#pragma endregion
+
 namespace alg {
 #pragma region Base64
-	/* Base64 Encoder/Decoder taken from FreeBSD Project.
+	/* Base64A Encoder/Decoder taken from FreeBSD Project.
 	   Migrated to C++ into a class */
-	Base64::Base64(
+	Base64A::Base64A(
 		_In_opt_ void(*TableConstructorCbA)(_In_ void* pTable)
 	) {
 		pcTable = (char*)malloc(64);
 		if (!TableConstructorCbA) {
-			// This constructs the standard Base64 Table
+			// This constructs the standard Base64A Table
 			const char ofs[] = { 'A', 'a' }; // offsets to startingpoints in ascii128 table
 			const char ofl[] = { 31, 31 };   // run length of offsets
 			for (char i = 0, n = 0; i < sizeof(ofs); n += ofl[i], i++)
@@ -23,14 +50,15 @@ namespace alg {
 			const char ext[] = { '+', '/' }; // single extra chars
 			for (char i = 0; i < 2; i++)
 				pcTable[i + 62] = ext[i];
-		} else
+		}
+		else
 			TableConstructorCbA(pcTable);
 	}
-	Base64::~Base64() {
+	Base64A::~Base64A() {
 		free(pcTable);
 		pcTable = nullptr;
 	}
-	status Base64::EBase64EncodeA( // returns length of string(not including Null) or space needed for string
+	status Base64A::EBase64Encode( // returns length of string(not including Null) or space needed for string
 		_In_      void*  pData,    // Data to be encoded
 		_In_      size_t nData,    // Size of Data
 		_Out_opt_ PSTR   psz,      // Output Buffer to fill / if nul Calculates the neccessary size
@@ -73,7 +101,8 @@ namespace alg {
 				*pPos++ = pcTable[((((byte*)pData)[0] & 0x03) << 4) & 0x3f];
 				if (bPad)
 					*pPos++ = '=';
-			} else {
+			}
+			else {
 				*pPos++ = pcTable[(((((byte*)pData)[0] & 0x03) << 4) | (((byte*)pData)[1] >> 4)) & 0x3f];
 				*pPos++ = pcTable[((((byte*)pData)[1] & 0x0f) << 2) & 0x3f];
 			} if (bPad)
@@ -85,8 +114,8 @@ namespace alg {
 		*pPos = '\0';
 		return (status)(pPos - (ptr)psz); // Return actuall Size (not including Nullterminator)
 	}
-	status Base64::EBase64DecodeA( // Decodes a Base64 String / returns Size of Data
-		_In_      PCSTR  psz,      // Base64 String to decode
+	status Base64A::EBase64Decode( // Decodes a Base64A String / returns Size of Data
+		_In_      PCSTR  psz,      // Base64A String to decode
 		_In_      size_t nsz,      // Length of String
 		_Out_opt_ void*  pData     // Output Buffer to fill with raw Data / if nul calculates the neccessary size
 	) {
@@ -168,63 +197,38 @@ namespace alg {
 #pragma endregion Out of Service
 
 #pragma region Hex
-	class HexConv {
-	public:
-		HexConv() {
-			// Setup HexTable
-			m_HexTable = (char*)malloc(16);
-			for (uint8 i = 0; i < 10; i++)
-				m_HexTable[i] = (char)i + '0';
-			for (uint8 i = 0; i < 6; i++)
-				m_HexTable[i + 10] = (char)i + 'a';
-		}
-		void ToHex(
-			_In_  void*  pData,
-			_In_  size_t nData,
-			_Out_ char*  sz
-		) {
-			for (int i = 0; i < nData; i++) {
-				sz[i * 2] = m_HexTable[((unsigned char*)pData)[i] >> 4];
-				sz[(i * 2) + 1] = m_HexTable[((unsigned char*)pData)[i] & 0xf];
-			}
-		}
-		void ConvertToBin(
-			char* sz,
-			void* pOut
-		) {
-			auto LHexToBinA = []( // Char to Hexvalue
-				char c            // Char to convert
-				) -> unsigned char {
-					return (c - '0') - ('a' * (c / 'a'));
-			};
-
-			while (*sz != '\0')
-				*(*(unsigned char**)&pOut)++ = (LHexToBinA(*sz++) << 4) + LHexToBinA(*sz++);
-		}
-
-
-	private:
-		char* m_HexTable;
-	};
-
-
-	void ConvertToBin(
-		char* sz,
-		void* pOut
+	HexConvA::HexConvA() {
+		// Setup HexTable
+		m_HexTable = (char*)malloc(16);
+		for (uint8 i = 0; i < 10; i++)
+			m_HexTable[i] = (char)i + '0';
+		for (uint8 i = 0; i < 6; i++)
+			m_HexTable[i + 10] = (char)i + 'a';
+	}
+	void HexConvA::BinToHex( //
+		_In_  void*  pData,  // Data to be converted
+		_In_  size_t nData,  // Size of Data
+		_Out_ char*  sz      // Target String to Fill
 	) {
-		auto LHexToBinA = []( // Char to Hexvalue
-			char c            // Char to convert
+		for (int i = 0; i < nData; i++) {
+			sz[i * 2] = m_HexTable[((unsigned char*)pData)[i] >> 4];
+			sz[(i * 2) + 1] = m_HexTable[((unsigned char*)pData)[i] & 0xf];
+		}
+		sz[nData * 2] = '\0';
+	}
+	void HexConvA::HexToBin( //
+		_In_  char* sz,      // String to be converted
+		_Out_ void* pOut     // Target array to fill
+	) {
+		auto LCharToDecA = []( //
+			char c             // Char to convert
 			) -> unsigned char {
-				if (c >= '0' && c <= '9')
-					return c - '0';
-				if (c >= 'a' && c <= 'f')
-					return c - 'a' + 10;
+				return (c - '0') - (('a' - '0') * (c / 'a'));
 		};
 
 		while (*sz != '\0')
-			*((*(unsigned char**)&pOut)++) = (LHexToBinA(*sz++) << 4) + LHexToBinA(*sz++);
+			*(*(unsigned char**)&pOut)++ = (LCharToDecA(*sz++) << 4) + LCharToDecA(*sz++);
 	}
-
 #pragma endregion
 
 #pragma region Uuid

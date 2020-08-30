@@ -1,3 +1,8 @@
+/*--------------------------------*\
+ | ! IMPORTANT ! :                |
+ | TLS-Callback inside antire.cpp |
+\*--------------------------------*/
+
 #include "_riftldr.h"
 
 typedef status(WINAPI* DllEntry)(
@@ -32,9 +37,9 @@ status IHashMappedSection2(
 
 	// Prepare Hashing
 	BCRYPT_ALG_HANDLE ah;
-	BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, NULL, NULL);
+	status s = BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, NULL, NULL);
 	BCRYPT_HASH_HANDLE hh;
-	BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
+	s = BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
 
 	// Iterate over Sections
 	PIMAGE_SECTION_HEADER pSh = IMAGE_FIRST_SECTION(pNth);
@@ -46,11 +51,10 @@ status IHashMappedSection2(
 		// Make copy of mapped Section
 		void* pImageCopy = VirtualAlloc(nullptr, pSh->Misc.VirtualSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 		memcpy(pImageCopy, (void*)(pSh->VirtualAddress + pNth->OptionalHeader.ImageBase), pSh->Misc.VirtualSize);
+		// Calculate the difference between the section base of the mapped and copied version
+		int nBaseDelta = (ptr)pImageCopy - (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
 
 		if (nRelocDelta) {
-			// Calculate the difference between the section base of the mapped and copied version
-			int nBaseDelta = (ptr)pImageCopy - (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
-
 			PIMAGE_BASE_RELOCATION pBrC = (PIMAGE_BASE_RELOCATION)(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase);
 			while ((ptr)pBrC < ((pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase)
 				+ pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size)
@@ -86,32 +90,19 @@ status IHashMappedSection2(
 		// with int3 interrupts (0xcc), so this basically fucks up the calculations if run under a debugger.
 		// (as a nice sideeffect this might also catch a debugger if it places breakpoints)
 
-		// Special Handling
-
-		const struct ignore {
-			char name[8];
-
-
+		// Special Handling (make a list of pointers and sizes that will be ignored by checking if they are in the region)
+		// (dont do it through section names (maybe use them es additional checks (probably not tho (has no actuall gains))))
+		static const struct ignore {
+			void*  VirtualAddress;
+			size_t RegionSize;
 		} list[] = {
-			{ ".rdata", }
+			{ 0,  0 },
 		};
-		static const char* szSec[] = {
-			".rdata",
-			".rscs",
-		};
+		for (uint8 j = 0; j < sizeof(list) / sizeof(*list); j++)
+			;
 
-		int8 j;
-		for (j = 0; j < sizeof(szSec) / sizeof(*szSec); j++)
-			if (!memcmp(pSh->Name, szSec[j], 8)) {
-				j |= 1 << 7; break;
-			}
-
-		switch (j) {
-		case 0:
-		default:
-			BCryptHashData(hh, (uchar*)pSh->VirtualAddress, pSh->Misc.VirtualSize, NULL);
-		}
-
+		// default:
+		s = BCryptHashData(hh, (uchar*)(pSh->VirtualAddress + nBaseDelta), pSh->Misc.VirtualSize, NULL);
 
 		// TODO: just hashing the sections here
 		VirtualFree(pImageCopy, 0, MEM_RELEASE);
@@ -123,46 +114,6 @@ status IHashMappedSection2(
 	BCryptCloseAlgorithmProvider(ah, NULL);
 	return 0;
 }
-
-class HexConv {
-public:
-	HexConv() {
-		// Setup HexTable
-		m_HexTable = (char*)malloc(16);
-		for (uint8 i = 0; i < 10; i++)
-			m_HexTable[i] = (char)i + '0';
-		for (uint8 i = 0; i < 6; i++)
-			m_HexTable[i + 10] = (char)i + 'a';
-	}
-	void ToHex(
-		_In_  void* pData,
-		_In_  size_t nData,
-		_Out_ char* sz
-	) {
-		for (int i = 0; i < nData; i++) {
-			sz[i * 2] = m_HexTable[((unsigned char*)pData)[i] >> 4];
-			sz[(i * 2) + 1] = m_HexTable[((unsigned char*)pData)[i] & 0xf];
-		}
-		sz[nData * 2] = '\0';
-	}
-	void ConvertToBin(
-		char* sz,
-		void* pOut
-	) {
-		auto LHexToBinA = []( // Char to Hexvalue
-			char c            // Char to convert
-			) -> unsigned char {
-				return (c - '0') - (('a' - '0') * (c / 'a'));
-		};
-
-		while (*sz != '\0')
-			*(*(unsigned char**)&pOut)++ = (LHexToBinA(*sz++) << 4) + LHexToBinA(*sz++);
-	}
-
-private:
-	char* m_HexTable;
-};
-
 
 int WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
@@ -180,34 +131,7 @@ int WINAPI wWinMain(
 		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, (int*)&g_PIB->sArg.n);
 	}
 
-
-	HexConv hc;
-
-
-	const int a = 1024 * 1024 * 256;
-	rng::Xoshiro xsr;
-
-	byte* data = (byte*)malloc(a);
-	for (int i = 0; i < a; i++)
-		data[i] = rng::Xoshiro::Instance()->EXoshiroSS();
-	for (int i = 0; i < a; i++)
-		data[i] = xsr.EXoshiroSS();
-
-
-	char* string = (char*)malloc(a * 2 + 1);
-	hc.ToHex(data, a, string);
-
-	byte* data2 = (byte*)malloc(a);
-	hc.ConvertToBin(string, data2);
-
-	__debugbreak();
-
-
-
-
 	// IHashMappedSection2();
-
-
 
 	BOOL IOpenConsole();
 	IOpenConsole();
