@@ -172,7 +172,6 @@ struct PIB {
 		PWSTR* v;  // Argument array (Vector)
 	} sArg;
 #endif
-	HANDLE hPh;                  // Process Heap
 	struct {                     // Module Information
 		HMODULE hM;              // Current Module (BaseAddress)
 		WCHAR   szMFN[MAX_PATH]; // Current Module Filename

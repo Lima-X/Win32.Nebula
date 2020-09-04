@@ -6,10 +6,6 @@
 #include "..\_riftutl\_riftutl.h"
 #endif
 
-#pragma region Data
-// Global Process Information Block
-PIB* g_PIB;
-
 namespace dat {
 	/* Contains the expected Hash of Section in the Image.
 	   This is only a Signature and has to be patched out with _riftutl. */
@@ -29,7 +25,6 @@ namespace dat {
 		0x65, 0x59, 0xf1, 0x98, 0x48, 0xae, 0xf5, 0x3b
 	};
 }
-#pragma endregion
 
 namespace alg {
 #pragma region Base64

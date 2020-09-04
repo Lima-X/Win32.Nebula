@@ -5,11 +5,26 @@
 
 #include "_riftldr.h"
 
-typedef status(WINAPI* DllEntry)(
-	_In_ HINSTANCE hinstDLL,
-	_In_ dword     fdwReason,
-	_In_ void*     pvReserved
-);
+// Finalize this
+struct TlsCallbackInterface {
+	enum vm : dword {
+		VM_WARE = 1,
+		VIRTUAL_BOX,
+		VIRTUAL_PC
+	} vm : 2;
+	enum dbg : dword {
+		PEB_BEINGDEBUGGED_FLAG = 1,
+		NTQPI_DEBUG_FLAGE,
+		NTQPI_DEBUG_OBJECT,
+		EXCEPTION_INT2D,
+		EXCEPTION_HANDLE,
+		EXCEPTION_UNHANDLED,
+	} dbg : 3;
+};
+
+
+// Global Process Information Block
+PIB* g_PIB;
 
 // Tempoerery test fucntion
 status IHashMappedSection2(
@@ -93,16 +108,69 @@ status IHashMappedSection2(
 		// Special Handling (make a list of pointers and sizes that will be ignored by checking if they are in the region)
 		// (dont do it through section names (maybe use them es additional checks (probably not tho (has no actuall gains))))
 		static const struct ignore {
-			void*  VirtualAddress;
+			ptr VirtualAddress;
 			size_t RegionSize;
 		} list[] = {
-			{ 0,  0 },
+			{ 0,  4 },
+			{ 3412, 8 },
+			{ 312, 32 }
 		};
+#if 0 // Old version/idea
+		void* ptr = (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + nBaseDelta;
 		for (uint8 j = 0; j < sizeof(list) / sizeof(*list); j++)
-			;
+			if ((list[i].VirtualAddress >= pSh->VirtualAddress + pNth->OptionalHeader.ImageBase)
+				&& (list[i].VirtualAddress + list[i].RegionSize <= pSh->VirtualAddress + pNth->OptionalHeader.ImageBase)
+				) {
+				ptr dif = ptr - ((pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + nBaseDelta)
+					s = BCryptHashData(hh, (uchar*)(ptr), dif, NULL);
+				ptr = dif + list[i].RegionSize;
+			}
+			else {
+				s = BCryptHashData(hh, (uchar*)(ptr), pSh->Misc.VirtualSize, NULL);
+			}
+#else	// NOTE: This ignorelist code is still untested
+		// Generate section ordered ignorelist
+		ignore* ilist = nullptr;
+		size_t nlist = 0;
 
-		// default:
-		s = BCryptHashData(hh, (uchar*)(pSh->VirtualAddress + nBaseDelta), pSh->Misc.VirtualSize, NULL);
+		uint8 lastsmallestindex = 0;
+		for (uint8 j = 0; j < sizeof(list) / sizeof(*list); j++) {
+			uint8 smallestindex = -1;
+			for (uint8 n = 0; n < sizeof(list) / sizeof(*list); n++) {
+				if ((list[i].VirtualAddress >= pSh->VirtualAddress + pNth->OptionalHeader.ImageBase)
+					&& (list[i].VirtualAddress + list[i].RegionSize <= pSh->VirtualAddress + pNth->OptionalHeader.ImageBase)
+					) {
+					if (n < smallestindex && n > lastsmallestindex)
+						smallestindex = n;
+				}
+			}
+
+			// probably not enough checks
+			if (smallestindex > lastsmallestindex) {
+				if (ilist)
+					ilist = (ignore*)realloc(ilist, ++nlist * sizeof(ignore));
+				else
+					ilist = (ignore*)malloc(++nlist * sizeof(ignore));
+
+				ilist[nlist - 1] = list[smallestindex];
+			}
+		}
+
+		// Iterate through ignorelist and hash
+		ptr ptrbase = (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + nBaseDelta;
+		if (nlist) {
+			for (uint8 j = 0; j < nlist; j++) {
+				ptr dif = ptrbase - ((pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + nBaseDelta);
+				s = BCryptHashData(hh, (uchar*)(ptrbase), dif, NULL);
+				ptrbase = dif + ilist[i].RegionSize;
+			}
+		} else {
+			s = BCryptHashData(hh, (uchar*)(ptrbase), pSh->Misc.VirtualSize, NULL);
+		}
+
+		if (ilist)
+			free(ilist);
+#endif
 
 		// TODO: just hashing the sections here
 		VirtualFree(pImageCopy, 0, MEM_RELEASE);
@@ -115,6 +183,23 @@ status IHashMappedSection2(
 	return 0;
 }
 
+HANDLE GetModuleThroughPebX86(
+	_In_ const wchar* szMod
+) {
+	void* pPeb = (void*)__readfsdword(0x30);
+	void* pPebLdrData = (void*)((ptr)pPeb + 0xc);
+	LIST_ENTRY* leModList = (LIST_ENTRY*)((ptr)pPebLdrData + 0x14);
+
+	while (leModList->Flink != leModList) {
+		void* pLdrData = (void*)((ptr)leModList + sizeof(*leModList));
+		void* usDllBaseName = (void*)((ptr)pLdrData + 0x2c);
+		if (!memcmp((wchar*)((ptr)usDllBaseName + 0x4), szMod, *(ushort*)usDllBaseName))
+			return (HANDLE)((ptr)pLdrData + 0x18);
+	}
+
+	return NULL;
+}
+
 int WINAPI wWinMain(
 	_In_     HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -124,8 +209,10 @@ int WINAPI wWinMain(
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(nCmdShow);
 	{	// Initialize Process Information Block
+		g_PIB = (PIB*)malloc(sizeof(PIB));
 		g_PIB->sMod.hM = hInstance;
 		GetCurrentDirectoryW(MAX_PATH, g_PIB->sMod.szCD);
+		GetModuleFileNameW(hInstance, g_PIB->sMod.szMFN, MAX_PATH);
 		utl::IGenerateHardwareId(&g_PIB->sID.HW);
 		utl::IGenerateSessionId(&g_PIB->sID.SE);
 		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, (int*)&g_PIB->sArg.n);
@@ -192,15 +279,16 @@ int WINAPI wWinMain(
 	if (!pDll)
 		return 0x132d;
 
-#ifdef _NDEBUG
+#ifndef _DEBUG
 	// Implement Manual Mapping using BlackBone
 #else
 	HMODULE dhDll = LoadLibraryExW(L"_riftdll.dll", NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
 	if (!dhDll)
 		return 0x2ab5;
 
-	DllEntry DllMain = (DllEntry)GetProcAddress(dhDll, "DllMain");
-	status bTest = DllMain(NULL, 4, g_PIB);
+
+	void* DllMain = GetProcAddress(dhDll, "DllMain");
+	status bTest = ((status(WINAPI*)(_In_ HINSTANCE hinstDLL, _In_ dword fdwReason, _In_ void* pvReserved))DllMain)(NULL, 4, g_PIB);
 
 	FreeLibrary(dhDll);
 #endif
@@ -210,7 +298,7 @@ int WINAPI wWinMain(
 	{	// CleanUp
 		rng::Xoshiro::Instance()->~Xoshiro();
 		LocalFree(g_PIB->sArg.v);
-		HeapFree(g_PIB->hPh, NULL, g_PIB);
+		free(g_PIB);
 	} return 0;
 }
 

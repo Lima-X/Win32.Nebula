@@ -9,10 +9,26 @@
    This means that everything in here is specifically made for here only
    and everything outside of this file should NOT be used here.
    Inoder to still communicate/inform the main ldr code, they will be linked through a small "interface" */
-#include "_riftldr.h"
+
+#include "..\..\global\global.h"
+
+// Windows special Headers
+#include <psapi.h>
+#include <tlHelp32.h>
+
+// Windows unlinked Headers
+#pragma comment(lib, "bcrypt.lib")
+#include <bcrypt.h>
+
+// Microsoft Detours
+#pragma comment(lib, "..\\..\\other\\msDetours\\lib.X86\\detours.lib")
+#include "..\..\other\msDetours\include\detours.h"
+
+// Dummyclass for typedef to get correct linkage
+namespace cry { class Md5 { public: typedef GUID hash; }; }
 namespace dat {
 	extern const cry::Md5::hash e_HashSig;
-	extern const CHAR e_pszSections[ANYSIZE_ARRAY][8];
+	extern const char e_pszSections[ANYSIZE_ARRAY][8];
 	extern const size_t e_nSections;
 }
 
@@ -20,18 +36,10 @@ namespace are { // Anti Reverse Engineering
 	namespace dbg { // Anti Debugging/Debugger (Detection)
 		static HMODULE hNtDll;
 
-		// Rewrite: Do it manually, by reading the flag directly from the PEB
-		static BOOL IBasicDebuggerCheck() {
-			BOOL bT = IsDebuggerPresent();
-			if (!bT) {
-				BOOL bDP;
-				bT = CheckRemoteDebuggerPresent(GetCurrentProcess(), &bDP);
-				if (bT)
-					return bDP;
-				else
-					return FALSE;
-			} else
-				return bT;
+		// Do it manually, by reading the flag directly from the PEB
+		static bool IBasicDebuggerCheck() {
+			void* pPeb = (void*)__readfsdword(0x30);
+			return *(byte*)((ptr)pPeb + 2);
 		}
 
 		// ICheckProcessDebugFlags will return true if
@@ -41,23 +49,17 @@ namespace are { // Anti Reverse Engineering
 		// inverse of EPROCESS->NoDebugInherit so (!TRUE == FALSE)
 		static BOOL ICheckProcessDebugFlags() {
 			// Much easier in ASM but C/C++ looks so much better
-			typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint32, void*, ULONG, PULONG);
-
 			// Get NtQueryInformationProcess
+			typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint32, void*, ULONG, PULONG);
 			pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
 
 			dword NoDebugInherit;
 			NTSTATUS nts = NtQIP(GetCurrentProcess(),
 				0x1f, // ProcessDebugFlags
 				&NoDebugInherit, 4, 0);
-
 			if (!nts)
-				return FALSE;
-
-			if (!NoDebugInherit)
-				return TRUE;
-			else
-				return FALSE;
+				return false;
+			return !NoDebugInherit;
 		}
 
 		// This function uses NtQuerySystemInformation
@@ -66,25 +68,19 @@ namespace are { // Anti Reverse Engineering
 		// is successful it'll return true which means we're
 		// being debugged or it'll return false if it fails
 		// or the process isn't being debugged
-		static BOOL IDebugObjectCheck() {
+		static bool IDebugObjectCheck() {
 			// Much easier in ASM but C/C++ looks so much better
-			typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint32, void*, ULONG, PULONG);
-
 			// Get NtQueryInformationProcess
+			typedef NTSTATUS(NTAPI* pNtQueryInformationProcess)(HANDLE, uint32, void*, ULONG, PULONG);
 			pNtQueryInformationProcess NtQIP = (pNtQueryInformationProcess)GetProcAddress(hNtDll, "NtQueryInformationProcess");
 
 			HANDLE hDebugObject;
 			NTSTATUS nts = NtQIP(GetCurrentProcess(),
 				0x1e, // ProcessDebugObjectHandle
 				&hDebugObject, 4, 0);
-
 			if (!nts)
-				return FALSE;
-
-			if (hDebugObject)
-				return TRUE;
-			else
-				return FALSE;
+				return false;
+			return hDebugObject;
 		}
 
 		// EHideThread will attempt to use
@@ -93,17 +89,12 @@ namespace are { // Anti Reverse Engineering
 		// hThread will cause the function to hide the thread
 		// the function is running in. Also, the function returns
 		// false on failure and true on success
-		BOOL EHideThread(
-			_In_opt_ HANDLE hThread
+		status EHideThread(
+			_In_opt_ HANDLE hThread = NULL
 		) {
-			typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, uint32, void*, ULONG);
-
 			// Get NtSetInformationThread
+			typedef NTSTATUS(NTAPI* pNtSetInformationThread)(HANDLE, uint32, void*, ULONG);
 			pNtSetInformationThread fnNtSIT = (pNtSetInformationThread)GetProcAddress(hNtDll, "NtSetInformationThread");
-
-			// Shouldn't fail
-			if (!fnNtSIT)
-				return FALSE;
 
 			// Set the thread info
 			NTSTATUS nts;
@@ -113,11 +104,7 @@ namespace are { // Anti Reverse Engineering
 					0, 0);
 			else
 				nts = fnNtSIT(hThread, 0x11, 0, 0);
-
-			if (!nts)
-				return FALSE;
-			else
-				return TRUE;
+			return nts;
 		}
 
 		// ICheckOutputDebugString checks whether or
@@ -125,13 +112,10 @@ namespace are { // Anti Reverse Engineering
 		// and if the error does occur then we know
 		// there's no debugger, otherwise if there IS
 		// a debugger no error will occur
-		static BOOL ICheckOutputDebugString() {
+		static bool ICheckOutputDebugString() {
 			SetLastError(0);
 			OutputDebugStringW(L"dbgC");
-			if (!GetLastError())
-				return TRUE;
-			else
-				return FALSE;
+			return GetLastError();
 		}
 
 		// The IInt2DCheck function will check to see if a debugger
@@ -140,34 +124,32 @@ namespace are { // Anti Reverse Engineering
 		// exception if there is no debugger. Also when used in OllyDBG
 		// it will skip a byte in the disassembly and will create
 		// some havoc.
-		static BOOL IInt2DCheck() {
+		static bool IInt2DCheck() {
 			__try {
 				__asm {
 					int 0x2d
 					xor eax, eax
 					add eax, 2
 				}
-			}
-			__except (EXCEPTION_EXECUTE_HANDLER) {
-				return FALSE;
+			} __except (EXCEPTION_EXECUTE_HANDLER) {
+				return false;
 			}
 
-			return TRUE;
+			return true;
 		}
 
 		// CheckCloseHandle will call CloseHandle on an invalid
 		// dword aligned value and if a debugger is running an exception
 		// will occur and the function will return true otherwise it'll
 		// return false
-		static BOOL ICheckCloseHandle() {
+		static bool ICheckCloseHandle() {
 			__try {
-				CloseHandle((HANDLE)0xffffffff);
-			}
-			__except (EXCEPTION_EXECUTE_HANDLER) {
-				return TRUE;
+				CloseHandle(INVALID_HANDLE_VALUE);
+			} __except (EXCEPTION_EXECUTE_HANDLER) {
+				return true;
 			}
 
-			return FALSE;
+			return false;
 		}
 
 		LONG WINAPI IUnhandledExcepFilter(PEXCEPTION_POINTERS pExcepPointers) {
@@ -179,7 +161,7 @@ namespace are { // Anti Reverse Engineering
 
 			return EXCEPTION_CONTINUE_EXECUTION;
 		}
-		VOID ISehUnhandledException() {
+		void ISehUnhandledException() {
 			SetUnhandledExceptionFilter(IUnhandledExcepFilter);
 			__asm {
 				xor eax, eax
@@ -195,11 +177,11 @@ namespace are { // Anti Reverse Engineering
 		BOOL IAntiDebug() {
 			hNtDll = GetModuleHandleW(L"ntdll.dll");
 			EHideThread(0);
-			//	ITryOpenCsrss();
 			CreateThread(0, 0, thAntiDebug, 0, 0, 0);
 			return 0;
 		}
 
+		// nice another bad joke
 		static dword WINAPI thAntiDebug(
 			_In_ void* pParam
 		) {
@@ -227,9 +209,11 @@ namespace are { // Anti Reverse Engineering
 		}
 	}
 
+	// All this shit is unsafe and idk how it didn't cause an issue yet,
+	// because some code here should really cause problems
 	namespace vma { // Virtual Machine Awareness
 		// this has to be checked and fixed, its a terrible mess atm...
-		static BOOL ICheckVMware() {
+		static bool ICheckVMware() {
 			__try {
 				__asm {
 					push ebx
@@ -242,24 +226,21 @@ namespace are { // Anti Reverse Engineering
 
 					pop  ebx
 				}
-			}
-			__except (EXCEPTION_EXECUTE_HANDLER) {
-				return FALSE;
+			} __except (EXCEPTION_EXECUTE_HANDLER) {
+				return false;
 			}
 
-			return TRUE;
+			return true;
 		}
 
-		static BOOL ICheckVirtualBox() {
+		static bool ICheckVirtualBox() {
 			HANDLE hDevice = CreateFileW(L"\\\\.\\VBoxMiniRdrDN", GENERIC_READ, FILE_SHARE_READ,
 				NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
 			if (hDevice != INVALID_HANDLE_VALUE) {
 				CloseHandle(hDevice);
-				return TRUE;
-			}
-			else
-				return FALSE;
+				return true;
+			} else
+				return false;
 		}
 
 		static dword ICVPCExceptionFilter(
@@ -286,8 +267,7 @@ namespace are { // Anti Reverse Engineering
 
 					pop    ebx
 				}
-			}
-			__except (ICVPCExceptionFilter(GetExceptionInformation())) {
+			} __except (ICVPCExceptionFilter(GetExceptionInformation())) {
 				return FALSE;
 			}
 
@@ -328,7 +308,7 @@ namespace are { // Anti Reverse Engineering
 			// Get a list of all the modules in this process.
 			dword nResult;
 			BOOL bs = K32EnumProcessModules(hProcess, NULL, 0, &nResult);
-			HMODULE* hMods = (HMODULE*)malloc(nResult);
+			HMODULE* hMods = (HMODULE*)HeapAlloc(GetProcessHeap(), 0, nResult);
 			bs = K32EnumProcessModules(hProcess, hMods, sizeof(hMods), &nResult);
 			if (bs)
 				for (uchar i = 0; i < nResult / sizeof(HMODULE); i++) {
@@ -340,7 +320,7 @@ namespace are { // Anti Reverse Engineering
 					}
 				}
 
-			free(hMods);
+			HeapFree(GetProcessHeap(), 0, hMods);
 			CloseHandle(hProcess);
 
 			return 0;
@@ -354,14 +334,14 @@ namespace are { // Anti Reverse Engineering
 		static HMODULE(WINAPI* RLoadLibraryW)(_In_ LPCWSTR lpLibFileName) = LoadLibraryW;
 		HMODULE WINAPI HLoadLibraryW(_In_ LPCWSTR lpLibFileName) {
 			for (uchar i = 0; i < sizeof(l_AllowedLibraries) / sizeof(PCWSTR); i++)
-				if (!StrStrIW(lpLibFileName, l_AllowedLibraries[i]))
+				if (!wcsstr(lpLibFileName, l_AllowedLibraries[i])) //  <- should be case insensitive
 					return RLoadLibraryW(lpLibFileName);
 			return NULL;
 		}
 		static HMODULE(WINAPI* RLoadLibraryExW)(_In_ LPCWSTR lpLibFileName, _Reserved_ HANDLE hFile, _In_ dword dwFlags) = LoadLibraryExW;
 		HMODULE WINAPI HLoadLibraryExW(_In_ LPCWSTR lpLibFileName, _Reserved_ HANDLE hFile, _In_ dword dwFlags) {
 			for (uchar i = 0; i < sizeof(l_AllowedLibraries) / sizeof(PCWSTR); i++)
-				if (!StrStrIW(lpLibFileName, l_AllowedLibraries[i]))
+				if (!wcsstr(lpLibFileName, l_AllowedLibraries[i]))
 					return RLoadLibraryExW(lpLibFileName, hFile, dwFlags);
 			return NULL;
 		}
@@ -403,7 +383,7 @@ namespace are { // Anti Reverse Engineering
 	namespace img { //  Image Tools
 		DEPRECATED BOOL fnErasePeHeader() {
 			// Get Nt Headers
-			PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)g_PIB->sMod.hM;
+			PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)GetModuleHandleW(nullptr);
 			PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((ptr)pDosHdr + pDosHdr->e_lfanew);
 			if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
 				return FALSE;
@@ -413,12 +393,14 @@ namespace are { // Anti Reverse Engineering
 
 			dword dwProtect;
 			size_t nOHdr = pOHdr->SizeOfHeaders;
-			VirtualProtect(g_PIB->sMod.hM, nOHdr, PAGE_EXECUTE_READWRITE, &dwProtect);
-			SecureZeroMemory(g_PIB->sMod.hM, nOHdr);
-			VirtualProtect(g_PIB->sMod.hM, nOHdr, dwProtect, &dwProtect);
+			HANDLE hMod = GetModuleHandleW(nullptr);
+			VirtualProtect(hMod, nOHdr, PAGE_EXECUTE_READWRITE, &dwProtect);
+			SecureZeroMemory(hMod, nOHdr);
+			VirtualProtect(hMod, nOHdr, dwProtect, &dwProtect);
 			return TRUE;
 		}
 
+#if 0
 		// Will Redo in Memory
 		FORCEINLINE BOOL IHashBinaryCheck() {
 			// Read Binary File
@@ -512,6 +494,7 @@ namespace are { // Anti Reverse Engineering
 			// free(pMd5);
 			return bT;
 		}
+#endif
 
 		// NOTE: this function isn't done yet and bearly has been tested,
 		//       it lacks a lot of safety features and sanity checks.
@@ -597,16 +580,26 @@ namespace are { // Anti Reverse Engineering
 		PIMAGE_EXPORT_DIRECTORY pEd = (PIMAGE_EXPORT_DIRECTORY)
 			(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress + (ptr)hMod);
 		PCSTR* pszNameTable = (PCSTR*)(pEd->AddressOfNames + (ptr)hMod);
-		cry::Md5 hash;
+
+		BCRYPT_ALG_HANDLE ah;
+		BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, nullptr, BCRYPT_HASH_REUSABLE_FLAG);
+		BCRYPT_HASH_HANDLE hh;
+		BCryptCreateHash(ah, &hh, nullptr, 0, nullptr, 0, BCRYPT_HASH_REUSABLE_FLAG);
 		for (int i = 0; i < pEd->NumberOfNames; i++) {
 			PCSTR sz = pszNameTable[i] + (ptr)hMod;
-			hash.EHashData((void*)sz, strlen(sz));
-			hash.EFnialize();
+			BCryptHashData(hh, (uchar*)sz, strlen(sz), NULL);
+			cry::Md5::hash md5;
+			BCryptFinishHash(hh, (uchar*)&md5, sizeof(md5), NULL);
 
-			if (hash.pMd5 == pHash) // <- i could just return GetProcAddress here, but the work to do it manually from here is minimal
+			if (md5 == pHash) { // <- I could just return GetProcAddress here, but the work to do it manually from here is minimal
+				BCryptDestroyHash(hh);
+				BCryptCloseAlgorithmProvider(ah, NULL);
 				return (void*)(((size_t*)(pEd->AddressOfFunctions + (ptr)hMod))[((word*)(pEd->AddressOfNameOrdinals + (ptr)hMod))[i]] + (ptr)hMod);
+			}
 		}
 
+		BCryptDestroyHash(hh);
+		BCryptCloseAlgorithmProvider(ah, NULL);
 		return nullptr;
 	}
 
@@ -626,20 +619,6 @@ namespace are { // Anti Reverse Engineering
 		UNREFERENCED_PARAMETER(dwReason);
 		UNREFERENCED_PARAMETER(Reserved);
 		if (l_bTlsFlag) {
-			{	// Partially initialize PIB (Neccessary Fields only)
-				{	// Allocate PIB (manually because crt fails)
-					HANDLE hPh = GetProcessHeap();
-					g_PIB = (PIB*)HeapAlloc(hPh, NULL, sizeof(*g_PIB));
-					g_PIB->hPh = hPh;
-					// g_PIB = (PIB*)malloc(sizeof(PIB)); // potentially unsafe (fails)
-				}
-
-				g_PIB->sMod.hM = GetModuleHandleW(NULL);
-				GetModuleFileNameW(g_PIB->sMod.hM, g_PIB->sMod.szMFN, MAX_PATH);
-
-				// TODO: smth like this
-				// g_PIB->sCry.IK = new cry::Aes(e_IKey);
-			}
 
 			// img::IHashBinaryCheck();
 			// img::IHashMappedSection();

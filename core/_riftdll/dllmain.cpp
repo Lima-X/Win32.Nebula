@@ -5,7 +5,7 @@ status riftMain() {
 	return NULL;
 }
 
-DLLEX status WINAPI DllMain(
+status WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,
 	_In_ dword     fdwReason,
 	_In_ void*     pvReserved
