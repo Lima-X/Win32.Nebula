@@ -1,10 +1,6 @@
-#ifdef _riftldr
-#include "..\_riftldr\_riftldr.h"
-#elif _riftdll
-#include "..\_riftdll\_riftdll.h"
-#elif _riftutl
-#include "..\_riftutl\_riftutl.h"
-#endif
+#include "shared.h"
+#include <malloc.h>
+#include <cstdio>
 
 namespace dat {
 	/* Contains the expected Hash of Section in the Image.
@@ -194,11 +190,13 @@ namespace alg {
 #pragma region Hex
 	HexConvA::HexConvA() {
 		// Setup HexTable
-		m_HexTable = (char*)malloc(16);
 		for (uint8 i = 0; i < 10; i++)
-			m_HexTable[i] = (char)i + '0';
-		for (uint8 i = 0; i < 6; i++)
-			m_HexTable[i + 10] = (char)i + 'a';
+			m_HexTable[i] = i + '0';
+
+		for (uint8 j = 0; j < 6; j++) {
+			m_HexTable[j + 10] = j + 'a';
+			m_HexTable[j + ('a' - '0')] = j + ('0' + 10);
+		}
 	}
 	void HexConvA::BinToHex( //
 		_In_  void*  pData,  // Data to be converted
@@ -206,31 +204,26 @@ namespace alg {
 		_Out_ char*  sz      // Target String to Fill
 	) {
 		for (int i = 0; i < nData; i++) {
-			sz[i * 2] = m_HexTable[((unsigned char*)pData)[i] >> 4];
-			sz[(i * 2) + 1] = m_HexTable[((unsigned char*)pData)[i] & 0xf];
+			sz[i * 2] = m_HexTable[((byte*)pData)[i] >> 4];
+			sz[(i * 2) + 1] = m_HexTable[((byte*)pData)[i] & 0xf];
 		}
 		sz[nData * 2] = '\0';
 	}
+
 	void HexConvA::HexToBin( //
 		_In_  char* sz,      // String to be converted
 		_Out_ void* pOut     // Target array to fill
 	) {
-		auto LCharToDecA = []( //
-			char c             // Char to convert
-			) -> unsigned char {
-				return (c - '0') - (('a' - '0') * (c / 'a'));
-		};
-
 		while (*sz != '\0')
-			*(*(unsigned char**)&pOut)++ = (LCharToDecA(*sz++) << 4) + LCharToDecA(*sz++);
+			 *(*(byte**)&pOut)++ = ((m_HexTable[*sz++ - '0'] - '0') << 4) + (m_HexTable[*sz++ - '0'] - '0');
 	}
 #pragma endregion
 
 #pragma region Uuid
 	/* UUID Converters */
 	// TODO: maybe rewrite this, its nightmarefuel
-	DEPRECATED VOID EUuidEncodeA(      // UUID to sString
-		_In_  UUID* pId,    // UUID to Encode
+	DEPRECATED void EUuidEncodeA(      // UUID to sString
+		_In_  uuid* pId,    // UUID to Encode
 		_Out_ PSTR  pString // String to fill
 	) {
 		for (char i = 0; i < 2; i++)
@@ -242,7 +235,7 @@ namespace alg {
 
 	VOID EUuidDecodeA(       // String to UUID
 		_In_  PCSTR pString, // String to Decode
-		_Out_ UUID* pId      // UUID to fill
+		_Out_ uuid* pId      // UUID to fill
 	) {
 		auto IHexToBinLA = []( // Char to Hexvalue
 			_In_ char c		   // Char to convert

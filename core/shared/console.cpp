@@ -1,8 +1,6 @@
-#ifdef _riftldr
-#include "..\_riftldr\_riftldr.h"
-#elif _riftutl
-#include "..\_riftutl\_riftutl.h"
-#endif
+#include "shared.h"
+#include <cstdio>
+#include <malloc.h>
 
 /* Current ui layout/design:
     Logo | Info
@@ -117,8 +115,8 @@ namespace cui {
 
 			// Shuffle Array (20 Rounds)
 			for (uint32 i = 0; i < nIndex * 20; i++) {
-				uint16 n1 = rng::Xoshiro::Instance()->ERandomIntDistribution(0, nIndex - 1);
-				uint16 n2 = rng::Xoshiro::Instance()->ERandomIntDistribution(0, nIndex - 1);
+				uint16 n1 = rng::Xoshiro::Instance().ERandomIntDistribution(0, nIndex - 1);
+				uint16 n2 = rng::Xoshiro::Instance().ERandomIntDistribution(0, nIndex - 1);
 				if (n1 == n2) // might remove this, branching might just make it slower
 					continue;
 
@@ -175,7 +173,7 @@ namespace cui {
 			: nLength(0)
 		{
 			// Choose Random Slogan
-			uint8 iSlogan = rng::Xoshiro::Instance()->ERandomIntDistribution(0, (sizeof(l_szRiftSlogan) / sizeof(*l_szRiftSlogan)) - 1);
+			uint8 iSlogan = rng::Xoshiro::Instance().ERandomIntDistribution(0, (sizeof(l_szRiftSlogan) / sizeof(*l_szRiftSlogan)) - 1);
 
 			// Get Maximum width (-slant) of riftInfo
 			nWidth = strlen(l_szRiftInfo[0]) - 1; // minus newline char
@@ -222,7 +220,7 @@ namespace cui {
 	};
 	static const char l_szRiftDisclaimer[] = {
 		"This software has been protected through obfuscation, encryption and more.\n"
-		"In order to run this please enter in the activation Key (form of a UUID),\n"
+		"In order to run this please enter the activation Key (form of a UUID),\n"
 		"this will also automatically run this Software without the further possibility of stoping it !\n"
 		"If you dont know what this is please close this window to exit,\n"
 		"If you do know what this is and know the consequenzes involved feel free to continue."
@@ -344,31 +342,103 @@ namespace cui {
 	}
 }
 
-class Console {
-public:
-	~Console() {
-		// TODO: Add additional checks if programm was attached to existing console
-		GetConsoleOriginalTitleW((wchar*)m_pBuffer, m_nBuffer);
-		SetConsoleTitleW((wchar*)m_pBuffer);
-		FreeConsole();
-		VirtualFree(m_pBuffer, 0, MEM_RELEASE);
-		conInstance = nullptr;
+namespace con {
+#pragma region Console
+	uint32 Console::m_nRefCounter = 0;
+	HANDLE Console::m_hConIn;
+	HANDLE Console::m_hConOut;
+	void* Console::m_pBuffer;
+	size_t Console::m_nBuffer;
+
+	Console::Console(
+		_In_ dword pId
+	) {
+		if (!m_nRefCounter++) {
+			// Add additional logic for attaching to existing console
+			if (!AttachConsole(pId))
+				if (!AllocConsole())
+					return;
+
+#ifdef _DEBUG
+			SetConsoleTitleW(L"[_riftldr] (debug/dev -build)");
+#else
+			SetConsoleTitleW(L"[_riftldr] (dev-build)");
+#endif
+			m_hConIn = GetStdHandle(STD_INPUT_HANDLE);
+			m_hConOut = GetStdHandle(STD_OUTPUT_HANDLE);
+
+			CONSOLE_SCREEN_BUFFER_INFO csbi;
+			GetConsoleScreenBufferInfo(m_hConOut, &csbi);
+			csbi.wAttributes &= 0xff00;
+			csbi.wAttributes |= (word)Attributes::CON_INFO;
+			SetConsoleTextAttribute(m_hConOut, csbi.wAttributes);
+			Cls();
+
+			m_pBuffer = VirtualAlloc(nullptr, 0x000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+		}
 	}
-	static Console* Instance() {
-		if (!conInstance)
-			conInstance = new Console;
-		return conInstance;
+	Console::~Console() {
+		if (!--m_nRefCounter) {
+			// TODO: Add additional checks if programm was attached to existing console
+			GetConsoleOriginalTitleW((wchar*)m_pBuffer, m_nBuffer);
+			SetConsoleTitleW((wchar*)m_pBuffer);
+			FreeConsole();
+			VirtualFree(m_pBuffer, 0, MEM_RELEASE);
+		}
 	}
 
-	enum class Attributes : byte { // most significant bit indecates error type
-		CON_SUCCESS =         FOREGROUND_GREEN,                                         // 0b00000010
-		CON_INFO    =         FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,      // 0b00000111
-		CON_QUEST   = 0x40 |  FOREGROUND_BLUE | FOREGROUND_INTENSITY,                   // 0b01001001
-		CON_ERROR   = 0x80 |  FOREGROUND_RED | FOREGROUND_INTENSITY,                    // 0b10001100
-		CON_WARNING = 0x80 | (FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY // 0b10001110
-	};
+	status Console::Cls() {
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		status s = GetConsoleScreenBufferInfo(m_hConOut, &csbi);
 
-	void PrintIntro() {
+		dword dw;
+		s = FillConsoleOutputCharacterW(m_hConOut, L' ', csbi.dwSize.X * csbi.dwSize.Y, { 0, 0 }, &dw);
+		s = !GetConsoleScreenBufferInfo(m_hConOut, &csbi);
+		s = !FillConsoleOutputAttribute(m_hConOut, csbi.wAttributes, csbi.dwSize.X * csbi.dwSize.Y, { 0, 0 }, &dw);
+		s = !SetConsoleCursorPosition(m_hConOut, { 0, 0 });
+
+		return s;
+	}
+	status Console::WaitForSingleInput() {
+		// Switch to raw mode
+		DWORD dw;
+		GetConsoleMode(m_hConIn, &dw);
+		SetConsoleMode(m_hConIn, NULL);
+
+		// Wait for the user's response
+		WaitForSingleObject(m_hConIn, INFINITE);
+		FlushConsoleInputBuffer(m_hConIn);
+
+		// Restore the console to its previous state
+		SetConsoleMode(m_hConIn, dw);
+		return 0;
+	}
+	status Console::WriteW(
+		_In_ word   wAttribute
+	) {
+		if (wAttribute & 0xf)
+			SetConsoleTextAttribute(m_hConOut, wAttribute & 0xf);
+		// WriteConsoleW(m_hConOut, m_pBuffer, nBufLen, (dword*)&nBufLen, NULL);
+		return -1;
+	}
+	status Console::PrintFW(
+		_In_     PCWSTR     pText,
+		_In_     Attributes wAttribute,
+		_In_opt_            ...
+	) {
+		va_list vaArg;
+		va_start(vaArg, wAttribute);
+
+		vswprintf((wchar*)m_pBuffer, pText, vaArg);
+		m_nBuffer = wcslen((wchar*)m_pBuffer);
+
+		va_end(vaArg);
+		return m_nBuffer;
+	}
+#pragma endregion
+
+#pragma region ConsoleGui
+	void ConsoleGui::PrintIntro() {
 		{	// Make Cursor invisible
 			CONSOLE_CURSOR_INFO cci;
 			GetConsoleCursorInfo(m_hConOut, &cci);
@@ -393,7 +463,8 @@ public:
 				SetConsoleWindowInfo(m_hConOut, true, &sr);
 				SetConsoleScreenBufferSize(m_hConOut, { sr.Right + 1, sr.Bottom + 1 });
 				SetConsoleWindowInfo(m_hConOut, true, &sr);
-			} else if (sr.Right > csbi.srWindow.Right) {
+			}
+			else if (sr.Right > csbi.srWindow.Right) {
 				SetConsoleScreenBufferSize(m_hConOut, { sr.Right + 1, sr.Bottom + 1 });
 				SetConsoleWindowInfo(m_hConOut, true, &sr);
 			}
@@ -528,92 +599,16 @@ public:
 #endif
 		SetConsoleCursorPosition(m_hConOut, { 0, 7 });
 	}
-
-	status cls() {
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		if (!GetConsoleScreenBufferInfo(m_hConOut, &csbi))
-			return -1;
-		dword dw;
-		if (!FillConsoleOutputCharacterW(m_hConOut, L' ', csbi.dwSize.X * csbi.dwSize.Y, { 0, 0 }, &dw))
-			return -2;
-		if (!GetConsoleScreenBufferInfo(m_hConOut, &csbi))
-			return -3;
-		if (!FillConsoleOutputAttribute(m_hConOut, csbi.wAttributes, csbi.dwSize.X * csbi.dwSize.Y, { 0, 0 }, &dw))
-			return -4;
-		if (!SetConsoleCursorPosition(m_hConOut, { 0, 0 }))
-			return -5;
-		return 0;
-	}
-
-
-	status WriteW(
-		_In_ word   wAttribute
-	) {
-		if (wAttribute & 0xf)
-			SetConsoleTextAttribute(m_hConOut, wAttribute & 0xf);
-		// WriteConsoleW(m_hConOut, m_pBuffer, nBufLen, (dword*)&nBufLen, NULL);
-
-	}
-	status PrintFW(
-		_In_     PCWSTR     pText,
-		_In_     Attributes wAttribute = Attributes::CON_INFO,
-		_In_opt_            ...
-	) {
-		va_list vaArg;
-		va_start(vaArg, wAttribute);
-
-		vswprintf((wchar*)m_pBuffer, pText, vaArg);
-		m_nBuffer = wcslen((wchar*)m_pBuffer);
-
-		va_end(vaArg);
-		return m_nBuffer;
-	}
-private:
-	// Constructors are private because its a singleton anyways
-	Console(
-		_In_ dword pId = NULL
-	) {
-		// Add additional logic for attaching to existing console
-		if (!AttachConsole(pId))
-			if (!AllocConsole())
-				return;
-
-#ifdef _DEBUG
-		SetConsoleTitleW(L"[_riftldr] (debug/dev -build)");
-#else
-		SetConsoleTitleW(L"[_riftldr] (dev-build)");
-#endif
-		m_hConIn = GetStdHandle(STD_INPUT_HANDLE);
-		m_hConOut = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(m_hConOut, &csbi);
-		csbi.wAttributes &= 0xff00;
-		csbi.wAttributes |= (word)Attributes::CON_INFO;
-		SetConsoleTextAttribute(m_hConOut, csbi.wAttributes);
-		cls();
-
-		m_pBuffer = VirtualAlloc(nullptr, 0x000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	}
-
-	static Console* conInstance; // Singleton Instance
-	void*  m_pBuffer;            // Temporery Buffer (Pool) that will be used to Format, Get Text and more (multiple of Pagesize)
-	size_t m_nBuffer;            // The size of data inside the temporery Buffer (Pool)
-
-	// Console Input/Output(/Error) Handle
-	HANDLE m_hConIn;
-	HANDLE m_hConOut;
-};
-Console* Console::conInstance = nullptr;
+#pragma endregion
+}
 
 BOOL IOpenConsole() {
-	Console* con = Console::Instance();
+	con::ConsoleGui con;
 
 	// con->PrintFW(L"Test", Console::Attributes::CON_ERROR);
 	// con->PrintFW(L"Test, default");
-	con->cls();
-	con->PrintIntro();
-	con->~Console();
+	con.Cls();
+	con.PrintIntro();
 
 	return 0;
 }

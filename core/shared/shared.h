@@ -1,23 +1,51 @@
-/* This File is shared between multiple Projects and provides intercompatibility between them. */
+/* This File is shared between the core Projects and provides intercompatibility between them. */
 #pragma once
-
 #include "..\..\global\global.h"
+
+
+// C++ Library Headers (currently completely unused as i dont make use of the STL (, and probably wont in this project))
+#ifdef __cplusplus
+
+// C Library Headers
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+
+// Windows special Headers
+#include <psapi.h>
+#include <tlHelp32.h>
+#include <shlobj.h>
+#include <knownfolders.h>
+
+// Windows unlinked Headers
+#pragma comment(lib, "bcrypt.lib")
+#include <bcrypt.h>
+#pragma comment(lib, "cabinet.lib")
+#include <compressapi.h>
+#pragma comment(lib, "pathcch.lib")
+#include <pathcch.h>
+#pragma comment(lib, "shlwapi.lib")
+#include <shlwapi.h>
+#pragma comment(lib, "wininet.lib")
+#include <wininet.h>
+
+// Microsoft Detours
+#pragma comment(lib, "..\\..\\other\\msDetours\\lib.X86\\detours.lib")
+#include "..\..\other\msDetours\include\detours.h"
+
+
 
 // #define ROUNDUP_MULTIPLE_BIT(num, mul) (((num + (mul - 1)) & ((size_t)-mul)))
 // #define ROUNDUP_MULTIPLE_MUL(num, mul) (((num + (mul - 1)) / mul) * mul)
-
-/* BCrypt */
-#define AES_KEY_SIZE    0x10                                                 // 128-Bit
-#define AES_BLOB_SIZE   (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
-#define AES_WARPED_SIZE (8 + AES_KEY_SIZE)                                   // 24-Bytes (Hardcoded)
-
+#ifdef __cplusplus
 namespace rng {
 	class Xoshiro {
 	public:
 		// Constructor/Destructor and Signleton Initialization
-		Xoshiro(_In_opt_ dword* dwState = nullptr);
+		Xoshiro(_In_opt_ void* dwState = nullptr);
 		~Xoshiro();
-		static Xoshiro* Instance();
+		static Xoshiro& Instance();
 
 		// Xoshiro Functions
 		dword EXoshiroSS();
@@ -25,9 +53,9 @@ namespace rng {
 		// Uniform int/float Distribution Functions
 		uint32 ERandomIntDistribution(_In_ uint32 nMin, _In_ uint32 nMax);
 		float ERandomRealDistribution();
+
 	private:
 		// State, Sync Opbject (for Singleton) & internal Trampoline
-		static Xoshiro* s_xsrInstance;
 		static CRITICAL_SECTION cs;
 		void(Xoshiro::*m_Trampoline)();
 		dword m_dwState[4];
@@ -63,7 +91,7 @@ namespace alg { /* Base64A Encoder/Decoder, UUID Converters and SigScanner : sha
 		void HexToBin(_In_ char* sz, _Out_ void* pOut);
 
 	private:
-		char* m_HexTable;
+		char m_HexTable[('a' - '0') - 1];
 	};
 }
 
@@ -106,6 +134,10 @@ namespace cry {
 		       hash               m_pMd5;
 	};
 
+// Use an Enum instead
+#define AES_KEY_SIZE    0x10                                                 // 128-Bit
+#define AES_BLOB_SIZE   (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
+#define AES_WARPED_SIZE (8 + AES_KEY_SIZE)                                   // 24-Bytes (Hardcoded)
 	class Aes {
 	public:
 		// Encrypted File/Resource Header
@@ -135,6 +167,44 @@ namespace cry {
 	// Actuall Declaration close to EoF (End of File)
 	// void* EUnpackResource(_In_ word wResID, _Out_ size_t* nData, _In_ Aes* waes = g_PIB->sCry.EK);
 }
+
+namespace con {
+	class Console {
+	public:
+		Console(_In_ dword pId = NULL);
+		~Console();
+
+		enum class Attributes : byte {                                                      // most significant bit indecates error type
+			CON_SUCCESS = FOREGROUND_GREEN,                                                 // 0b00000010
+			CON_INFO = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,                 // 0b00000111
+			CON_QUEST = 0x40 | FOREGROUND_BLUE | FOREGROUND_INTENSITY,                      // 0b01001001
+			CON_ERROR = 0x80 | FOREGROUND_RED | FOREGROUND_INTENSITY,                       // 0b10001100
+			CON_WARNING = 0x80 | (FOREGROUND_RED | FOREGROUND_GREEN) | FOREGROUND_INTENSITY // 0b10001110
+		};
+
+		status Cls();
+		status WaitForSingleInput();
+		status WriteW(_In_ word wAttribute);
+		status PrintFW(_In_ PCWSTR pText, _In_ Attributes wAttribute = Attributes::CON_INFO, _In_opt_ ...);
+
+	protected:
+		// Console Input/Output(/Error) Handle
+		static HANDLE m_hConIn;
+		static HANDLE m_hConOut;
+
+	private:
+		static uint32 m_nRefCounter; // Class Reference Counter
+		static void*  m_pBuffer;     // Temporery Buffer (Pool) that will be used to Format, Get Text and more (multiple of Pagesize)
+		static size_t m_nBuffer;     // The size of data inside the temporery Buffer (Pool)
+	};
+
+	class ConsoleGui
+		: public Console {
+	public:
+		void PrintIntro();
+	};
+}
+
 
 /* FileSystem */
 #define GENERIC_RW (GENERIC_READ | GENERIC_WRITE)
@@ -185,4 +255,5 @@ extern PIB* g_PIB;
 // and the struct reqires the actual namespace, where this would normaly be defined to be present
 #ifndef _riftutl
 namespace cry { void* EUnpackResource(_In_ word wResID, _Out_ size_t* nData, _In_ Aes* waes = g_PIB->sCry.EK); }
+#endif
 #endif

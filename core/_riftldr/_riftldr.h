@@ -1,6 +1,6 @@
 #pragma once
 #include "..\..\global\global.h"
-#include "..\shared\depends.h"
+#include "..\shared\shared.h"
 #include "resource.h"
 #include <shellapi.h>
 

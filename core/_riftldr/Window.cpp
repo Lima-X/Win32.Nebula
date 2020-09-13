@@ -25,7 +25,7 @@ dword WINAPI thWindowThread(
 	wc.cbSize = sizeof(wc);
 	wc.lpfnWndProc = WndProc;
 
-	uchar nLength = rng::Xoshiro::Instance()->ERandomIntDistribution(8, 255);
+	uchar nLength = rng::Xoshiro::Instance().ERandomIntDistribution(8, 255);
 	PCWSTR pName = (PCWSTR)malloc(nLength);
 
 //	wc.lpszClassName = ;

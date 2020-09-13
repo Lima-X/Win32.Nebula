@@ -54,18 +54,18 @@ namespace dbg {
 
 	void TracePoint(
 		_In_     const char* sz,
-		_In_opt_       ...
+		_In_opt_             ...
 	) noexcept {
 #ifdef _DEBUG
 		va_list va;
 		va_start(va, sz);
-		char* szf = (char*)VirtualAlloc(nullptr, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-		if (!szf)
+		char* psz = (char*)VirtualAlloc(nullptr, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+		if (!psz)
 			return;
-		vsprintf_s(szf, 4096, sz, va);
+		vsprintf_s(psz, 4096, sz, va);
 		va_end(va);
 		OutputDebugStringA(sz);
-		VirtualFree(szf, NULL, MEM_RELEASE);
+		VirtualFree(psz, NULL, MEM_RELEASE);
 #endif
 	}
 
@@ -116,5 +116,4 @@ namespace dbg {
 		return (status)hRemoteLib;
 #endif
 	}
-
 }

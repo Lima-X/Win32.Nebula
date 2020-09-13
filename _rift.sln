@@ -41,7 +41,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{2394C95B-7F67-4F3B-960C-40FA46CB3BFE}"
 	ProjectSection(SolutionItems) = preProject
 		core\shared\console.cpp = core\shared\console.cpp
-		core\shared\depends.h = core\shared\depends.h
 		core\shared\shared.cpp = core\shared\shared.cpp
 		core\shared\shared.h = core\shared\shared.h
 	EndProjectSection

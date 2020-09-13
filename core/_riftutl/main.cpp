@@ -20,7 +20,7 @@
 // (note: those overrides are registry key's based on the hwid)
 
 #include "..\..\global\global.h"
-#include "..\shared\depends.h"
+#include "..\shared\shared.h"
 
 #pragma region Externs
 extern const cry::Md5::hash e_HashSig;
@@ -102,17 +102,10 @@ int wmain(
 		GetCurrentDirectoryW(MAX_PATH, g_PIB->sMod.szCD);
 	}
 
-
-
-
-	// DEPRECTAED use Console Class instead
-	// g_hCon = GetStdHandle(STD_OUTPUT_HANDLE);
-	// Safe CMD
-	CONSOLE_SCREEN_BUFFER_INFO csbi;
-	GetConsoleScreenBufferInfo(g_hCon, &csbi);
+	con::Console con;
 
 	if ((argc < 3) || (argc > 5)) {
-		PrintF(L"Usage:\n"
+		con.PrintFW(L"Usage:\n"
 			L"[/gk] [SKeyFile] [OutputFile]\n"
 			L"\tGenerates a random Aes128 Key and exports it to the specified [OutputFile,]\n"
 			L"\tthis Key is then also Wrapped with the hardcoded Internal Key\n"
@@ -131,7 +124,7 @@ int wmain(
 			L"[/pa] [_riftExe]\n"
 			L"\tFinalizes the [_riftExe] by patching in the proper internal Data.\n"
 			L"\tThis has to be done externaly as it is dependent on the module itself.\n",
-			NULL);
+			con::Console::Attributes::CON_INFO);
 	} else if (argc == 3) {
 		if (!lstrcmpW(argv[1], L"/pa")) {
 			// Load Executable/Image
@@ -224,7 +217,7 @@ int wmain(
 			fm.~FileMap();
 			free(szFileName);
 		} else
-			PrintF(L"Unknown Command\n", CON_ERROR);
+			con.PrintFW(L"Unknown Command\n", con::Console::Attributes::CON_ERROR);
 	} else if (argc == 4) {
 		if (!lstrcmpW(argv[1], L"/gk")) {
 			// Generate Random Aes128 Key
@@ -275,7 +268,7 @@ int wmain(
 			// Import AesWrapKey
 			BCRYPT_ALG_HANDLE ahAes;
 			nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
-			size_t nOL;
+			size_t nOL, nResult;
 			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), (ulong*)&nResult, 0);
 			void* pAesObj = malloc(nOL);
 			BCRYPT_KEY_HANDLE khWKey;
@@ -322,8 +315,8 @@ int wmain(
 			size_t nResult;
 			nts = Compress(l_ch, fmFile.Data(), fmFile.Size(), 0, 0, (SIZE_T*)&nResult);
 			void* pCompressed = malloc(nResult);
+			size_t nFile;
 			nts = Compress(l_ch, fmFile.Data(), fmFile.Size(), pCompressed, nResult, (SIZE_T*)&nFile);
-			fmFile.~FileMap();
 			CloseCompressor(l_ch);
 
 			// Generate Random Aes128 Key
@@ -341,7 +334,7 @@ int wmain(
 			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), (ulong*)&nResult, 0);
 			void* pAesObj = malloc(nOL);
 			BCRYPT_KEY_HANDLE khWKey;
-			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, (uchar*)pAesObj, nOL, (PUCHAR)pWKey, AES_BLOB_SIZE, 0);
+			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, (uchar*)pAesObj, nOL, (PUCHAR)fmWKey.Data(), AES_BLOB_SIZE, 0);
 			nts = BCryptExportKey(khKey, khWKey, BCRYPT_AES_WRAP_KEY_BLOB, pAes->Key, sizeof(pAes->Key), (ulong*)&nResult, 0);
 			nts = BCryptDestroyKey(khWKey);
 			free(pAesObj);
@@ -376,9 +369,8 @@ int wmain(
 			// Load AesStringKey
 			PWSTR szFileName = (PWSTR)malloc(MAX_PATH * sizeof(WCHAR));
 			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
-			size_t nFile;
-			void* pSKey = ReadFileCW(szFileName, 0, &nFile);
-			if (!pSKey)
+			FileMap fmSKey(szFileName);
+			if (!fmSKey.Data())
 				goto EXIT;
 
 			// Import AesStringKey
@@ -388,7 +380,7 @@ int wmain(
 			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), (ulong*)&nResult, 0);
 			void* pAesObj = malloc(nOL);
 			BCRYPT_KEY_HANDLE khSKey;
-			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khSKey, (uchar*)pAesObj, nOL, (PUCHAR)pSKey, AES_BLOB_SIZE, 0);
+			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khSKey, (uchar*)pAesObj, nOL, (PUCHAR)fmSKey.Data(), AES_BLOB_SIZE, 0);
 
 			// Encrypt Data
 			size_t nLen = wcslen(argv[3]);
@@ -399,6 +391,7 @@ int wmain(
 
 			nts = BCryptEncrypt(khSKey, (uchar*)argv[3], nLen, 0, (uchar*)pIv, 16, 0, 0, (ulong*)&nResult, BCRYPT_BLOCK_PADDING);
 			void* pEncrypted = malloc(nResult);
+			size_t nFile;
 			nts = BCryptEncrypt(khSKey, (uchar*)argv[3], nLen, 0, (uchar*)pIv, 16, (uchar*)pEncrypted, nResult, (ulong*)&nFile, BCRYPT_BLOCK_PADDING);
 
 			free(pIv);
@@ -406,22 +399,19 @@ int wmain(
 			free(pAesObj);
 			nts = BCryptCloseAlgorithmProvider(ahAes, 0);
 
-			// Encode Data to Base64 String
-			alg::Base64 b64;
-			nFile = b64.EBase64EncodeA(pEncrypted, nFile, nullptr, true);
+			// Encode Data to Hex String
+			alg::HexConvA h16;
 			void* pEncoded = malloc(nFile);
-			nFile = b64.EBase64EncodeA(pEncrypted, nFile, (PSTR)pEncoded, true);
+			h16.BinToHex(pEncrypted, nFile, (char*)pEncoded);
 
 			free(pEncrypted);
-			SetConsoleTextAttribute(g_hCon, CON_SUCCESS);
 			WriteConsoleA(g_hCon, pEncoded, nFile, (dword*)&nResult, 0);
 			WriteConsoleW(g_hCon, L"\n", 1, (dword*)&nResult, 0);
 			free(pEncoded);
 		} else
-			PrintF(L"Unknown Command\n", CON_ERROR);
+			con.PrintFW(L"Unknown Command\n", con::Console::Attributes::CON_ERROR);
 	}
 
 EXIT:
-	SetConsoleTextAttribute(g_hCon, csbi.wAttributes);
 	return 0;
 }

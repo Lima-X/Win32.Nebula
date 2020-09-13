@@ -3,11 +3,10 @@
 namespace rng {
 #pragma region Xoshiro
 	CRITICAL_SECTION Xoshiro::cs;
-	rng::Xoshiro* Xoshiro::s_xsrInstance = nullptr;
 
 	// Constructor/Destructor and Signleton Initialization
 	Xoshiro::Xoshiro(
-		_In_opt_ dword* dwState // = nullptr
+		_In_opt_ void* dwState // = nullptr
 	)
 		: m_Trampoline(&Xoshiro::INext)
 	{
@@ -22,22 +21,17 @@ namespace rng {
 	}
 	Xoshiro::~Xoshiro() {
 		// this is only semi safe but should do
-		if (this == s_xsrInstance)
-			EnterCriticalSection(&cs);
-		free(m_dwState);
-		if (this == s_xsrInstance) {
-			s_xsrInstance = nullptr;
-			LeaveCriticalSection(&cs);
+		if (this == &Instance())
 			DeleteCriticalSection(&cs);
-		}
 	}
-	Xoshiro* Xoshiro::Instance() {
-		if (!s_xsrInstance) {
-			s_xsrInstance = new Xoshiro();
-			s_xsrInstance->m_Trampoline = &Xoshiro::INext2;
+	Xoshiro& Xoshiro::Instance() {
+		static Xoshiro* xsrInstance = nullptr;
+		if (!xsrInstance) {
+			xsrInstance = new Xoshiro;
+			xsrInstance->m_Trampoline = &Xoshiro::INext2;
 			InitializeCriticalSection(&cs);
 		}
-		return s_xsrInstance;
+		return *xsrInstance;
 	}
 
 	// Internal State manipulation Functions
@@ -108,7 +102,7 @@ namespace rng {
 		if (dwState)
 			xsr = new rng::Xoshiro(dwState);
 		else
-			xsr = rng::Xoshiro::Instance();
+			xsr = &rng::Xoshiro::Instance();
 		for (size_t i = 0; i < n; i++)
 			;//	((PWCHAR)sz)[i] = (WCHAR)e_Base64Table[xsr->ERandomIntDistribution(0, 63)];
 	}
@@ -132,7 +126,7 @@ namespace rng {
 			return 0;
 
 		if (nMax && (nMax <= nMin))
-			*n = rng::Xoshiro::Instance()->ERandomIntDistribution(nMin, nMax);
+			*n = rng::Xoshiro::Instance().ERandomIntDistribution(nMin, nMax);
 		else
 			*n = nMin;
 
@@ -166,7 +160,7 @@ namespace rng {
 		_Out_    void* pBuffer,
 		_In_     size_t nBuffer
 	) {
-		rng::Xoshiro* xsr = rng::Xoshiro::Instance();
+		rng::Xoshiro* xsr = &rng::Xoshiro::Instance();
 		for (uint32 i = 0; i < (nBuffer / 4); i++) {
 			((PDWORD)pBuffer)[i] = xsr->EXoshiroSS();
 		} for (uint32 i = (nBuffer / 4) * 4; i < nBuffer; i++) {

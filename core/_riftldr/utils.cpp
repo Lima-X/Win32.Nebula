@@ -1,7 +1,7 @@
 #include "_riftldr.h"
 
 namespace utl {
-	bool IIsUserAdmin() {
+	BOOL IIsUserAdmin() {
 		SID* pSid;
 		SID_IDENTIFIER_AUTHORITY sia = SECURITY_NT_AUTHORITY;
 		BOOL bSId = AllocateAndInitializeSid(&sia, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, (PSID*)&pSid);
