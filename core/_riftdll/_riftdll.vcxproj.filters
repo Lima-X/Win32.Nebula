@@ -38,5 +38,11 @@
     <ClCompile Include="tyranid.c">
       <Filter>Source Files\UACExploit</Filter>
     </ClCompile>
+    <ClCompile Include="rkcmgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pefi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

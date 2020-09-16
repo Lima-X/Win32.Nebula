@@ -101,6 +101,8 @@
     <ClCompile Include="aic.c" />
     <ClCompile Include="appinfo32.c" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="pefi.cpp" />
+    <ClCompile Include="rkcmgr.cpp" />
     <ClCompile Include="tyranid.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

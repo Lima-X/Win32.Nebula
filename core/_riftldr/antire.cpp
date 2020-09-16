@@ -608,13 +608,15 @@ namespace are { // Anti Reverse Engineering
 	/* Thread Local Storage (TLS) Callback :
 	   This will start the Protection Services
 	   and partially initialize _riftldr       */
-	static BOOLEAN l_bTlsFlag = TRUE;
+	static bool l_bTlsFlag = flase;
 	extern const byte e_IKey[24];
 	VOID NTAPI ITlsCb(
 		_In_ void* DllHandle,
 		_In_ dword dwReason,
 		_In_ void* Reserved
 	) {
+		::dbg::Tracepoint();
+
 		UNREFERENCED_PARAMETER(DllHandle);
 		UNREFERENCED_PARAMETER(dwReason);
 		UNREFERENCED_PARAMETER(Reserved);
@@ -628,7 +630,7 @@ namespace are { // Anti Reverse Engineering
 			// Call Anit RE Methods here...
 			// (Anti Debugger, Section Hashing, Function Hooking)
 
-			l_bTlsFlag = FALSE;
+			l_bTlsFlag = true;
 		}
 	}
 #pragma comment (linker, "/INCLUDE:__tls_used")

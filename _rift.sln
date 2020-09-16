@@ -33,7 +33,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftmmi", "root\_riftmmi\_
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Global", "Global", "{F3992298-2A79-4104-B206-FD12AF5D5B55}"
 	ProjectSection(SolutionItems) = preProject
-		global\debug.cpp = global\debug.cpp
 		global\global.cpp = global\global.cpp
 		global\global.h = global\global.h
 	EndProjectSection
@@ -44,6 +43,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{2394C9
 		core\shared\shared.cpp = core\shared\shared.cpp
 		core\shared\shared.h = core\shared\shared.h
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftdev", "_riftdev\_riftdev.vcxproj", "{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -87,6 +88,14 @@ Global
 		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Release|x64.Build.0 = Release|x64
 		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Release|x86.ActiveCfg = Release|Win32
 		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Release|x86.Build.0 = Release|Win32
+		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Debug|x64.ActiveCfg = Debug|x64
+		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Debug|x64.Build.0 = Debug|x64
+		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Debug|x86.ActiveCfg = Debug|Win32
+		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Debug|x86.Build.0 = Debug|Win32
+		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Release|x64.ActiveCfg = Release|x64
+		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Release|x64.Build.0 = Release|x64
+		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Release|x86.ActiveCfg = Release|Win32
+		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

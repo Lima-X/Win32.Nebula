@@ -62,9 +62,6 @@
     <ClCompile Include="random.cpp">
       <Filter>Source Files\Algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\global\debug.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="_rift.rc">
