@@ -16,9 +16,6 @@
     <Filter Include="Source Files\Utilities">
       <UniqueIdentifier>{5b001b9f-00d9-4cbd-81a2-2b55bc985771}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Algorithms">
-      <UniqueIdentifier>{e72389f3-a674-48be-890e-6ea82c78feb4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource Files\RT_RCData">
       <UniqueIdentifier>{7a73c4f2-3105-4784-9d7c-bf8e1040dcd8}</UniqueIdentifier>
     </Filter>
@@ -32,9 +29,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\shared\shared.cpp">
-      <Filter>Source Files\Algorithms</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -59,10 +53,10 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="random.cpp">
-      <Filter>Source Files\Algorithms</Filter>
+    <ClCompile Include="..\shared\shared.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\global\debug.cpp">
+    <ClCompile Include="..\..\global\global.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

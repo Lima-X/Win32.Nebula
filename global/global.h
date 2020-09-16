@@ -2,6 +2,7 @@
 // that is virtually included in every File in every Project
 #pragma once
 
+#pragma region _rift standard data declarations
 // CRT Specific Defines
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NON_CONFORMING_SWPRINTFS
@@ -52,8 +53,41 @@ struct status {
 }; */
 
 // Raw Pointer Type
-#ifdef _WIN64
+#ifdef _M_AMD64
 typedef unsigned long long ptr;
-#elif _WIN32
+#elif _M_IX86
 typedef unsigned long      ptr;
 #endif
+#pragma endregion
+
+// Debug
+namespace dbg {
+	class Benchmark {
+	public:
+		enum class resolution : uint32 {
+			SEC = 1,
+			MILLI = 1000,
+			MICRO = 1000000,
+			NANO = 1000000000
+		};
+
+		Benchmark(_In_ resolution res = resolution::MILLI);
+		void Begin();
+		uint64 End();
+
+	private:
+#ifdef _DEBUG
+		static LARGE_INTEGER m_liFrequenzy;
+		const  resolution    m_res;
+		       LARGE_INTEGER m_liBegin;
+		       LARGE_INTEGER m_liEnd;
+#endif
+	};
+
+#define BreakPoint() __debugbreak()
+	void TracePoint(_In_ const char* sz, _In_opt_ ...) noexcept;
+	void StatusAssert(_In_ status s, _In_ const char* sz, _In_opt_ ...);
+
+	// Temporery DllInjector, this allows for JIT debugging which manualmapping can't really do
+	status InjectDllW(_In_ const wchar* szDll, _In_ dword dwPid);
+}
