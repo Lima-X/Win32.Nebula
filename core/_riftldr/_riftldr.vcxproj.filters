@@ -13,51 +13,60 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\Utilities">
-      <UniqueIdentifier>{5b001b9f-00d9-4cbd-81a2-2b55bc985771}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource Files\RT_RCData">
       <UniqueIdentifier>{7a73c4f2-3105-4784-9d7c-bf8e1040dcd8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Anti RE">
+      <UniqueIdentifier>{998d1e10-2e13-4ed2-8d0f-739edc50636e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Loader">
+      <UniqueIdentifier>{db87afd5-1b47-4936-8976-e0ab6f2e3203}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Loader\Utilities">
+      <UniqueIdentifier>{5b001b9f-00d9-4cbd-81a2-2b55bc985771}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="resource.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
     <ClInclude Include="_riftldr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="antire.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\shared\console.cpp">
-      <Filter>Source Files\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="crypt.cpp">
-      <Filter>Source Files\Utilities</Filter>
+      <Filter>Source Files\Loader\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="nt.cpp">
-      <Filter>Source Files\Utilities</Filter>
+      <Filter>Source Files\Loader\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="process.cpp">
-      <Filter>Source Files\Utilities</Filter>
+      <Filter>Source Files\Loader\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="window.cpp">
-      <Filter>Source Files\Utilities</Filter>
+      <Filter>Source Files\Loader\Utilities</Filter>
     </ClCompile>
     <ClCompile Include="antire.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Anti RE</Filter>
     </ClCompile>
     <ClCompile Include="utils.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Loader</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\shared.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files\Loader</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\global\global.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="sbvm.cpp">
+      <Filter>Source Files\Anti RE</Filter>
+    </ClCompile>
+    <ClCompile Include="adbg.cpp">
+      <Filter>Source Files\Anti RE</Filter>
+    </ClCompile>
+    <ClCompile Include="aana.cpp">
+      <Filter>Source Files\Anti RE</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

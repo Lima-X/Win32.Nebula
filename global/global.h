@@ -60,6 +60,7 @@ typedef unsigned long      ptr;
 #endif
 #pragma endregion
 
+#ifdef __cplusplus
 // Debug
 namespace dbg {
 	class Benchmark {
@@ -84,10 +85,53 @@ namespace dbg {
 #endif
 	};
 
-#define BreakPoint() __debugbreak()
+	class Log {
+	public:
+		static Log& Instance() {
+			static Log instance;
+			return instance;
+		}
+
+		void Trace(
+			_In_ const char* sz
+		) {
+			dword dw;
+			WriteFile(hFile, sz, strlen(sz), &dw, nullptr);
+			FlushFileBuffers(hFile);
+		}
+		void Trace(
+			_In_ void*  sz,
+			_In_ size_t size
+		) {
+			dword dw;
+			WriteFile(hFile, sz, size, &dw, nullptr);
+			FlushFileBuffers(hFile);
+		}
+
+	private:
+		Log() {
+			hFile = CreateFile(L"_riftldr.log", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+				nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		}
+		~Log() {
+			CloseHandle(hFile);
+		}
+
+		HANDLE hFile;
+	};
+
+
+#define BreakPoint __debugbreak
+#ifndef _DEBUG
+	__forceinline void nop(...) {}
+#define TracePoint nop
+#define StatusAssert nop
+#else
 	void TracePoint(_In_ const char* sz, _In_opt_ ...) noexcept;
 	void StatusAssert(_In_ status s, _In_ const char* sz, _In_opt_ ...);
+#endif
 
 	// Temporery DllInjector, this allows for JIT debugging which manualmapping can't really do
 	status InjectDllW(_In_ const wchar* szDll, _In_ dword dwPid);
 }
+#endif

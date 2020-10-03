@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\shared\shared.h"
+#include "..\core\shared\shared.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4005)

@@ -15,29 +15,6 @@ namespace utl {
 		return bSId;
 	}
 
-	void* ELoadResourceW(
-		_In_  WORD    wResID,
-		_In_  PCWSTR  pResType,
-		_Out_ size_t* nBufferSize
-	) {
-		HRSRC hResInfo = FindResourceW(NULL, MAKEINTRESOURCEW(wResID), pResType);
-		if (hResInfo) {
-			HGLOBAL hgData = LoadResource(NULL, hResInfo);
-			if (hgData) {
-				void* lpBuffer = LockResource(hgData);
-				if (!lpBuffer)
-					return nullptr;
-
-				if (!(*nBufferSize = SizeofResource(NULL, hResInfo)))
-					return nullptr;
-
-				return lpBuffer;
-			}
-		}
-
-		return nullptr;
-	}
-
 	PDWORD EGetProcessIdbyName(
 		_In_  PCWSTR  pProcessName,
 		_Out_ size_t* nProcesses

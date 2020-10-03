@@ -74,7 +74,7 @@ VOID SelfDelete2() {
 
 	PWSTR pFile = (PWSTR)malloc((MAX_PATH + 4) * sizeof(WCHAR));
 	CopyMemory(pFile, L"\\??\\", 5 * sizeof(WCHAR));
-	wcscat_s(pFile, MAX_PATH + 4, g_PIB->sMod.szMFN);
+	// wcscat_s(pFile, MAX_PATH + 4, g_PIB->sMod.szMFN);
 
 	size_t nLen = wcslen(pFile);
 	UNICODE_STRING us;

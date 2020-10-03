@@ -10,27 +10,7 @@
    and everything outside of this file should NOT be used here.
    Inoder to still communicate/inform the main ldr code, they will be linked through a small "interface" */
 
-#include "..\..\global\global.h"
-
-// Windows special Headers
-#include <psapi.h>
-#include <tlHelp32.h>
-
-// Windows unlinked Headers
-#pragma comment(lib, "bcrypt.lib")
-#include <bcrypt.h>
-
-// Microsoft Detours
-#pragma comment(lib, "..\\..\\other\\msDetours\\lib.X86\\detours.lib")
-#include "..\..\other\msDetours\include\detours.h"
-
-// Dummyclass for typedef to get correct linkage
-namespace cry { class Md5 { public: typedef GUID hash; }; }
-namespace dat {
-	extern const cry::Md5::hash e_HashSig;
-	extern const char e_pszSections[ANYSIZE_ARRAY][8];
-	extern const size_t e_nSections;
-}
+#include "antire.h"
 
 namespace are { // Anti Reverse Engineering
 	namespace dbg { // Anti Debugging/Debugger (Detection)
@@ -400,167 +380,175 @@ namespace are { // Anti Reverse Engineering
 			return TRUE;
 		}
 
-#if 0
-		// Will Redo in Memory
-		FORCEINLINE BOOL IHashBinaryCheck() {
-			// Read Binary File
-			size_t nFileSize;
-			void* pFile = utl::AllocReadFileW(g_PIB->sMod.szMFN, &nFileSize);
-			if (!pFile)
-				return 0;
 
-			// Get NT Headers
-			PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)((ptr)pFile + ((PIMAGE_DOS_HEADER)pFile)->e_lfanew);
-			if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
-				return FALSE;
-			PIMAGE_FILE_HEADER pFHdr = &pNtHdr->FileHeader;
-			PIMAGE_OPTIONAL_HEADER pOHdr = &pNtHdr->OptionalHeader;
-			if (pOHdr->Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
-				return FALSE;
-
-			// Prepare Hashing
-			cry::Md5 hash;
-			// BCRYPT_ALG_HANDLE ah;
-			// BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, NULL, NULL);
-			// BCRYPT_HASH_HANDLE hh;
-			// BCryptCreateHash(ah, &hh, NULL, 0, NULL, 0, NULL);
-
-			for (uchar i = 0; i < pFHdr->NumberOfSections; i++) {
-				// Get Section and Check if Type is accepted
-				PIMAGE_SECTION_HEADER pSHdr = ((PIMAGE_SECTION_HEADER)((ptr)pOHdr + (ptr)pFHdr->SizeOfOptionalHeader) + i);
-				if (!((pSHdr->Characteristics & IMAGE_SCN_CNT_CODE) || (pSHdr->Characteristics & IMAGE_SCN_CNT_INITIALIZED_DATA)))
-					continue;
-
-				// Check for Special Section
-				BOOLEAN bFlag;
-				for (uchar j = 0; j < dat::e_nSections; j++) {
-					bFlag = TRUE;
-					for (uchar n = 0; n < IMAGE_SIZEOF_SHORT_NAME; n++) {
-						if (pSHdr->Name[n] != dat::e_pszSections[j][n]) {
-							bFlag = FALSE;
-							break;
-						}
-					} if (bFlag) {
-						bFlag = j + 1;
-						break;
-					}
-				}
-
-				// Set Section Pointers
-				void* pSection = (void*)((ptr)pFile + (ptr)pSHdr->PointerToRawData);
-				size_t nSection = pSHdr->SizeOfRawData;
-
-				// Select what to to
-				if (bFlag == 1) {
-					void* pHash = 0;
-
-					// TODO: replace with SigScanner
-					// Find Hash Signature
-					for (uint32 j = 0; j < nSection - sizeof(cry::Md5::hash); j++) {
-						bFlag = TRUE;
-						for (uchar n = 0; n < sizeof(cry::Md5::hash); n++) {
-							if (((byte*)pSection)[j + n] != (*(byte**)&dat::e_HashSig)[n]) {
-								bFlag = FALSE;
-								break;
-							}
-						} if (bFlag) {
-							pHash = (void*)((ptr)pSection + j);
-							break;
-						}
-					}
-
-					// Hash only Data surrounding the Hash
-					size_t nRDataP1 = (ptr)pHash - (ptr)pSection;
-					hash.EHashData(pSection, nRDataP1);
-					// BCryptHashData(hh, (uchar*)pSection, nRDataP1, NULL);
-					size_t nRDataP2 = ((ptr)pSection + nSection) - ((ptr)pHash + sizeof(cry::Md5::hash));
-					hash.EHashData((void*)((ptr)pHash + sizeof(cry::Md5::hash)), nRDataP2);
-					// BCryptHashData(hh, (PUCHAR)((ptr)pHash + sizeof(hash)), nRDataP2, NULL);
-				}
-				else if (bFlag >= 2)
-					continue;
-				else
-					hash.EHashData(pSection, nSection);
-				// BCryptHashData(hh, (uchar*)pSection, nSection, NULL);
-			}
-
-			hash.EFnialize();
-			bool bT = hash.pMd5 == dat::e_HashSig;
-			// void* pMd5 = malloc(sizeof(hash));
-			// BCryptFinishHash(hh, (uchar*)pMd5, sizeof(hash), NULL);
-			// BCryptDestroyHash(hh);
-			// BCryptCloseAlgorithmProvider(ah, NULL);
-			// BOOL bT = EMd5Compare(pMd5, e_HashSig);
-			// free(pMd5);
-			return bT;
-		}
-#endif
-
-		// NOTE: this function isn't done yet and bearly has been tested,
-		//       it lacks a lot of safety features and sanity checks.
-		//       Only the neccessary checks have been implemented yet !
-		status IHashMappedSection() {
+		// So this is quiet shitty for debugging, basically i just realized that the debugger works by replacing instructions
+		// with int3 interrupts (0xcc), so this basically fucks up the calculations if run under a debugger.
+		// (as a nice sideeffect this might also catch a debugger if it places breakpoints)
+		// NOTE: This function is now in a working state and should be relatively safe to use.
+		//       I would still use this function with care and validate its result as it might still contain several bugs,
+		//       it contains only a few sanity checks and is more experimantal than anything.
+		// DEV-NOTE: This function took so much from me, my sanity and probably more,
+		//           there were so many bugs and so much trouble associated with this piece of code.
+		//           If this function breaks hope you're not the one that has to fix it...
+		status HashMappedSection(
+			_Out_ cry::Md5::hash& md5
+		) {
+			// Get Mapped Memory Image
 			HMODULE hMod = GetModuleHandleW(nullptr);
 			PIMAGE_NT_HEADERS pNth = (PIMAGE_NT_HEADERS)((ptr)hMod + ((PIMAGE_DOS_HEADER)hMod)->e_lfanew);
 			if (pNth->Signature != IMAGE_NT_SIGNATURE)
-				return -1;
+				return -1; // Invalid Signature
 			if (pNth->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
-				return -2;
+				return -2; // Invalid Signature
 
-			// Calculate reloc delta and first BaseRelocation Block
-			int nRelocDelta = pNth->OptionalHeader.ImageBase - 0x400000;
-			PIMAGE_BASE_RELOCATION pBr = (PIMAGE_BASE_RELOCATION)
-				(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase);
+			// Calculate relocation delta
+			int32 nRelocDelta = pNth->OptionalHeader.ImageBase - 0x400000;
+
+			// Prepare Hashing
+			BCRYPT_ALG_HANDLE ah;
+			status s = BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, nullptr, NULL);
+			BCRYPT_HASH_HANDLE hh;
+			s = BCryptCreateHash(ah, &hh, nullptr, 0, nullptr, 0, NULL);
 
 			// Iterate over Sections
 			PIMAGE_SECTION_HEADER pSh = IMAGE_FIRST_SECTION(pNth);
-			for (char i = 0; i < pNth->FileHeader.NumberOfSections; i++) {
+			for (uint8 i = 0; i < pNth->FileHeader.NumberOfSections; i++) {
+				// Skip if Section is not code_seg or const_seg
+				if (!(pSh->Characteristics & (IMAGE_SCN_CNT_CODE | IMAGE_SCN_CNT_INITIALIZED_DATA)))
+					continue;
+				{	// Skip if Section is recognized as an illegal Section
+					static const char* szISeg[] = {
+						".idata",
+						".data",
+						// ".reloc"
+					};
+
+					bool b = false;
+					for (uint8 j = 0; j < sizeof(szISeg) / sizeof(*szISeg); j++) {
+						byte cpy[8];
+						uint8 len = strlen(szISeg[j]);
+						memcpy(cpy, szISeg[j], len);
+						memset(cpy + len, 0, 8 - len);
+						if (!memcmp(pSh->Name, cpy, 8)) {
+							b = true; break;
+						}
+					} if (b)
+						continue;
+				}
+
 				// Make copy of mapped Section
 				void* pImageCopy = VirtualAlloc(nullptr, pSh->Misc.VirtualSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 				memcpy(pImageCopy, (void*)(pSh->VirtualAddress + pNth->OptionalHeader.ImageBase), pSh->Misc.VirtualSize);
 
+				// Calculate the difference between the section base of the mapped and copied version
+				int nMappingDelta = (ptr)pImageCopy - (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
 				if (nRelocDelta) {
-					// Calculate the difference between the section base of the mapped and copied version
-					int nBaseDelta = (ptr)pImageCopy - (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
-
-					// This line is a fucking joke, like seriously WTF did i think i was doing
-					while (((pBr->VirtualAddress + pNth->OptionalHeader.ImageBase)
-						< (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + pSh->Misc.VirtualSize)
-						&& ((ptr)pBr
-							< ((pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase)
-								+ pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size))
+					PIMAGE_BASE_RELOCATION pBr = (PIMAGE_BASE_RELOCATION)(pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase);
+					while ((ptr)pBr < ((pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress + pNth->OptionalHeader.ImageBase)
+						+ pNth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size)
 					) {
-						// First Relocation Entry
-						struct IMAGE_RELOCATION_ENTRY {
-							word Offset : 12;
-							word Type : 4;
-						} *pRe = (IMAGE_RELOCATION_ENTRY*)(pBr + 1);
+						if ((ptr)pBr->VirtualAddress >= pSh->VirtualAddress
+							&& (ptr)pBr->VirtualAddress <= pSh->VirtualAddress + pSh->Misc.VirtualSize
+						) {
+							// First Relocation Entry
+							const struct IMAGE_RELOCATION_ENTRY {
+								word Offset : 12;
+								word Type : 4;
+							} *pRe = (IMAGE_RELOCATION_ENTRY*)(pBr + 1);
 
-						// iterate over Relocation Entries and apply changes
-						for (word i = 0; i < (pBr->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOCATION_ENTRY); i++)
-							switch (pRe[i].Type) {
-							case IMAGE_REL_BASED_HIGHLOW:
-								*(ptr*)(((pBr->VirtualAddress + pNth->OptionalHeader.ImageBase) + pRe[i].Offset) + nBaseDelta) -= nRelocDelta;
-								break;
-							case IMAGE_REL_BASED_ABSOLUTE:
-								continue;
-							default:
-								VirtualFree(pImageCopy, 0, MEM_RELEASE);
-								return -3;
-							}
+							// iterate over Relocation Entries and apply changes
+							for (uint16 j = 0; j < (pBr->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOCATION_ENTRY); j++)
+								switch (pRe[j].Type) {
+								case IMAGE_REL_BASED_HIGHLOW:
+									*(ptr*)(((pBr->VirtualAddress + pNth->OptionalHeader.ImageBase) + pRe[j].Offset) + nMappingDelta) -= nRelocDelta;
+									break;
+								case IMAGE_REL_BASED_ABSOLUTE:
+									continue;
+								default:
+									VirtualFree(pImageCopy, 0, MEM_RELEASE);
+									return -3; // Unknown reloc Type
+								}
+						}
 
-						bool uPad = pBr->SizeOfBlock % 4;
-						*(ptr*)&pBr += pBr->SizeOfBlock; // this would probably be enough, but just to make sure we are on a 32bit boundary
-						if (uPad)
-							*(ptr*)&pBr += 2;
+						// Advance to next reloc Block
+						*(ptr*)&pBr += pBr->SizeOfBlock;
 					}
 				}
-				// TODO: just hashing the sections here
 
+				// Special Handling (make a list of pointers and sizes that will be ignored by checking if they are in the region)
+				// (dont do it through section names (maybe use them es additional checks (probably not tho (has no actuall gains))))
+				static const struct region {
+					ptr VirtualAddress;
+					size_t RegionSize;
+				} list[] = {
+					{ (ptr)&dat::hMemoryHash, sizeof(dat::hMemoryHash) }
+				};
+
+				// dynamical sorted array of regions inside sections
+				region* pSortedList = nullptr;
+				size_t nSortedList = 0;
+
+				ptr pSmallestAddress = -1;
+				for (uint8 j = 0; j < sizeof(list) / sizeof(*list); j++) {
+					// Current smallest index with bigger element then last smallest element
+					uint8 ci = -1; // set to invalid by default
+					for (int n = 0; n < sizeof(list) / sizeof(*list); n++) {
+						// Check if pointer is within the boundaries of the current section
+						if (list[n].VirtualAddress >= pSh->VirtualAddress + pNth->OptionalHeader.ImageBase
+							&& list[n].VirtualAddress + list[n].RegionSize <= (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + pSh->Misc.VirtualSize
+						) {
+							// Check if Sorted list is already valid
+							if (pSortedList) {
+								// Check if ci is still invalid
+								if (ci != (unsigned int)-1) {
+									// Check if current last ellement is bigger then current and that current is smaller then last selected
+									if (list[n].VirtualAddress < list[ci].VirtualAddress && list[n].VirtualAddress > pSortedList[j - 1].VirtualAddress)
+										ci = n;
+								} else if (list[n].VirtualAddress > pSortedList[j - 1].VirtualAddress)
+									ci = n;
+							} else {
+								if (list[n].VirtualAddress < pSmallestAddress)
+									ci = n, pSmallestAddress = list[n].VirtualAddress;
+							}
+						}
+					}
+
+					// Check if the last element selected is valid and add it to the list
+					if (ci != (uint8)-1) {
+						if (pSortedList)
+							pSortedList = (region*)HeapReAlloc(GetProcessHeap(), NULL, pSortedList, ++nSortedList * sizeof(*pSortedList));
+						else
+							pSortedList = (region*)HeapAlloc(GetProcessHeap(), NULL, ++nSortedList * sizeof(*pSortedList));
+
+						pSortedList[j] = list[ci];
+					} else
+						break;
+				}
+
+				// Iterate through ignorelist and hash
+				ptr pSection = (pSh->VirtualAddress + pNth->OptionalHeader.ImageBase);
+				if (nSortedList) {
+					for (uint8 j = 0; j < nSortedList; j++) {
+						ptr dif = pSortedList[j].VirtualAddress - pSection;
+						s = BCryptHashData(hh, (uchar*)(pSection + nMappingDelta), dif, NULL);
+						pSection += dif + pSortedList[j].RegionSize;
+					}
+					s = BCryptHashData(hh, (uchar*)(pSection + nMappingDelta),
+						((pSh->VirtualAddress + pNth->OptionalHeader.ImageBase) + pSh->Misc.VirtualSize) - pSection, NULL);
+				} else
+					s = BCryptHashData(hh, (uchar*)(pSection + nMappingDelta), pSh->Misc.VirtualSize, NULL);
+
+				if (pSortedList)
+					HeapFree(GetProcessHeap(), NULL, pSortedList);
+
+				// TODO: just hashing the sections here
 				VirtualFree(pImageCopy, 0, MEM_RELEASE);
 				pSh++;
 			}
 
+			BCryptFinishHash(hh, (uchar*)&md5, sizeof(md5), NULL);
+			BCryptDestroyHash(hh);
+			BCryptCloseAlgorithmProvider(ah, NULL);
 			return 0;
 		}
 	}
@@ -585,6 +573,7 @@ namespace are { // Anti Reverse Engineering
 		BCryptOpenAlgorithmProvider(&ah, BCRYPT_MD5_ALGORITHM, nullptr, BCRYPT_HASH_REUSABLE_FLAG);
 		BCRYPT_HASH_HANDLE hh;
 		BCryptCreateHash(ah, &hh, nullptr, 0, nullptr, 0, BCRYPT_HASH_REUSABLE_FLAG);
+		void* pRet = nullptr;
 		for (int i = 0; i < pEd->NumberOfNames; i++) {
 			PCSTR sz = pszNameTable[i] + (ptr)hMod;
 			BCryptHashData(hh, (uchar*)sz, strlen(sz), NULL);
@@ -592,18 +581,15 @@ namespace are { // Anti Reverse Engineering
 			BCryptFinishHash(hh, (uchar*)&md5, sizeof(md5), NULL);
 
 			if (md5 == pHash) { // <- I could just return GetProcAddress here, but the work to do it manually from here is minimal
-				BCryptDestroyHash(hh);
-				BCryptCloseAlgorithmProvider(ah, NULL);
-				return (void*)(((size_t*)(pEd->AddressOfFunctions + (ptr)hMod))[((word*)(pEd->AddressOfNameOrdinals + (ptr)hMod))[i]] + (ptr)hMod);
+				pRet = (void*)(((size_t*)(pEd->AddressOfFunctions + (ptr)hMod))[((word*)(pEd->AddressOfNameOrdinals + (ptr)hMod))[i]] + (ptr)hMod);
+				break;
 			}
 		}
 
 		BCryptDestroyHash(hh);
 		BCryptCloseAlgorithmProvider(ah, NULL);
-		return nullptr;
+		return pRet;
 	}
-
-
 
 	/* Thread Local Storage (TLS) Callback :
 	   This will start the Protection Services
@@ -618,11 +604,13 @@ namespace are { // Anti Reverse Engineering
 		UNREFERENCED_PARAMETER(DllHandle);
 		UNREFERENCED_PARAMETER(dwReason);
 		UNREFERENCED_PARAMETER(Reserved);
-		if (l_bTlsFlag) {
-			::dbg::TracePoint("Executing TLS Callback: %s", __FUNCTION__);
+		if (!l_bTlsFlag) {
+			::dbg::TracePoint("Executing TLS Callback: " __FUNCTION__);
 
 			// img::IHashBinaryCheck();
-			// img::IHashMappedSection();
+			cry::Md5::hash md5;
+			img::HashMappedSection(md5);
+			bool b = memcmp(&md5, &dat::hMemoryHash, sizeof(cry::Md5::hash));
 
 			// void* a = ImportFunctionByHash(GetModuleHandleW(L"ntdll.dll"), *(hash*)"\x4b\xef\x63\xe1\x6e\x12\x8a\xd7\x75\x1a\x37\xda\x73\x9f\x19\x88");
 			// void* b = (void*)GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "CsrCaptureTimeout");

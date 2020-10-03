@@ -5,7 +5,6 @@
 
 // C++ Library Headers (currently completely unused as i dont make use of the STL (, and probably wont in this project))
 #ifdef __cplusplus
-
 // C Library Headers
 #include <cstdio>
 #else
@@ -33,8 +32,6 @@
 // Microsoft Detours
 #pragma comment(lib, "..\\..\\other\\msDetours\\lib.X86\\detours.lib")
 #include "..\..\other\msDetours\include\detours.h"
-
-
 
 // #define ROUNDUP_MULTIPLE_BIT(num, mul) (((num + (mul - 1)) & ((size_t)-mul)))
 // #define ROUNDUP_MULTIPLE_MUL(num, mul) (((num + (mul - 1)) / mul) * mul)
@@ -114,6 +111,8 @@ namespace utl {
 		const void*       m_pData; // Address of Memory to search
 		      size_t      m_nData; // Size of Region to search in
 	};
+
+	void* ELoadResourceW(_In_ word wResID, _In_ const wchar* pResType, _Out_ size_t* nBufferSize);
 }
 
 namespace cry {
@@ -164,8 +163,7 @@ namespace cry {
 	VOID IConvertKeyToBlob(_In_ uuid* pKey, _Out_ void* pBlob);
 	DEPRECATED PCWSTR EDecryptString(_In_ PCSTR pString, _Out_ size_t* nResult);
 	void* IDecompressLZ(_In_ void* pData, _In_  size_t  nData, _Out_ size_t* nResult);
-	// Actuall Declaration close to EoF (End of File)
-	// void* EUnpackResource(_In_ word wResID, _Out_ size_t* nData, _In_ Aes* waes = g_PIB->sCry.EK);
+	void* EUnpackResource(_In_ word wResID, _Out_ size_t* nData, _In_ Aes* waes);
 }
 
 namespace con {
@@ -248,12 +246,4 @@ struct PIB {
 		WCHAR   szCD[MAX_PATH];  // Current Directory
 	} sMod;
 };
-extern PIB* g_PIB;
-
-// this is so ugly, i cant believe i actually have to do this like this, its just horrible but neccassery,
-// because this function declaration requires the struct and a object of that struct to be present
-// and the struct reqires the actual namespace, where this would normaly be defined to be present
-#ifndef _riftutl
-namespace cry { void* EUnpackResource(_In_ word wResID, _Out_ size_t* nData, _In_ Aes* waes = g_PIB->sCry.EK); }
-#endif
 #endif

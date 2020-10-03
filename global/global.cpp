@@ -16,7 +16,9 @@ namespace nid {
 // This contains utilities for debugging (only implemented in Debug config)
 #include <cstdio>
 namespace dbg {
+#ifdef _DEBUG
 	LARGE_INTEGER Benchmark::m_liFrequenzy;
+#endif
 	Benchmark::Benchmark(
 		_In_ resolution res
 	)
@@ -55,15 +57,30 @@ namespace dbg {
 		_In_opt_             ...
 	) noexcept {
 #ifdef _DEBUG
-		va_list va;
-		va_start(va, sz);
-		char* psz = (char*)VirtualAlloc(nullptr, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-		if (!psz)
-			return;
-		vsprintf_s(psz, 4096, sz, va);
-		va_end(va);
-		OutputDebugStringA(psz);
-		VirtualFree(psz, NULL, MEM_RELEASE);
+		// Check if Formating is required
+		bool b = false;
+		for (uint16 i = 0; sz[i] != NULL; i++) {
+			if (sz[i] == '%')
+				if (sz[i + 1] != '%')
+					i++;
+				else
+					b = true;
+		}
+
+		// Format if needed
+		if (b) {
+			va_list va;
+			va_start(va, sz);
+			char* psz = (char*)VirtualAlloc(nullptr, 0x1000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+			if (!psz)
+				return;
+			vsprintf_s(psz, 0x1000, sz, va);
+			va_end(va);
+			sz = psz;
+		}
+		OutputDebugStringA(sz);
+		if (b)
+			VirtualFree((void*)sz, NULL, MEM_RELEASE);
 #endif
 	}
 
@@ -104,14 +121,13 @@ namespace dbg {
 			return -5; // Failed to create remote Thread
 
 		WaitForSingleObject(hRemoteThread, INFINITE);
-		HANDLE hRemoteLib;
-		GetExitCodeThread(hRemoteThread, (dword*)&hRemoteLib);
+		dword dwRemote;
+		GetExitCodeThread(hRemoteThread, &dwRemote);
 
 		CloseHandle(hRemoteThread);
 		VirtualFreeEx(hProc, rpDllPath, 0, MEM_RELEASE);
 		CloseHandle(hProc);
-
-		return (status)hRemoteLib;
+		return dwRemote;
 #endif
 	}
 }

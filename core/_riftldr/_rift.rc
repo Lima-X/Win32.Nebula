@@ -98,7 +98,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON                ICON                    "F:\\Visual Studio Data\\source\\repos\\Win32._rift\\other\\_riftIcon\\_rift.ico"
+IDI_ICON                ICON                    "D:\\visualstudio\\repos\\_rift\\other\\_riftico\\_rift.ico"
 
 #endif    // Neutral (Default) (unknown sub-lang: 0x8) resources
 /////////////////////////////////////////////////////////////////////////////

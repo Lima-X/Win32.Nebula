@@ -1,6 +1,4 @@
 #include "shared.h"
-#include <cstdio>
-#include <malloc.h>
 
 /* Current ui layout/design:
     Logo | Info

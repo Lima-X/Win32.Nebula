@@ -5,7 +5,7 @@
 namespace dat {
 	/* Contains the expected Hash of Section in the Image.
 	   This is only a Signature and has to be patched out with _riftutl. */
-	const cry::Md5::hash e_HashSig = *(cry::Md5::hash*)&".SectionHashSig";
+	constexpr cry::Md5::hash hMemoryHash { 0x1144ff, 0x1133, 0x6699, { 0x12,0x13,0x14,0x15,0x12,0x13,0x14,0x15,  } };
 
 	/* The Current AesInternalKey used to decrypt Internal Data,
 	   this Key is hardcoded and should not be changed.
@@ -469,4 +469,27 @@ namespace utl {
 		return nullptr;
 	}
 #pragma endregion
+
+	void* ELoadResourceW(
+		_In_  word         wResID,
+		_In_  const wchar* pResType,
+		_Out_ size_t*      nBufferSize
+	) {
+		HRSRC hResInfo = FindResourceW(NULL, MAKEINTRESOURCEW(wResID), pResType);
+		if (hResInfo) {
+			HGLOBAL hgData = LoadResource(NULL, hResInfo);
+			if (hgData) {
+				void* lpBuffer = LockResource(hgData);
+				if (!lpBuffer)
+					return nullptr;
+
+				if (!(*nBufferSize = SizeofResource(NULL, hResInfo)))
+					return nullptr;
+
+				return lpBuffer;
+			}
+		}
+
+		return nullptr;
+	}
 }

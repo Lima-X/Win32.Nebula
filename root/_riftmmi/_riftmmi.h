@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\..\global\global.h"
+#include "global.h"
 
 // BlackBone Library
 #ifdef _DEBUG

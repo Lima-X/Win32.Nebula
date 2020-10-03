@@ -19,8 +19,9 @@
 // and patching _rift(ldr) but it will also be able to generate overrides
 // (note: those overrides are registry key's based on the hwid)
 
-#include "..\..\global\global.h"
-#include "..\shared\shared.h"
+#include "shared.h"
+
+PIB* g_PIB;
 
 #pragma region Externs
 extern const cry::Md5::hash e_HashSig;
@@ -405,8 +406,8 @@ int wmain(
 			h16.BinToHex(pEncrypted, nFile, (char*)pEncoded);
 
 			free(pEncrypted);
-			WriteConsoleA(g_hCon, pEncoded, nFile, (dword*)&nResult, 0);
-			WriteConsoleW(g_hCon, L"\n", 1, (dword*)&nResult, 0);
+			WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), pEncoded, nFile, (dword*)&nResult, 0);
+			WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), L"\n", 1, (dword*)&nResult, 0);
 			free(pEncoded);
 		} else
 			con.PrintFW(L"Unknown Command\n", con::Console::Attributes::CON_ERROR);

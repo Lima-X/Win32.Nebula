@@ -31,22 +31,27 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_rifturk", "root\_rifturk\_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftmmi", "root\_riftmmi\_riftmmi.vcxproj", "{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Global", "Global", "{F3992298-2A79-4104-B206-FD12AF5D5B55}"
-	ProjectSection(SolutionItems) = preProject
-		global\global.cpp = global\global.cpp
-		global\global.h = global\global.h
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{2394C95B-7F67-4F3B-960C-40FA46CB3BFE}"
-	ProjectSection(SolutionItems) = preProject
-		core\shared\console.cpp = core\shared\console.cpp
-		core\shared\shared.cpp = core\shared\shared.cpp
-		core\shared\shared.h = core\shared\shared.h
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftdev", "other\_riftdev\_riftdev.vcxproj", "{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "global", "global\global.vcxitems", "{8AF695AC-D632-41EE-A7A5-499C3BF9DCDC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared", "core\shared\shared.vcxitems", "{01A36F22-55D1-4B49-9894-B6080000C4CB}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		core\shared\shared.vcxitems*{01a36f22-55d1-4b49-9894-b6080000c4cb}*SharedItemsImports = 9
+		global\global.vcxitems*{0881218e-929d-4cdf-aaad-b4c4955c6081}*SharedItemsImports = 4
+		core\shared\shared.vcxitems*{21265fc7-5328-4846-845d-13404c45fb8e}*SharedItemsImports = 4
+		global\global.vcxitems*{21265fc7-5328-4846-845d-13404c45fb8e}*SharedItemsImports = 4
+		core\shared\shared.vcxitems*{708dc70c-d97d-4e1f-b214-5259d3e2c669}*SharedItemsImports = 4
+		global\global.vcxitems*{708dc70c-d97d-4e1f-b214-5259d3e2c669}*SharedItemsImports = 4
+		global\global.vcxitems*{8af695ac-d632-41ee-a7a5-499c3bf9dcdc}*SharedItemsImports = 9
+		core\shared\shared.vcxitems*{a641fbb6-ffe1-41c8-9bb8-17cd61ad2ef8}*SharedItemsImports = 4
+		global\global.vcxitems*{a641fbb6-ffe1-41c8-9bb8-17cd61ad2ef8}*SharedItemsImports = 4
+		global\global.vcxitems*{bd634f5a-24e9-4775-b4aa-1eee8b81f2ad}*SharedItemsImports = 4
+		core\shared\shared.vcxitems*{d1283f5d-4c3d-4b1d-9cc7-3dd821952a3a}*SharedItemsImports = 4
+		global\global.vcxitems*{d1283f5d-4c3d-4b1d-9cc7-3dd821952a3a}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
@@ -92,10 +97,8 @@ Global
 		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Debug|x64.Build.0 = Debug|x64
 		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Debug|x86.ActiveCfg = Debug|Win32
 		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Debug|x86.Build.0 = Debug|Win32
-		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Release|x64.ActiveCfg = Release|x64
-		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Release|x64.Build.0 = Release|x64
-		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Release|x86.ActiveCfg = Release|Win32
-		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Release|x86.Build.0 = Release|Win32
+		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Release|x64.ActiveCfg = Debug|x64
+		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Release|x86.ActiveCfg = Debug|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,8 +112,7 @@ Global
 		{708DC70C-D97D-4E1F-B214-5259D3E2C669} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
 		{0881218E-929D-4CDF-AAAD-B4C4955C6081} = {410236BD-0C95-4218-8E1C-BC6735B91591}
 		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD} = {410236BD-0C95-4218-8E1C-BC6735B91591}
-		{F3992298-2A79-4104-B206-FD12AF5D5B55} = {118C1682-B6BB-40BC-8076-F301EDE6C451}
-		{2394C95B-7F67-4F3B-960C-40FA46CB3BFE} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
+		{01A36F22-55D1-4B49-9894-B6080000C4CB} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FA23DB8B-7FAB-4586-936D-4ADB4CD8B90E}
