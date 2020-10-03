@@ -20,7 +20,7 @@ namespace dbg {
 	LARGE_INTEGER Benchmark::m_liFrequenzy;
 #endif
 	Benchmark::Benchmark(
-		_In_ resolution res
+		_In_ Resolution res
 	)
 #ifdef _DEBUG
 		: m_res(res)
@@ -61,10 +61,10 @@ namespace dbg {
 		bool b = false;
 		for (uint16 i = 0; sz[i] != NULL; i++) {
 			if (sz[i] == '%')
-				if (sz[i + 1] != '%')
+				if (sz[i + 1] != '%') {
+					b = true; break;
+				} else
 					i++;
-				else
-					b = true;
 		}
 
 		// Format if needed

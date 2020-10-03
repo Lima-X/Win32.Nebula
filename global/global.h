@@ -65,21 +65,21 @@ typedef unsigned long      ptr;
 namespace dbg {
 	class Benchmark {
 	public:
-		enum class resolution : uint32 {
-			SEC = 1,
+		enum class Resolution : uint32 {
+			SEC   = 1,
 			MILLI = 1000,
 			MICRO = 1000000,
-			NANO = 1000000000
+			NANO  = 1000000000
 		};
 
-		Benchmark(_In_ resolution res = resolution::MILLI);
+		Benchmark(_In_ Resolution res = Resolution::MILLI);
 		void Begin();
 		uint64 End();
 
 	private:
 #ifdef _DEBUG
 		static LARGE_INTEGER m_liFrequenzy;
-		const  resolution    m_res;
+		const  Resolution    m_res;
 		       LARGE_INTEGER m_liBegin;
 		       LARGE_INTEGER m_liEnd;
 #endif

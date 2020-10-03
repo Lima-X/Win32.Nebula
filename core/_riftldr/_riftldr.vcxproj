@@ -110,10 +110,6 @@
     <ClInclude Include="_riftldr.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\global\global.cpp" />
-    <ClCompile Include="..\shared\console.cpp" />
-    <ClCompile Include="..\shared\crypt.cpp" />
-    <ClCompile Include="..\shared\shared.cpp" />
     <ClCompile Include="aana.cpp" />
     <ClCompile Include="adbg.cpp" />
     <ClCompile Include="nt.cpp" />

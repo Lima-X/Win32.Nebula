@@ -102,7 +102,7 @@ int WINAPI wWinMain(
 		return 0x45e0;
 
 	size_t nDll;
-	void* pDll = cry::EUnpackResource(IDR_RIFTDLL, &nDll);
+	void* pDll = cry::EUnpackResource(IDR_RIFTDLL, &nDll, g_PIB->sCry.EK);
 	if (!pDll)
 		return 0x132d;
 

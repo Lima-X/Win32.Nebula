@@ -23,12 +23,6 @@
 
 PIB* g_PIB;
 
-#pragma region Externs
-extern const cry::Md5::hash e_HashSig;
-extern const CHAR e_pszSections[ANYSIZE_ARRAY][8];
-extern const size_t e_nSections;
-#pragma endregion
-
 #pragma region Utilities
 class FileMap {
 public:
@@ -158,19 +152,8 @@ int wmain(
 						continue;
 
 					// Check for Special Section
-					BOOLEAN bFlag;
-					for (uint8 j = 0; j < e_nSections; j++) {
-						bFlag = TRUE;
-						for (uint8 n = 0; n < IMAGE_SIZEOF_SHORT_NAME; n++) {
-							if (pSHdr->Name[n] != e_pszSections[j][n]) {
-								bFlag = FALSE;
-								break;
-							}
-						} if (bFlag) {
-							bFlag = j + 1;
-							break;
-						}
-					}
+					BOOLEAN bFlag = false;
+					// Removed because of errors
 
 					// Set Section Pointers
 					void* pSection = (void*)((ptr)fm.Data() + pSHdr->PointerToRawData);
@@ -181,10 +164,7 @@ int wmain(
 						for (uint32 j = 0; j < nSection - sizeof(cry::Md5::hash); j++) {
 							bFlag = TRUE;
 							for (uchar n = 0; n < sizeof(cry::Md5::hash); n++) {
-								if (((byte*)pSection)[j + n] != (*(byte**)&e_HashSig)[n]) {
-									bFlag = FALSE;
-									break;
-								}
+								// Removed because of errors
 							} if (bFlag) {
 								pHash = (void*)((ptr)pSection + j);
 								break;
@@ -242,7 +222,7 @@ int wmain(
 			// Save Aes Blob
 			PWSTR szFileName = (PWSTR)malloc(MAX_PATH * sizeof(WCHAR));
 			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[2]);
-			nts = WriteFileCW(szFileName, 0, pKeyE, AES_BLOB_SIZE);
+			// nts = WriteFileCW(szFileName, 0, pKeyE, AES_BLOB_SIZE);
 			free(szFileName);
 			free(pKeyE);
 		} else if (!lstrcmpW(argv[1], L"/gt")) {
@@ -284,7 +264,7 @@ int wmain(
 
 			// Save TestFile
 			PathCchCombine(szFileName, MAX_PATH, g_PIB->sMod.szCD, argv[3]);
-			nts = WriteFileCW(szFileName, FILE_ATTRIBUTE_ENCRYPTED, pData, 512);
+			// nts = WriteFileCW(szFileName, FILE_ATTRIBUTE_ENCRYPTED, pData, 512);
 			free(szFileName);
 			free(pData);
 		}

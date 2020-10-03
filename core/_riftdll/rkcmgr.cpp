@@ -202,7 +202,7 @@ private:
 };
 
 int dllisttest() {
-	dbg::Benchmark bm(dbg::Benchmark::resolution::NANO);
+	dbg::Benchmark bm(dbg::Benchmark::Resolution::NANO);
 	bm.Begin();
 
 	auto pipalloc = [](size_t nSize) {

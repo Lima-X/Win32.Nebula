@@ -68,6 +68,12 @@
     <ClCompile Include="aana.cpp">
       <Filter>Source Files\Anti RE</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\global\global.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\shared.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="_rift.rc">

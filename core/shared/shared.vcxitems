@@ -14,6 +14,7 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)console.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)crypt.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)shared.cpp" />
   </ItemGroup>
