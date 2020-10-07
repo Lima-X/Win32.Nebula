@@ -154,7 +154,7 @@ VOID ESelfDestruct() {
 	wchar* pScriptW = (wchar*)malloc(0x800);
 	uint32 uiRandomID = rng::Xoshiro::Instance().EXoshiroSS();
 	PCWSTR szMFN = utl::GetFileNameFromPathW(g_PIB->sMod.szMFN);
-	swprintf(pScriptW, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, utl::GetFileNameFromPathW(szFilePath));
+	swprintf_s(pScriptW, 0x800, l_szSelfDelBat, uiRandomID, szMFN, szMFN, uiRandomID, utl::GetFileNameFromPathW(szFilePath));
 
 	// Convert to Raw (ANSI)
 	size_t nScript = wcslen(pScriptW);

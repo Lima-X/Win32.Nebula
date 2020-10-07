@@ -38,9 +38,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\shared\console.cpp">
-      <Filter>Source Files\Loader\Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="nt.cpp">
       <Filter>Source Files\Loader\Utilities</Filter>
     </ClCompile>
@@ -67,12 +64,6 @@
     </ClCompile>
     <ClCompile Include="aana.cpp">
       <Filter>Source Files\Anti RE</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\global\global.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\shared\shared.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

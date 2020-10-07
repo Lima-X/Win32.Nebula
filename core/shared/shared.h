@@ -2,12 +2,11 @@
 #pragma once
 #include "..\..\global\global.h"
 
-
-// C++ Library Headers (currently completely unused as i dont make use of the STL (, and probably wont in this project))
 #ifdef __cplusplus
-// C Library Headers
+// C++ Library Headers
 #include <cstdio>
 #else
+// C Library Headers
 #include <stdio.h>
 #endif
 
@@ -22,7 +21,7 @@
 #include <bcrypt.h>
 #pragma comment(lib, "cabinet.lib")
 #include <compressapi.h>
-#pragma comment(lib, "pathcch.lib")
+#pragma comment(lib, "pathcch.lib") // Get rid of this in the future
 #include <pathcch.h>
 #pragma comment(lib, "shlwapi.lib")
 #include <shlwapi.h>
@@ -33,10 +32,20 @@
 #pragma comment(lib, "..\\..\\other\\msDetours\\lib.X86\\detours.lib")
 #include "..\..\other\msDetours\include\detours.h"
 
-// #define ROUNDUP_MULTIPLE_BIT(num, mul) (((num + (mul - 1)) & ((size_t)-mul)))
-// #define ROUNDUP_MULTIPLE_MUL(num, mul) (((num + (mul - 1)) / mul) * mul)
+
+
 #ifdef __cplusplus
+#pragma region Utility
+constexpr uint32 RoundUpToMulOfPow2(uint32 num, uint32 mul) {
+	return (num + (mul - 1)) & (0 - mul);
+}
+constexpr uint32 RoundUpToNearestMul(uint32 num, uint32 mul) {
+	return ((num + (mul - 1)) / mul) * mul;
+}
+#pragma endregion
+
 namespace rng {
+	// TODO: Implement a Guard mechanism as this currently does not automatically free the Memory !
 	class Xoshiro {
 	public:
 		// Constructor/Destructor and Signleton Initialization
@@ -66,7 +75,7 @@ namespace rng {
 
 namespace alg { /* Base64A Encoder/Decoder, UUID Converters and SigScanner : shared.c */
 	// why -A suffix, because these functions work with raw data,
-	// also Hex and Base64A don't need Unicode
+	// Hex and Base64A don't need Unicode
 	// and it would be stupid to use Unicode outside of the programm anyways,
 	// as it would just bloat the data
 	class Base64A {
@@ -133,29 +142,58 @@ namespace cry {
 		       hash               m_pMd5;
 	};
 
-// Use an Enum instead
-#define AES_KEY_SIZE    0x10                                                 // 128-Bit
-#define AES_BLOB_SIZE   (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AES_KEY_SIZE) // 28-Bytes (Dynamic)
-#define AES_WARPED_SIZE (8 + AES_KEY_SIZE)                                   // 24-Bytes (Hardcoded)
 	class Aes {
 	public:
-		// Encrypted File/Resource Header
-		struct AESIB {
-			byte     Key[AES_WARPED_SIZE]; // Wrapped Aes128 Key (ew, hardcoded size that is not specified by BCrypt's docs (also fuck BCrypt's docs))
-			byte     Iv[16];               // Initialization-Vector
-			Md5::hash Hash;                 // Md5-Checksum of original File
-			byte     Data[];               // Start of encrypted Data
+		enum Property {
+			AesKeySize = 0x10,                                                 // 128-Bit
+			AesBlobSize = (sizeof(BCRYPT_KEY_DATA_BLOB_HEADER) + AesKeySize), // 28-Bytes (Dynamic)
+			AesWrappedBlob = (8 + AesKeySize),                                    // 24-Bytes (Hardcoded)
+			AesBlockSize = 0x10
+		};
+		enum class CryptMode {
+			AesEncrypt,
+			AesDecrypt
 		};
 
-		Aes(_In_ void* pBlob, _In_opt_ Aes* pIKey = nullptr);
+		// Encrypted File/Resource Header
+		struct AESIB {
+			byte      Key[Property::AesWrappedBlob]; // Wrapped Aes128 Key (ew, hardcoded size that is not specified by BCrypt's docs (also fuck BCrypt's docs))
+			Md5::hash Hash;                           // Md5-Checksum of original File
+		};
+
+		Aes(_In_ const void* pBlob, _In_opt_ const Aes* pIKey = nullptr);
+		Aes(_In_opt_ byte Key[AesKeySize]);
+
 		~Aes();
-		VOID IWrapKey(_In_ const Aes& pWrap, _Out_ void* pBlob);
-		status IValidateKey(_In_ void* pData);
+		status ExportWrappedKey(_In_ const Aes& pWrap, _Out_ void* pBlob);
+		status ValidateKey(_In_ void* pData);
 		void* IAesDecrypt(_In_ void* pData, _In_ size_t nData, _In_ void* pIv, _Out_ size_t* nResult);
+		status AesDecrypt(_In_ void* pData, _In_ size_t nData, _In_opt_ void* pIv, _Out_ void* pRaw);
+		status AesEncrypt(
+			_In_     void* pData,
+			_In_     size_t nData,
+			_In_opt_ void* pIv,
+			_Out_    void* pRaw
+		);
+		status AesCrypt(
+			_In_     CryptMode mode,
+			_In_     void* pData,
+			_In_     size_t nData,
+			_In_opt_ void* pIv,
+			_Out_    void* pRaw
+		);
+
+
+		static void ConvertRawKeyToBlob(
+			_In_  byte  pKey[AesKeySize],
+			_Out_ void* pBlob
+		);
+
 	private:
+		Aes();
 		static BCRYPT_ALG_HANDLE s_ah;
 		static size_t s_nObj;
-		static int s_nRefCount;
+		static uint16 s_nRefCount;
 		BCRYPT_KEY_HANDLE m_kh;
 		void* m_pObj;
 	};
@@ -246,4 +284,8 @@ struct PIB {
 		WCHAR   szCD[MAX_PATH];  // Current Directory
 	} sMod;
 };
+
+namespace dat {
+	extern const byte e_IKey[cry::Aes::AesKeySize];
+}
 #endif

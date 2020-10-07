@@ -3,15 +3,11 @@
 #include <cstdio>
 
 namespace dat {
-	/* Contains the expected Hash of Section in the Image.
-	   This is only a Signature and has to be patched out with _riftutl. */
-	constexpr cry::Md5::hash hMemoryHash { 0x1144ff, 0x1133, 0x6699, { 0x12,0x13,0x14,0x15,0x12,0x13,0x14,0x15,  } };
-
 	/* The Current AesInternalKey used to decrypt Internal Data,
 	   this Key is hardcoded and should not be changed.
 	   Changing this Key would requirer to reencrypt all Data that is based on this Key,
 	   this includes all obfuscated Strings and even external Resources. */
-	const byte e_IKey[AES_KEY_SIZE] = {
+	const byte e_IKey[cry::Aes::AesKeySize] = {
 		0xd9, 0xbf, 0x99, 0x27, 0x18, 0xca, 0x6a, 0xf6,
 		0xb4, 0xd5, 0xd4, 0x67,	0x4e, 0xf5, 0xf9, 0x01
 	};
@@ -41,8 +37,7 @@ namespace alg {
 			const char ext[] = { '+', '/' }; // single extra chars
 			for (char i = 0; i < 2; i++)
 				pcTable[i + 62] = ext[i];
-		}
-		else
+		} else
 			TableConstructorCbA(pcTable);
 	}
 	Base64A::~Base64A() {
@@ -278,8 +273,7 @@ namespace rng {
 				BCryptGenRandom(cah, (UCHAR*)&m_dwState, sizeof(dword) * 4, NULL);
 				BCryptCloseAlgorithmProvider(cah, NULL);
 			}
-		}
-		else
+		} else
 			memcpy(m_dwState, dwState, 16);
 	}
 	Xoshiro::~Xoshiro() {

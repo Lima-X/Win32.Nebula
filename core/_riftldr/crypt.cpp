@@ -19,9 +19,9 @@ namespace cry {
 		}
 		m_pObj = malloc(s_nObj);
 		if (!pIKey)
-			s = BCryptImportKey(s_ah, NULL, BCRYPT_KEY_DATA_BLOB, &m_kh, (uchar*)m_pObj, s_nObj, (uchar*)pBlob, AES_BLOB_SIZE, NULL);
+			s = BCryptImportKey(s_ah, NULL, BCRYPT_KEY_DATA_BLOB, &m_kh, (uchar*)m_pObj, s_nObj, (uchar*)pBlob, AesBlobSize, NULL);
 		else
-			s = BCryptImportKey(s_ah, pIKey->m_kh, BCRYPT_AES_WRAP_KEY_BLOB, &m_kh, (uchar*)m_pObj, s_nObj, (uchar*)pBlob, AES_WARPED_SIZE, NULL);
+			s = BCryptImportKey(s_ah, pIKey->m_kh, BCRYPT_AES_WRAP_KEY_BLOB, &m_kh, (uchar*)m_pObj, s_nObj, (uchar*)pBlob, AesWrappedBlob, NULL);
 		s_nRefCount++;
 	}
 	Aes::~Aes() {
@@ -33,11 +33,11 @@ namespace cry {
 	}
 
 	// TODO: this has to be implemented and adapted to the new c++ class model for rift
-	VOID Aes::IWrapKey(
+	VOID Aes::ExportWrappedKey(
 		_In_  const Aes& pWrap,
 		_Out_ void*      pBlob
 	) {}
-	status Aes::IValidateKey( // Checks if a Key can decrypt sampledata without opening a plaintext attack
+	status Aes::ValidateKey( // Checks if a Key can decrypt sampledata without opening a plaintext attack
 		_In_ void* pData      // Sampledata to Decrypt (has to be 512-Bytes in total)
 	) {
 		return 0;
@@ -71,9 +71,9 @@ namespace cry {
 		_Out_ void* pBlob
 	) {
 		// Actually implement Bcrypt Import and Export instead of doing it like this....
-		BCRYPT_KEY_DATA_BLOB_HEADER kdbh = { BCRYPT_KEY_DATA_BLOB_MAGIC, BCRYPT_KEY_DATA_BLOB_VERSION1, AES_KEY_SIZE };
+		BCRYPT_KEY_DATA_BLOB_HEADER kdbh = { BCRYPT_KEY_DATA_BLOB_MAGIC, BCRYPT_KEY_DATA_BLOB_VERSION1, AesKeySize };
 		memcpy(pBlob, &kdbh, sizeof(BCRYPT_KEY_DATA_BLOB_HEADER));
-		memcpy((void*)((ptr)pBlob + sizeof(BCRYPT_KEY_DATA_BLOB_HEADER)), pKey, AES_KEY_SIZE);
+		memcpy((void*)((ptr)pBlob + sizeof(BCRYPT_KEY_DATA_BLOB_HEADER)), pKey, AesKeySize);
 	}
 
 	/* String Decryption */

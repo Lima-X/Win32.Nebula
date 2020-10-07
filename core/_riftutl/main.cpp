@@ -28,11 +28,14 @@ class FileMap {
 public:
 	// Add support for readonly Pages
 	FileMap(
-		_In_ const wchar* const szFile
+		_In_ const wchar* const szFile,
+		_In_ dword dwAccess = GENERIC_READ | GENERIC_WRITE,
+		_In_ dword dwShare = FILE_SHARE_READ,
+		_In_ dword dwProtection = PAGE_READWRITE
 	) {
-		if ((m_hFile = CreateFileW(szFile, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_EXISTING, NULL, nullptr)) == INVALID_HANDLE_VALUE)
+		if ((m_hFile = CreateFileW(szFile, dwAccess, dwShare, nullptr, OPEN_EXISTING, NULL, nullptr)) == INVALID_HANDLE_VALUE)
 			return;
-		if (!(m_hMap = CreateFileMappingW(m_hFile, nullptr, PAGE_READWRITE, 0, 0, nullptr)))
+		if (!(m_hMap = CreateFileMappingW(m_hFile, nullptr, dwProtection, 0, 0, nullptr)))
 			return;
 
 		m_pFile = MapViewOfFile(m_hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
@@ -176,8 +179,7 @@ int wmain(
 						size_t nRDataP2 = ((ptr)pSection + nSection) - ((ptr)pHash + sizeof(cry::Md5::hash));
 						// this is unsafe, i should rather get the size of the sig then to assume it... but idc atm :D
 						BCryptHashData(hh, (uchar*)((ptr)pHash + sizeof(cry::Md5::hash)), nRDataP2, 0);
-					}
-					else if (bFlag >= 2)
+					} else if (bFlag >= 2)
 						continue;
 					else
 						BCryptHashData(hh, (uchar*)pSection, nSection, 0);
@@ -205,17 +207,17 @@ int wmain(
 			BCRYPT_ALG_HANDLE ahAes, ahRng;
 			NTSTATUS nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
 			nts = BCryptOpenAlgorithmProvider(&ahRng, BCRYPT_RNG_ALGORITHM, 0, 0);
-			byte* pKey = (byte*)malloc(AES_KEY_SIZE);
-			nts = BCryptGenRandom(ahRng, pKey, AES_KEY_SIZE, 0);
+			byte* pKey = (byte*)malloc(cry::Aes::AesKeySize);
+			nts = BCryptGenRandom(ahRng, pKey, cry::Aes::AesKeySize, 0);
 			nts = BCryptCloseAlgorithmProvider(ahRng, 0);
 			BCRYPT_KEY_HANDLE khAes;
-			nts = BCryptGenerateSymmetricKey(ahAes, &khAes, 0, 0, pKey, AES_KEY_SIZE, 0);
+			nts = BCryptGenerateSymmetricKey(ahAes, &khAes, 0, 0, pKey, cry::Aes::AesKeySize, 0);
 			free(pKey);
 
 			// Export AesBlob
 			size_t nResult;
-			void* pKeyE = malloc(AES_BLOB_SIZE);
-			nts = BCryptExportKey(khAes, 0, BCRYPT_KEY_DATA_BLOB, (uchar*)pKeyE, AES_BLOB_SIZE, (ulong*)&nResult, 0);
+			void* pKeyE = malloc(cry::Aes::AesBlobSize);
+			nts = BCryptExportKey(khAes, 0, BCRYPT_KEY_DATA_BLOB, (uchar*)pKeyE, cry::Aes::AesBlobSize, (ulong*)&nResult, 0);
 			nts = BCryptDestroyKey(khAes);
 			BCryptCloseAlgorithmProvider(ahAes, 0);
 
@@ -253,7 +255,7 @@ int wmain(
 			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), (ulong*)&nResult, 0);
 			void* pAesObj = malloc(nOL);
 			BCRYPT_KEY_HANDLE khWKey;
-			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, (uchar*)pAesObj, nOL, (PUCHAR)fmWKey.Data(), AES_BLOB_SIZE, 0);
+			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, (uchar*)pAesObj, nOL, (PUCHAR)fmWKey.Data(), cry::Aes::AesBlobSize, 0);
 
 			// initialization-vector and Encrypt
 			void* pIv = malloc(16);
@@ -303,19 +305,19 @@ int wmain(
 			// Generate Random Aes128 Key
 			BCRYPT_ALG_HANDLE ahRng;
 			nts = BCryptOpenAlgorithmProvider(&ahRng, BCRYPT_RNG_ALGORITHM, 0, 0);
-			void* pKey = malloc(AES_KEY_SIZE);
-			nts = BCryptGenRandom(ahRng, (uchar*)pKey, AES_KEY_SIZE, 0);
+			void* pKey = malloc(cry::Aes::AesKeySize);
+			nts = BCryptGenRandom(ahRng, (uchar*)pKey, cry::Aes::AesKeySize, 0);
 			BCRYPT_ALG_HANDLE ahAes;
 			nts = BCryptOpenAlgorithmProvider(&ahAes, BCRYPT_AES_ALGORITHM, 0, 0);
 			BCRYPT_KEY_HANDLE khKey;
-			nts = BCryptGenerateSymmetricKey(ahAes, &khKey, 0, 0, (uchar*)pKey, AES_KEY_SIZE, 0);
+			nts = BCryptGenerateSymmetricKey(ahAes, &khKey, 0, 0, (uchar*)pKey, cry::Aes::AesKeySize, 0);
 
 			// Wrap and export AesKey
 			size_t nOL;
 			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), (ulong*)&nResult, 0);
 			void* pAesObj = malloc(nOL);
 			BCRYPT_KEY_HANDLE khWKey;
-			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, (uchar*)pAesObj, nOL, (PUCHAR)fmWKey.Data(), AES_BLOB_SIZE, 0);
+			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khWKey, (uchar*)pAesObj, nOL, (PUCHAR)fmWKey.Data(), cry::Aes::AesBlobSize, 0);
 			nts = BCryptExportKey(khKey, khWKey, BCRYPT_AES_WRAP_KEY_BLOB, pAes->Key, sizeof(pAes->Key), (ulong*)&nResult, 0);
 			nts = BCryptDestroyKey(khWKey);
 			free(pAesObj);
@@ -361,7 +363,7 @@ int wmain(
 			nts = BCryptGetProperty(ahAes, BCRYPT_OBJECT_LENGTH, (PUCHAR)&nOL, sizeof(size_t), (ulong*)&nResult, 0);
 			void* pAesObj = malloc(nOL);
 			BCRYPT_KEY_HANDLE khSKey;
-			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khSKey, (uchar*)pAesObj, nOL, (PUCHAR)fmSKey.Data(), AES_BLOB_SIZE, 0);
+			nts = BCryptImportKey(ahAes, 0, BCRYPT_KEY_DATA_BLOB, &khSKey, (uchar*)pAesObj, nOL, (PUCHAR)fmSKey.Data(), cry::Aes::AesBlobSize, 0);
 
 			// Encrypt Data
 			size_t nLen = wcslen(argv[3]);

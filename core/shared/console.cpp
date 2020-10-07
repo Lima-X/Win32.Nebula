@@ -153,6 +153,8 @@ namespace cui {
 		"This will be living hell >:)",
 		"Just give up already, sweatheart <3",
 		"a overdose for your system...",
+		"It's all just a Game...",
+		"_rift will 9/11 your Computer",
 		""
 	};
 	static const char* l_szRiftInfo[] = {
@@ -372,7 +374,7 @@ namespace con {
 			SetConsoleTextAttribute(m_hConOut, csbi.wAttributes);
 			Cls();
 
-			m_pBuffer = VirtualAlloc(nullptr, 0x000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+			m_pBuffer = VirtualAlloc(nullptr, 0x1000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 		}
 	}
 	Console::~Console() {
@@ -427,7 +429,7 @@ namespace con {
 		va_list vaArg;
 		va_start(vaArg, wAttribute);
 
-		vswprintf((wchar*)m_pBuffer, pText, vaArg);
+		vswprintf_s((wchar*)m_pBuffer, 0x1000, pText, vaArg);
 		m_nBuffer = wcslen((wchar*)m_pBuffer);
 
 		va_end(vaArg);

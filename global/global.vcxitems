@@ -17,6 +17,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)global.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)debug.c" />
     <ClCompile Include="$(MSBuildThisFileDirectory)global.cpp" />
   </ItemGroup>
 </Project>

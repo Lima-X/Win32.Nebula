@@ -5,16 +5,18 @@
 #pragma region _rift standard data declarations
 // CRT Specific Defines
 #define _CRT_SECURE_NO_WARNINGS
-#define _CRT_NON_CONFORMING_SWPRINTFS
 
 // Windows (NT) Specific Defines
 #define _WIN32_WINNT         0x06010000 // Windows 7 and up
 #define  WIN32_LEAN_AND_MEAN            // Reduce Header Size
 #include <windows.h>                    // Windows Header
 
+
+
+// Declaration-Specifications
    #define DEPRECATED      __declspec(deprecated)
 // #define DEPRECATED(str) __declspec(deprecated(str))
-
+;
 // Standard types
 typedef unsigned char      uchar;
 typedef          wchar_t   wchar;
@@ -45,7 +47,7 @@ typedef GUID uuid;
    x=0 if Successful
    x<0 if Failure (Errorcode)
    x>0 reserved for extra Info (also Success) */
-typedef signed long status;
+typedef _Success_(return >= 0) signed long status;
 /* equal to:
 struct status {
 	ulong uCode  : 31;
@@ -60,78 +62,88 @@ typedef unsigned long      ptr;
 #endif
 #pragma endregion
 
+
+/* Because of how the C Preprocessor works (Macro's)
+   Im Forced to use either rely on:
+   - WPO and LTO optimizations (which I would actually trust but dont want to)
+   - Use some weird as fucker to reform the expression into something else that is valid but goes into nothing
+   - Use plain C to write my "Debugging API" which will be ugly and wont fit the C++ style im aiming for */
 #ifdef __cplusplus
-// Debug
-namespace dbg {
-	class Benchmark {
-	public:
-		enum class Resolution : uint32 {
-			SEC   = 1,
-			MILLI = 1000,
-			MICRO = 1000000,
-			NANO  = 1000000000
-		};
+class Benchmark {
+public:
+	typedef void nul;
+	enum class Resolution : uint32 {
+		SEC = 1,
+		MILLI = 1000,
+		MICRO = 1000000,
+		NANO = 1000000000
+	};
 
-		Benchmark(_In_ Resolution res = Resolution::MILLI);
-		void Begin();
-		uint64 End();
+	Benchmark(_In_ Resolution res = Resolution::MILLI);
+	void Begin();
+	uint64 End();
 
-	private:
+private:
 #ifdef _DEBUG
-		static LARGE_INTEGER m_liFrequenzy;
-		const  Resolution    m_res;
-		       LARGE_INTEGER m_liBegin;
-		       LARGE_INTEGER m_liEnd;
+	static LARGE_INTEGER m_liFrequenzy;
+	const  Resolution    m_res;
+	LARGE_INTEGER m_liBegin;
+	LARGE_INTEGER m_liEnd;
 #endif
-	};
+};
 
-	class Log {
-	public:
-		static Log& Instance() {
-			static Log instance;
-			return instance;
-		}
+class Log {
+public:
+	static Log& Instance() {
+		static Log instance;
+		return instance;
+	}
 
-		void Trace(
-			_In_ const char* sz
-		) {
-			dword dw;
-			WriteFile(hFile, sz, strlen(sz), &dw, nullptr);
-			FlushFileBuffers(hFile);
-		}
-		void Trace(
-			_In_ void*  sz,
-			_In_ size_t size
-		) {
-			dword dw;
-			WriteFile(hFile, sz, size, &dw, nullptr);
-			FlushFileBuffers(hFile);
-		}
+	void Trace(
+		_In_ const char* sz
+	) {
+		dword dw;
+		WriteFile(hFile, sz, strlen(sz), &dw, nullptr);
+		FlushFileBuffers(hFile);
+	}
+	void Trace(
+		_In_ void* sz,
+		_In_ size_t size
+	) {
+		dword dw;
+		WriteFile(hFile, sz, size, &dw, nullptr);
+		FlushFileBuffers(hFile);
+	}
 
-	private:
-		Log() {
-			hFile = CreateFile(L"_riftldr.log", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-				nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		}
-		~Log() {
-			CloseHandle(hFile);
-		}
+private:
+	Log() {
+		hFile = CreateFile(L"_riftldr.log", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
+			nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	}
+	~Log() {
+		CloseHandle(hFile);
+	}
 
-		HANDLE hFile;
-	};
-
+	HANDLE hFile;
+};
+#endif
 
 #define BreakPoint __debugbreak
-#ifndef _DEBUG
-	__forceinline void nop(...) {}
-#define TracePoint nop
-#define StatusAssert nop
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef _DEBUG
+#define TracePoint dbgTracePoint
+	void dbgTracePoint(_In_z_ const char* sz, _In_opt_ ...);
+#define StatusAssert dbgStatusAssert
+	void dbgStatusAssert(_In_ status s, _In_ const char* sz, _In_opt_ ...);
 #else
-	void TracePoint(_In_ const char* sz, _In_opt_ ...) noexcept;
-	void StatusAssert(_In_ status s, _In_ const char* sz, _In_opt_ ...);
+#define TracePoint()
+#define StatusAssert()
 #endif
 
 	// Temporery DllInjector, this allows for JIT debugging which manualmapping can't really do
 	status InjectDllW(_In_ const wchar* szDll, _In_ dword dwPid);
+#ifdef __cplusplus
 }
 #endif

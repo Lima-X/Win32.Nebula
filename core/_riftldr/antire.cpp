@@ -605,7 +605,7 @@ namespace are { // Anti Reverse Engineering
 		UNREFERENCED_PARAMETER(dwReason);
 		UNREFERENCED_PARAMETER(Reserved);
 		if (!l_bTlsFlag) {
-			::dbg::TracePoint("Executing TLS Callback: " __FUNCTION__);
+			TracePoint("Executing TLS Callback: " __FUNCTION__);
 
 			// img::IHashBinaryCheck();
 			cry::Md5::hash md5;

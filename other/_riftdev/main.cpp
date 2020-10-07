@@ -33,7 +33,7 @@ public:
 			setEntry(Property::LastEntry, nullptr);
 		const_cast<T&>(m_nCapacity) = Capacity - nHead;
 		m_nCapacityUsed = 0;
-		dbg::TracePoint("dl-list constructed at: %#08x\n", m_BaseAddress);
+		TracePoint("dl-list constructed at: %#08x\n", m_BaseAddress);
 	}
 
 	void* AddObject(
@@ -68,7 +68,7 @@ public:
 		}
 
 		m_nCapacityUsed += nData + sizeof(ListEntry);
-		dbg::TracePoint("Object Added to list at: %#08x,\n%17soffset: 0x%#04x\n", (ptr)pRet, "", (ptr)pRet - m_BaseAddress);
+		TracePoint("Object Added to list at: %#08x,\n%17soffset: 0x%#04x\n", (ptr)pRet, "", (ptr)pRet - m_BaseAddress);
 		return pRet;
 	}
 
@@ -77,7 +77,7 @@ public:
 		_In_ void* pAddr
 	) {
 		ListEntry* pEntry = (ListEntry*)((ptr)pAddr - sizeof(ListEntry));
-		dbg::TracePoint("Removing Object Entry at: 0x%08x\n", pEntry);
+		TracePoint("Removing Object Entry at: 0x%08x\n", pEntry);
 
 		if (pEntry->size) { // Make sure entry is valid
 			if (pEntry->next && pEntry->prev) {
@@ -199,10 +199,7 @@ private:
 		  T&  m_nCapacityUsed = *(T*)(m_BaseAddress + sizeof(T) * 3); // count of bytes currently used in the container
 };
 
-int main() {
-	dbg::Benchmark bm(dbg::Benchmark::Resolution::MICRO);
-	bm.Begin();
-
+void dlist() {
 	auto pipalloc = [](size_t nSize) {
 		void* mem = malloc(nSize);
 		memset(mem, 0xcd, nSize);
@@ -235,6 +232,123 @@ int main() {
 		entry = (char*)list.GetNextEntry(entry);
 		list.RemoveObject(tentry);
 	} while (entry);
+}
+
+#pragma region Base Class Temporery Contstruction delegation Test
+class Base {
+public:
+	Base(Base* pBase) {
+		TracePoint("BaseClass constructed with class param\n");
+	}
+	Base() {
+		TracePoint("BaseClass Constructed\n");
+	}
+	~Base() {
+		TracePoint("BaseClass Deconstructor called\n");
+	}
+};
+
+class Derived : private Base {
+public:
+	Derived()
+		: Base(&Base()) {
+		TracePoint("Derived Constructed\n");
+	}
+	~Derived() {
+		TracePoint("Derived Destroyed\n");
+	}
+
+private:
+
+};
+#pragma endregion
+
+#pragma region My Heap Singleton
+class MySingleton {
+public:
+	static MySingleton& Instance() {
+		return *Inst();
+	}
+
+private:
+	MySingleton() {
+		TracePoint("MySingleton Constructed");
+	}
+	~MySingleton() {
+		TracePoint("MySingleton Destroyed");
+	}
+
+	static inline MySingleton*& Inst() {
+		TracePoint("MyInstance Called");
+		static Guard g;
+		static MySingleton* inst;
+		if (!inst)
+			inst = new MySingleton;
+
+		return inst;
+	}
+	class Guard {
+	public:
+		~Guard() {
+			MySingleton*& inst = Inst();
+			if (inst) {
+				delete inst;
+				inst = nullptr;
+			}
+			TracePoint("MyGuard Destroyed");
+		}
+	};
+};
+#pragma endregion
+
+#pragma region Refrence Heap Singleton
+class RefSingleton {
+public:
+	static RefSingleton* Instance() {
+		TracePoint("RefInstance Called");
+		static Guard g;
+		if (!StInstance)
+			StInstance = new RefSingleton();
+		return StInstance;
+	}
+
+private:
+	RefSingleton() {
+		TracePoint("RefSingleton Constructed");
+	}
+	~RefSingleton() {
+		TracePoint("RefSingleton Destroyed");
+	}
+	class Guard {
+	public:
+		~Guard() {
+			if (RefSingleton::StInstance) {
+				delete StInstance;
+				StInstance = nullptr;
+			}
+			TracePoint("RefGuard Destroyed");
+		}
+	};
+
+	static RefSingleton* StInstance;
+};
+RefSingleton* RefSingleton::StInstance = nullptr;
+#pragma endregion
+
+int main() {
+	Benchmark bm(Benchmark::Resolution::MICRO);
+	bm.Begin();
+
+	void("dwazdgawdvzuwagzdwa");
+
+
+	{
+		MySingleton& a = MySingleton::Instance();
+	}
+	{
+		RefSingleton* a = RefSingleton::Instance();
+	}
+
 
 	uint32 dw = bm.End();
 	return 0;

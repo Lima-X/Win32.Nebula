@@ -1,5 +1,5 @@
 # What is \_rift ?
-\_rift is a \[**P**\]acked(compressed & encryped) and \[**P**\]rotected \[**M**\]odule \[**L**\]oader. (**PPML**)
+\_rift is a \[**P**\]acked and \[**P**\]rotected \[**M**\]odule \[**L**\]oader. (**PPML**)
 
 It aims to be able to launch a payload of choice in a protected environment hidden from the eyes of a user.\
 It tries to achive this by using many well know malware techniques and even some less know ones.\
@@ -7,28 +7,34 @@ Im planning to add a lot more features to this even stuff outside of the origina
 
 ## Parts
 - Core:\
-  As the name already says, its basically the main(core) part of this software...
+  As the name already says, its basically the main(core) part of this software...\
+  Consisting of a Loader and the main Executable in the form of a encrypted Dll.
 
   - \_riftldr:\
     Main Executable containing the Core-Loader (S1) and its packed Resources,
-    as well as many other Features.
+    as well as many other Features and Services.
 
   - \_riftdll:\
     Main Payload Dll also containing the Loader-Stub (S2).\
-    after initializazion Controll will be given to this
+    After initializazion, Controll will be given to this
+    which can then be used as as a seperate "EntryPoint"
+    that is fully protected by the loader.
 
   - \_riftutl:\
-    Build utility used to compress/encrypt, obfuscate internal data and patch _rift.
+    Build utility used to compress/encrypt,
+    obfuscate internal data, patch _rift and more.
 
 - Sub:\
   These are sub parts like services or small standalones used by the core part.
 
   - \_riftmmi:\
     Dll Injector used to inject the RootKit Dll.\
-    (Using parts of BlackBone/Xenos by DarthTon)
+    (Using parts of BlackBone/Xenos by DarthTon)\
+    ((instead of being a standalone this will be moved into \_riftdll
+    and \_riftldr in the future))
 
   - \_rifturk:\
-    The RootKit Dll that will primarily hide Processes and Files.
+    The RootKit Dll that will primarily hide Processes, Files and more.
 
 ## Feature List:
 - Usermode Rootkit:
@@ -60,7 +66,7 @@ or into the plain sourcecode.
 #### Note:
 **Im aware that this is totaly malware.\
 It is not meant to be used with melicous intend
-and should only serve as a learning resource, demonstartion or proof of concept (PoC).\
+and should only serve as a learning resource, demonstration or proof of concept (PoC).\
 I do not encourage the spreading of malware as it is illegal and only contributes to trouble.\
 ! THE CREATOR IS NOT RESPONSIBLE FOR ANYTHING DONE USING THIS SOFTWARE !**
 

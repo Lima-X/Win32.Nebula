@@ -5,10 +5,17 @@ giving basic information about its sourcecode such as:
 - build instructions
 - anything else I decide to add
 
-###### Note:
+##### Note:
 This document is currently deprecated and inaccurate,
 as the sourcecode and main mechanisms of \_rift are currently heavily changing.\
 For more accurate information refer to the sourceode or other notes.
+```
+Regex for removing comments:
+(/\*(.|[\n])*?\*/)|(//.*)
+
+C-MultilineComments: /\*(.|[\n])*?\*/
+C++ Comments:        //.*
+```
 
 ## Build Instructions
 #### Building the Excutable:
