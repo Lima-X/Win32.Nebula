@@ -2,23 +2,7 @@
 #include <malloc.h>
 #include <cstdio>
 
-namespace dat {
-	/* The Current AesInternalKey used to decrypt Internal Data,
-	   this Key is hardcoded and should not be changed.
-	   Changing this Key would requirer to reencrypt all Data that is based on this Key,
-	   this includes all obfuscated Strings and even external Resources. */
-	const byte e_IKey[cry::Aes::AesKeySize] = {
-		0xd9, 0xbf, 0x99, 0x27, 0x18, 0xca, 0x6a, 0xf6,
-		0xb4, 0xd5, 0xd4, 0x67,	0x4e, 0xf5, 0xf9, 0x01
-	};
-	// KillSwitch Data Hash
-	DEPRECATED const byte e_KillSwitchHash[sizeof(cry::Md5::hash)] = {
-		0xc5, 0xc9, 0x2b, 0x4e, 0xe2, 0xc4, 0x61, 0x8f,
-		0x65, 0x59, 0xf1, 0x98, 0x48, 0xae, 0xf5, 0x3b
-	};
-}
-
-namespace alg {
+namespace ALG {
 #pragma region Base64
 	/* Base64A Encoder/Decoder taken from FreeBSD Project.
 	   Migrated to C++ into a class */

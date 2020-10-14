@@ -45,7 +45,7 @@
 	|      \_  __ \  \   __\\   __\  |   / __ |\_  __ \  /                                                      | | 6chars semi
 	|       |  | \/  ||  |   |  | |  |__/ /_/ | |  | \/ / Special Thanks to:                                    | | hardcoded
 	|  _____|__|  |__||__|   |__| |____/\____ | |__|   / [irql](Chris) : helping with Wintrnls                  | |
-	| /_____/                                \/       / and a lot more in the future probably :flushed:         | -
+	| /_____/                                \/       /                                                         | -
 	+------------------------------------------------+----------------------------------------------------------+
 	| Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore | -
 	| et dolore magna aliquyam erat, sed diam voluptua.                                                         | |
@@ -155,6 +155,7 @@ namespace cui {
 		"a overdose for your system...",
 		"It's all just a Game...",
 		"_rift will 9/11 your Computer",
+		"Please proceed into Android HELL",
 		""
 	};
 	static const char* l_szRiftInfo[] = {
@@ -162,7 +163,7 @@ namespace cui {
 		// A random selected Slogan followed by an empty line
 		"Special Thanks to:\n"
 		"[irql](Chris) : helping with Wintrnls\n"
-		"and a lot more in the future probably :flushed:"
+		""
 	};
 	struct RiftInfoRaw {
 		uint8 nWidth;
@@ -175,9 +176,8 @@ namespace cui {
 			// Choose Random Slogan
 			uint8 iSlogan = rng::Xoshiro::Instance().ERandomIntDistribution(0, (sizeof(l_szRiftSlogan) / sizeof(*l_szRiftSlogan)) - 1);
 
-			// Get Maximum width (-slant) of riftInfo
-			nWidth = strlen(l_szRiftInfo[0]) - 1; // minus newline char
-			{
+			{	// Get Maximum width (-slant) of riftInfo
+				nWidth = strlen(l_szRiftInfo[0]) - 1; // minus newline char
 				uint8 n = strlen(l_szRiftSlogan[iSlogan]);
 				if (n - 1 > nWidth) // account for slant
 					nWidth = n - 1;
@@ -271,8 +271,7 @@ namespace cui {
 							if (cord.Y != ctx.cord1.Y && cord.Y != ctx.p2) c = L'|'; break;
 						case GContext::gType::LEFTSLANT:
 							if (cord.Y != ctx.cord1.Y && cord.Y != ctx.p2) c = L'/';
-						}
-						if (!c)
+						} if (!c)
 							c = L'+';
 					}
 					dword dw;

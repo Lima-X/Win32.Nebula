@@ -1,5 +1,6 @@
-# What is \_rift ?
-\_rift is a \[**P**\]acked and \[**P**\]rotected \[**M**\]odule \[**L**\]oader. (**PPML**)
+# \_rift
+\_rift is a \[**P**\]acked and \[**P**\]rotected \[**M**\]odule \[**L**\]oader. (**PPML**)\
+The Project is currently in development.
 
 It aims to be able to launch a payload of choice in a protected environment hidden from the eyes of a user.\
 It tries to achive this by using many well know malware techniques and even some less know ones.\

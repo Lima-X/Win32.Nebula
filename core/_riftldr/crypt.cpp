@@ -83,7 +83,7 @@ namespace cry {
 		_Out_ size_t* nResult
 	) {
 		*nResult = strlen(pString);
-		alg::Base64A b64(alg::IBase64ObfuscatedTableCbA);
+		ALG::Base64A b64(ALG::IBase64ObfuscatedTableCbA);
 		status nData = b64.EBase64Decode(pString, *nResult, nullptr);
 		void* pData = nullptr;
 		if (!(nData < 0))
@@ -107,10 +107,10 @@ namespace cry {
 	) {
 		COMPRESSOR_HANDLE ch;
 		if (CreateDecompressor(COMPRESS_ALGORITHM_LZMS, NULL, &ch)) {
-			Decompress(ch, pData, nData, NULL, 0, (SIZE_T*)nResult);
+			XPress(ch, pData, nData, NULL, 0, (SIZE_T*)nResult);
 			void* pDecompressed = VirtualAlloc(nullptr, (SIZE_T)nResult, MEM_RESERVE | MEM_COMMIT, PAGE_READONLY);
 			if (pDecompressed) {
-				if (Decompress(ch, pData, nData, pDecompressed, (SIZE_T)nResult, (SIZE_T*)nResult)) {
+				if (XPress(ch, pData, nData, pDecompressed, (SIZE_T)nResult, (SIZE_T*)nResult)) {
 					CloseDecompressor(ch);
 					return pDecompressed;
 				}

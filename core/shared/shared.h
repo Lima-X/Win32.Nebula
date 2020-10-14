@@ -35,15 +35,6 @@
 
 
 #ifdef __cplusplus
-#pragma region Utility
-constexpr uint32 RoundUpToMulOfPow2(uint32 num, uint32 mul) {
-	return (num + (mul - 1)) & (0 - mul);
-}
-constexpr uint32 RoundUpToNearestMul(uint32 num, uint32 mul) {
-	return ((num + (mul - 1)) / mul) * mul;
-}
-#pragma endregion
-
 namespace rng {
 	// TODO: Implement a Guard mechanism as this currently does not automatically free the Memory !
 	class Xoshiro {
@@ -73,7 +64,7 @@ namespace rng {
 	};
 }
 
-namespace alg { /* Base64A Encoder/Decoder, UUID Converters and SigScanner : shared.c */
+namespace ALG { /* Base64A Encoder/Decoder, UUID Converters and SigScanner : shared.c */
 	// why -A suffix, because these functions work with raw data,
 	// Hex and Base64A don't need Unicode
 	// and it would be stupid to use Unicode outside of the programm anyways,
@@ -150,10 +141,6 @@ namespace cry {
 			AesWrappedBlob = (8 + AesKeySize),                                    // 24-Bytes (Hardcoded)
 			AesBlockSize = 0x10
 		};
-		enum class CryptMode {
-			AesEncrypt,
-			AesDecrypt
-		};
 
 		// Encrypted File/Resource Header
 		struct AESIB {
@@ -169,19 +156,7 @@ namespace cry {
 		status ValidateKey(_In_ void* pData);
 		void* IAesDecrypt(_In_ void* pData, _In_ size_t nData, _In_ void* pIv, _Out_ size_t* nResult);
 		status AesDecrypt(_In_ void* pData, _In_ size_t nData, _In_opt_ void* pIv, _Out_ void* pRaw);
-		status AesEncrypt(
-			_In_     void* pData,
-			_In_     size_t nData,
-			_In_opt_ void* pIv,
-			_Out_    void* pRaw
-		);
-		status AesCrypt(
-			_In_     CryptMode mode,
-			_In_     void* pData,
-			_In_     size_t nData,
-			_In_opt_ void* pIv,
-			_Out_    void* pRaw
-		);
+		status AesEncrypt(_In_ void* pData, _In_ size_t nData, _In_opt_ void* pIv, _Out_ void* pRaw);
 
 
 		static void ConvertRawKeyToBlob(
@@ -191,9 +166,11 @@ namespace cry {
 
 	private:
 		Aes();
+		inline status AesCrypt(_In_ void* pData, _In_ size_t nData, _In_opt_ void* pIv, _Out_ void* pRaw, _In_range_(0, 1) uint8 cn);
+
 		static BCRYPT_ALG_HANDLE s_ah;
 		static size_t s_nObj;
-		static uint16 s_nRefCount;
+		alignas(2) volatile static uint16 s_nRefCount;
 		BCRYPT_KEY_HANDLE m_kh;
 		void* m_pObj;
 	};
@@ -285,7 +262,20 @@ struct PIB {
 	} sMod;
 };
 
+
 namespace dat {
-	extern const byte e_IKey[cry::Aes::AesKeySize];
+	/* The Current AesInternalKey used to decrypt Internal Data,
+	   this Key is hardcoded and should not be changed.
+	   Changing this Key would requirer to reencrypt all Data that is based on this Key,
+	   this includes all obfuscated Strings and even external Resources. */
+	constexpr byte e_IKey[cry::Aes::AesKeySize] = {
+		0xd9, 0xbf, 0x99, 0x27, 0x18, 0xca, 0x6a, 0xf6,
+		0xb4, 0xd5, 0xd4, 0x67, 0x4e, 0xf5, 0xf9, 0x01
+	};
+	// KillSwitch Data Hash
+	DEPRECATED constexpr byte e_KillSwitchHash[sizeof(cry::Md5::hash)] = {
+		0xc5, 0xc9, 0x2b, 0x4e, 0xe2, 0xc4, 0x61, 0x8f,
+		0x65, 0x59, 0xf1, 0x98, 0x48, 0xae, 0xf5, 0x3b
+	};
 }
 #endif

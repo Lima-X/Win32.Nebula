@@ -45,12 +45,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir).in\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir).in\$(ProjectName)\</IntDir>
   </PropertyGroup>
@@ -83,7 +81,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dllist.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="other.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

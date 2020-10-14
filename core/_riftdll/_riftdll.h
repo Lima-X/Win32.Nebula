@@ -8,7 +8,25 @@
 #pragma warning(pop)
 
 /* RPC DebugObject UAC Bypass/Exploit */
-#ifndef __cplusplus
+#ifdef __cplusplus
+
+// BlackBone Library
+#ifdef _DEBUG
+#ifdef _WIN64
+#pragma comment(lib, "..\\..\\other\\dtBlackBone\\build\\x64\\Debug\\BlackBone.lib")
+#elif _WIN32
+#pragma comment(lib, "..\\..\\other\\dtBlackBone\\build\\Win32\\Debug\\BlackBone.lib")
+#endif
+#elif _NDEBUG
+#ifdef _WIN64
+#pragma comment(lib, "..\\..\\other\\dtBlackBone\\build\\x64\\Release\\BlackBone.lib")
+#elif _WIN32
+#pragma comment(lib, "..\\..\\other\\dtBlackBone\\build\\Win32\\Release\\BlackBone.lib")
+#endif
+#endif
+#include "..\..\other\dtBlackBone\src\BlackBone\ManualMap\MMap.h"
+
+#else
 #pragma comment(lib, "rpcrt4.lib")
 #include <rpcndr.h>
 #include <rpc.h>
@@ -16,6 +34,8 @@
 #include <ocidl.h>
 #include "appinfo32.h"
 #endif
+
+
 
 // Why did i even bother making this macro for this
 // if this file doesn't get used outside the dll anyways -.-

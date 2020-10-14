@@ -413,6 +413,7 @@ namespace are { // Anti Reverse Engineering
 			// Iterate over Sections
 			PIMAGE_SECTION_HEADER pSh = IMAGE_FIRST_SECTION(pNth);
 			for (uint8 i = 0; i < pNth->FileHeader.NumberOfSections; i++) {
+			Redo:
 				// Skip if Section is not code_seg or const_seg
 				if (!(pSh->Characteristics & (IMAGE_SCN_CNT_CODE | IMAGE_SCN_CNT_INITIALIZED_DATA)))
 					continue;
@@ -423,17 +424,16 @@ namespace are { // Anti Reverse Engineering
 						// ".reloc"
 					};
 
-					bool b = false;
 					for (uint8 j = 0; j < sizeof(szISeg) / sizeof(*szISeg); j++) {
 						byte cpy[8];
 						uint8 len = strlen(szISeg[j]);
 						memcpy(cpy, szISeg[j], len);
 						memset(cpy + len, 0, 8 - len);
 						if (!memcmp(pSh->Name, cpy, 8)) {
-							b = true; break;
+							i++;
+							goto Redo;
 						}
-					} if (b)
-						continue;
+					}
 				}
 
 				// Make copy of mapped Section
@@ -605,7 +605,7 @@ namespace are { // Anti Reverse Engineering
 		UNREFERENCED_PARAMETER(dwReason);
 		UNREFERENCED_PARAMETER(Reserved);
 		if (!l_bTlsFlag) {
-			TracePoint("Executing TLS Callback: " __FUNCTION__);
+			::dbg::TracePoint("Executing TLS Callback: " __FUNCTION__);
 
 			// img::IHashBinaryCheck();
 			cry::Md5::hash md5;

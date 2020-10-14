@@ -325,7 +325,7 @@ int wmain(
 			// init initialization-vector and copy
 			void* pIv = malloc(16);
 			nts = BCryptGenRandom(ahRng, (uchar*)pIv, 16, 0);
-			CopyMemory(pAes->Iv, pIv, 16);
+			// CopyMemory(pAes->Iv, pIv, 16);
 			nts = BCryptCloseAlgorithmProvider(ahRng, 0);
 
 			// Encrypt Data
@@ -383,7 +383,7 @@ int wmain(
 			nts = BCryptCloseAlgorithmProvider(ahAes, 0);
 
 			// Encode Data to Hex String
-			alg::HexConvA h16;
+			ALG::HexConvA h16;
 			void* pEncoded = malloc(nFile);
 			h16.BinToHex(pEncrypted, nFile, (char*)pEncoded);
 

@@ -13,6 +13,8 @@ RIFTINJECT32
 RIFTINJECT64
 RIFTROOT32
 RIFTROOT64
+_rift.pptx
+.gitignore
 # _rift specific directories
 .in/
 # 3rd-Party Libraries

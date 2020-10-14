@@ -29,8 +29,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftutl", "core\_riftutl\_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_rifturk", "root\_rifturk\_rifturk.vcxproj", "{0881218E-929D-4CDF-AAAD-B4C4955C6081}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftmmi", "root\_riftmmi\_riftmmi.vcxproj", "{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_riftdev", "other\_riftdev\_riftdev.vcxproj", "{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "global", "global\global.vcxitems", "{8AF695AC-D632-41EE-A7A5-499C3BF9DCDC}"
@@ -48,7 +46,6 @@ Global
 		global\global.vcxitems*{8af695ac-d632-41ee-a7a5-499c3bf9dcdc}*SharedItemsImports = 9
 		core\shared\shared.vcxitems*{a641fbb6-ffe1-41c8-9bb8-17cd61ad2ef8}*SharedItemsImports = 4
 		global\global.vcxitems*{a641fbb6-ffe1-41c8-9bb8-17cd61ad2ef8}*SharedItemsImports = 4
-		global\global.vcxitems*{bd634f5a-24e9-4775-b4aa-1eee8b81f2ad}*SharedItemsImports = 4
 		core\shared\shared.vcxitems*{d1283f5d-4c3d-4b1d-9cc7-3dd821952a3a}*SharedItemsImports = 4
 		global\global.vcxitems*{d1283f5d-4c3d-4b1d-9cc7-3dd821952a3a}*SharedItemsImports = 4
 	EndGlobalSection
@@ -85,14 +82,6 @@ Global
 		{0881218E-929D-4CDF-AAAD-B4C4955C6081}.Release|x64.Build.0 = Release|x64
 		{0881218E-929D-4CDF-AAAD-B4C4955C6081}.Release|x86.ActiveCfg = Release|Win32
 		{0881218E-929D-4CDF-AAAD-B4C4955C6081}.Release|x86.Build.0 = Release|Win32
-		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Debug|x64.ActiveCfg = Debug|x64
-		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Debug|x64.Build.0 = Debug|x64
-		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Debug|x86.ActiveCfg = Debug|Win32
-		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Debug|x86.Build.0 = Debug|Win32
-		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Release|x64.ActiveCfg = Release|x64
-		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Release|x64.Build.0 = Release|x64
-		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Release|x86.ActiveCfg = Release|Win32
-		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD}.Release|x86.Build.0 = Release|Win32
 		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Debug|x64.ActiveCfg = Debug|x64
 		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Debug|x64.Build.0 = Debug|x64
 		{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}.Debug|x86.ActiveCfg = Debug|Win32
@@ -111,7 +100,6 @@ Global
 		{21265FC7-5328-4846-845D-13404C45FB8E} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
 		{708DC70C-D97D-4E1F-B214-5259D3E2C669} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
 		{0881218E-929D-4CDF-AAAD-B4C4955C6081} = {410236BD-0C95-4218-8E1C-BC6735B91591}
-		{BD634F5A-24E9-4775-B4AA-1EEE8B81F2AD} = {410236BD-0C95-4218-8E1C-BC6735B91591}
 		{01A36F22-55D1-4B49-9894-B6080000C4CB} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

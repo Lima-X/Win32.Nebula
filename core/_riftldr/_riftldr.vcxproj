@@ -49,16 +49,15 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
     <IntDir>$(SolutionDir).in\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir).in\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
     <TargetExt>.exe</TargetExt>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -75,6 +74,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <Version>6.1</Version>
+      <ShowProgress>LinkVerbose</ShowProgress>
     </Link>
     <ResourceCompile>
       <Culture />
@@ -97,8 +97,10 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <Version>6.1</Version>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <ShowProgress>LinkVerbose</ShowProgress>
     </Link>
     <ResourceCompile>
       <Culture />

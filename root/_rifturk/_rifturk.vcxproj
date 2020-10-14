@@ -77,7 +77,6 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir).in\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)32</TargetName>
@@ -89,7 +88,6 @@
     <TargetName>$(ProjectName)32</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir).in\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)64</TargetName>

@@ -14,10 +14,11 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)debug.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)def.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)global.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)debug.c" />
     <ClCompile Include="$(MSBuildThisFileDirectory)global.cpp" />
   </ItemGroup>
 </Project>
