@@ -3,7 +3,7 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-# _rift specific files
+# rift specific files
 RIFTSKEY
 RIFTWKEY
 RIFTTEST
@@ -13,12 +13,11 @@ RIFTINJECT32
 RIFTINJECT64
 RIFTROOT32
 RIFTROOT64
-_rift.pptx
+rift.pptx
 .gitignore
-# _rift specific directories
+# rift specific directories
 .in/
 # 3rd-Party Libraries
-dtBlackBone/
 msDetours/
 
 # User-specific files
