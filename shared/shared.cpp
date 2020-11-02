@@ -167,14 +167,16 @@ namespace ALG {
 #pragma endregion Out of Service
 
 #pragma region Hex
+	char HexConvA::s_HexTable[('a' - '0') - 1];
+
 	HexConvA::HexConvA() {
 		// Setup HexTable
 		for (uint8 i = 0; i < 10; i++)
-			m_HexTable[i] = i + '0';
+			s_HexTable[i] = i + '0';
 
 		for (uint8 j = 0; j < 6; j++) {
-			m_HexTable[j + 10] = j + 'a';
-			m_HexTable[j + ('a' - '0')] = j + ('0' + 10);
+			s_HexTable[j + 10] = j + 'a';
+			s_HexTable[j + ('a' - '0')] = j + ('0' + 10);
 		}
 	}
 	void HexConvA::BinToHex( //
@@ -183,8 +185,8 @@ namespace ALG {
 		_Out_ char*  sz      // Target String to Fill
 	) {
 		for (int i = 0; i < nData; i++) {
-			sz[i * 2] = m_HexTable[((byte*)pData)[i] >> 4];
-			sz[(i * 2) + 1] = m_HexTable[((byte*)pData)[i] & 0xf];
+			sz[i * 2] = s_HexTable[((byte*)pData)[i] >> 4];
+			sz[(i * 2) + 1] = s_HexTable[((byte*)pData)[i] & 0xf];
 		}
 		sz[nData * 2] = '\0';
 	}
@@ -194,7 +196,7 @@ namespace ALG {
 		_Out_ void* pOut     // Target array to fill
 	) {
 		while (*sz != '\0')
-			 *(*(byte**)&pOut)++ = ((m_HexTable[*sz++ - '0'] - '0') << 4) + (m_HexTable[*sz++ - '0'] - '0');
+			 *(*(byte**)&pOut)++ = ((s_HexTable[*sz++ - '0'] - '0') << 4) + (s_HexTable[*sz++ - '0'] - '0');
 	}
 #pragma endregion
 

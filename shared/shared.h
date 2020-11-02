@@ -103,7 +103,7 @@ namespace ALG { /* Base64A Encoder/Decoder, UUID Converters and SigScanner : sha
 		void HexToBin(_In_ char* sz, _Out_ void* pOut);
 
 	private:
-		char m_HexTable[('a' - '0') - 1];
+		static char s_HexTable[('a' - '0') - 1];
 	};
 }
 
@@ -248,9 +248,6 @@ typedef struct _SIG { // Signature Block
 	size_t nLength;    // Length of Signature to search
 } SIG, * PSIG;
 void* ESigScan(_In_ void* pData, _In_ size_t nData, _In_ PSIG sig);
-
-/* Utilities and Other : Utils.c */
-PDWORD EGetProcessIdbyName(_In_ PCWSTR pProcessName, _Out_ size_t* nProcesses);
 
 /* Process Information Block (replacment for Global Data) */
 // This is kinda deprected now because im using the crt now

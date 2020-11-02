@@ -170,3 +170,46 @@ namespace cry {
 		const dword m_k[4];
 	};
 }
+
+namespace utl {
+	status GetPIdByNameExW(                  // Enumerates all processes and fills and array with matching PId's
+		_In_z_    const wchar* pProcessName, // the process name to search for (case insensitive)
+		_Out_opt_       dword* pPId,         // and array to fill with the process ids (if null: returns number of matching processes)
+		_In_            size_t nPId          // the size of the array to fill (if -1: assumes an array of infinite size)
+	) {
+		HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+		if (hSnap == INVALID_HANDLE_VALUE)
+			return -1;
+		if (!pPId)
+			nPId = -1;
+
+		PROCESSENTRY32W pe32;
+		pe32.dwSize = sizeof(PROCESSENTRY32W);
+
+		uint32 nProcesses = 0;
+		if (Process32FirstW(hSnap, &pe32)) {
+			do {
+				if (!_wcsicmp(pe32.szExeFile, pProcessName)) {
+					if (!--nPId) {
+						CloseHandle(hSnap);
+						return -2; // Not enough Space
+					}
+
+					pPId[nProcesses++] = pe32.th32ProcessID;
+				}
+			} while (Process32NextW(hSnap, &pe32));
+		}
+
+		CloseHandle(hSnap);
+		return nProcesses;
+	}
+
+	status GetPIdByNameW(                // Enumerates all processes and returns the first matching processes PId
+		_In_z_ const wchar* pProcessName // the process name to search for (case insensitive)
+	) {
+		dword dwPId;
+		status s = GetPIdByNameExW(pProcessName, &dwPId, 1);
+		if (s || s == -2)
+			return dwPId;
+	}
+}

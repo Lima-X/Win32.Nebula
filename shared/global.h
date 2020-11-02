@@ -14,11 +14,11 @@
 #define _WIN32_WINNT         0x06010000 // Windows 7 and up
 #define  WIN32_LEAN_AND_MEAN            // Reduce Header Size
 #include <windows.h>                    // Windows Header
-
+#include <tlhelp32.h>                   // Process Api Helper
 
 // _rift Specific
-#include "def.h"
-#include "debug.h"
+#include "sub/def.h"
+#include "sub/debug.h"
 
 #ifdef __cplusplus
 #pragma region Utility
@@ -32,4 +32,11 @@ constexpr uint32 Max(uint32 num1, uint32 num2) {
 	return num1 > num2 ? num1 : num2;
 }
 #pragma endregion
+
+
+namespace utl {
+	status GetPIdByNameExW(_In_z_ const wchar* pProcessName, _Out_opt_ dword* pPId, _In_ size_t nPId);
+	status GetPIdByNameW(_In_z_ const wchar* pProcessName);
+}
+
 #endif

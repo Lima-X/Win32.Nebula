@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)global.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)shared.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)sub\console.cpp">
+      <Filter>sub</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)sub\crypt.cpp">
+      <Filter>sub</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)global.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)shared.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\debug.h">
+      <Filter>sub</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\def.h">
+      <Filter>sub</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="sub">
+      <UniqueIdentifier>{23a97736-0411-448f-9d28-c5c7706e549c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

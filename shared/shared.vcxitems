@@ -15,15 +15,15 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)debug.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)def.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)global.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shared.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\debug.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\def.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)console.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)crypt.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)global.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)shared.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)sub\console.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)sub\crypt.cpp" />
   </ItemGroup>
 </Project>

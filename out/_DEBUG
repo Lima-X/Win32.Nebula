@@ -1,6 +1,0 @@
-This File defines the current Configuration.
-It specifies which build (Release/Debug) to use for Encryption/Decryption.
-Name this File according to the wanted Configuration:
-
-_NDEBUG : Release
-_DEBUG  : Debug

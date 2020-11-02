@@ -1,12 +1,5 @@
 @echo off
-
-if exist _NDEBUG (
-	cd Release
-) else if exist _DEBUG (
-	cd Debug
-) else (
-	goto eof
-)
+cd bin
 
 _riftTool.exe /ec "_riftdll.dll" "..\RIFTWKEY" "..\RIFTDLL"
 _riftTool.exe /ec "_riftInject32.exe" "..\RIFTWKEY" "..\RIFTINJECT32"

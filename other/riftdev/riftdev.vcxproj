@@ -80,6 +80,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\core\riftstb\rkmgr.cpp" />
     <ClCompile Include="dllist.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="other.cpp" />

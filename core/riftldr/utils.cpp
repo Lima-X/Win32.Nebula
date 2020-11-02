@@ -15,37 +15,6 @@ namespace utl {
 		return bSId;
 	}
 
-	PDWORD EGetProcessIdbyName(
-		_In_  PCWSTR  pProcessName,
-		_Out_ size_t* nProcesses
-	) {
-		HANDLE hPSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-		if (hPSnap == INVALID_HANDLE_VALUE)
-			return 0;
-
-		PROCESSENTRY32W pe32;
-		pe32.dwSize = sizeof(PROCESSENTRY32W);
-
-		PDWORD pProcesses = NULL;
-		if (Process32FirstW(hPSnap, &pe32)) {
-			*nProcesses = 0;
-			do {
-				if (!lstrcmpiW(pe32.szExeFile, pProcessName)) {
-					if (pProcesses)
-						pProcesses = (dword*)realloc(pProcesses, sizeof(dword) * *nProcesses);
-					else
-						pProcesses = (dword*)malloc(sizeof(dword));
-
-					pProcesses[*nProcesses] = pe32.th32ProcessID;
-					(*nProcesses)++;
-				}
-			} while (Process32Next(hPSnap, &pe32));
-		}
-
-		CloseHandle(hPSnap);
-		return pProcesses;
-	}
-
 	DEPRECATED void* AllocReadFileW( // Use FileMap Class instead
 		_In_  PCWSTR  szFileName,
 		_Out_ size_t* nFileSize
@@ -275,10 +244,9 @@ namespace utl {
 		BOOL bS = StartServiceW(hSer, NULL, NULL);
 
 		// Open TrustedInstaller Process
-		size_t nProc;
-		PDWORD pProc = EGetProcessIdbyName(L"TrustedInstaller.exe", &nProc);
+		DWORD pProc = utl::GetPIdByNameW(L"TrustedInstaller.exe");
 		bS = EAdjustPrivilege(SE_DEBUG_NAME, TRUE);
-		HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pProc[0]);
+		HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pProc);
 		LE = GetLastError();
 
 		// Setup StartupInformation
