@@ -10,7 +10,34 @@
    and everything outside of this file should NOT be used here.
    Inoder to still communicate/inform the main ldr code, they will be linked through a small "interface" */
 
-#include "antire.h"
+#include "global.h"
+
+// Windows special Headers
+#include <psapi.h>
+#include <tlHelp32.h>
+
+// Windows unlinked Headers
+#pragma comment(lib, "bcrypt.lib")
+#include <bcrypt.h>
+
+// Microsoft Detours
+#ifdef _M_AMD64
+#pragma comment(lib, "..\\..\\other\\detours\\lib.X64\\detours.lib")
+#elif _M_IX86
+#pragma comment(lib, "..\\..\\other\\detours\\lib.X86\\detours.lib")
+#endif
+#include "..\other\detours\detours.h"
+
+// Dummyclass for typedef to get correct linkage
+namespace cry { class Hash { public: typedef GUID hash; }; }
+namespace dat {
+	/* Contains the expected Hash of Section in the Image.
+	This is only a Signature and has to be patched out with _riftutl.
+	Patchable-Signature: "dat:SIG.MemHash" */
+	constexpr cry::Hash::hash hMemoryHash = { ':tad', 'IS', '.G', { 'M', 'e', 'm', 'H', 'a', 's', 'h', '\0' } };
+}
+
+
 
 namespace are { // Anti Reverse Engineering
 	namespace dbg { // Anti Debugging/Debugger (Detection)
@@ -338,6 +365,7 @@ namespace are { // Anti Reverse Engineering
 			return NULL;
 		}
 		BOOL IHookLoadLibrary() {
+			// TODO/BUG: This Currently
 			// Update all Threads
 			HANDLE hTSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 			if (hTSnap == INVALID_HANDLE_VALUE)

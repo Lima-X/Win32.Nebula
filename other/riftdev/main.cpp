@@ -214,13 +214,11 @@ int main() {
 	dbg::Benchmark bm(dbg::Benchmark::Resolution::MICRO);
 	bm.Begin();
 
-
 	// void RootKitTest();
 	// RootKitTest();
 
 	// void CryptoTestFunc();
 	// CryptoTestFunc();
-
 
 
 

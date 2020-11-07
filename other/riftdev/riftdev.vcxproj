@@ -44,11 +44,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)out\bin\</OutDir>
     <IntDir>$(SolutionDir).in\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)out\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)out\bin\</OutDir>
     <IntDir>$(SolutionDir).in\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -80,8 +80,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\core\riftstb\rkmgr.cpp" />
-    <ClCompile Include="dllist.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="other.cpp" />
   </ItemGroup>

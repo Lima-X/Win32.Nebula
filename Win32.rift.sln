@@ -7,13 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "riftCore", "riftCore", "{70
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "riftRoot", "riftRoot", "{410236BD-0C95-4218-8E1C-BC6735B91591}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3P Libraries", "3P Libraries", "{ADF0C4C8-1A43-41D1-BCFB-DA8133BFEDFD}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Detours", "Detours", "{BF696E0C-93B0-4E49-A5D4-CE10FF979E9B}"
-	ProjectSection(SolutionItems) = preProject
-		other\msDetours\include\detours.h = other\msDetours\include\detours.h
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Other", "Other", "{118C1682-B6BB-40BC-8076-F301EDE6C451}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "riftldr", "core\riftldr\riftldr.vcxproj", "{A641FBB6-FFE1-41C8-9BB8-17CD61AD2EF8}"
@@ -27,6 +20,12 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "riftdev", "other\riftdev\riftdev.vcxproj", "{D1283F5D-4C3D-4B1D-9CC7-3DD821952A3A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared", "shared\shared.vcxitems", "{8AF695AC-D632-41EE-A7A5-499C3BF9DCDC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MS Detours", "MS Detours", "{C3811B8A-6003-447E-8F21-D05FDDC4BAD5}"
+	ProjectSection(SolutionItems) = preProject
+		other\detours\detours.h = other\detours\detours.h
+		other\detours\detver.h = other\detours\detver.h
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -81,12 +80,11 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{ADF0C4C8-1A43-41D1-BCFB-DA8133BFEDFD} = {118C1682-B6BB-40BC-8076-F301EDE6C451}
-		{BF696E0C-93B0-4E49-A5D4-CE10FF979E9B} = {ADF0C4C8-1A43-41D1-BCFB-DA8133BFEDFD}
 		{A641FBB6-FFE1-41C8-9BB8-17CD61AD2EF8} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
 		{21265FC7-5328-4846-845D-13404C45FB8E} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
 		{708DC70C-D97D-4E1F-B214-5259D3E2C669} = {70E05276-5A9B-4F1D-A745-851DDA55C016}
 		{0881218E-929D-4CDF-AAAD-B4C4955C6081} = {410236BD-0C95-4218-8E1C-BC6735B91591}
+		{C3811B8A-6003-447E-8F21-D05FDDC4BAD5} = {118C1682-B6BB-40BC-8076-F301EDE6C451}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FA23DB8B-7FAB-4586-936D-4ADB4CD8B90E}

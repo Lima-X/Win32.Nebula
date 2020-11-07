@@ -28,10 +28,6 @@
 #pragma comment(lib, "wininet.lib")
 #include <wininet.h>
 
-// Microsoft Detours
-#pragma comment(lib, "..\\..\\other\\msDetours\\lib.X86\\detours.lib")
-#include "..\other\msDetours\include\detours.h"
-
 #ifdef __cplusplus
 namespace rng {
 	class CRNG {

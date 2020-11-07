@@ -30,9 +30,6 @@
     <ClInclude Include="riftldr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="antire.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>

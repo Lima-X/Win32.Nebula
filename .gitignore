@@ -3,22 +3,25 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+
+
 # rift specific files
 RIFTSKEY
 RIFTWKEY
 RIFTTEST
 RIFTKILL
 RIFTDLL
-RIFTINJECT32
-RIFTINJECT64
 RIFTROOT32
 RIFTROOT64
 rift.pptx
 .gitignore
+
 # rift specific directories
 .in/
-# 3rd-Party Libraries
-msDetours/
+out/bin/
+other/detours/
+
+
 
 # User-specific files
 *.rsuser
