@@ -666,7 +666,7 @@ private:
 };
 
 class rkc
-	: private ALG::HexConvA,
+	: private alg::HexConvA,
 	private cry::Hash {
 public:
 	rkc(

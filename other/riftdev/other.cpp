@@ -17,7 +17,7 @@ public:
 class Derived : private Base {
 public:
 	Derived()
-		: Base(&Base()) {
+		: Base(Base()) {
 		TracePoint("Derived Constructed\n");
 	}
 	~Derived() {

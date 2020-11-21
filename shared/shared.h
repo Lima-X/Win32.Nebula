@@ -42,13 +42,11 @@ namespace rng {
 	};
 
 	// TODO: Implement a Guard mechanism as this currently does not automatically free the Memory !
-	class Xoshiro
-		: private CRNG {
+	class Xoshiro {
 		static constexpr size_t nState = sizeof(dword) * 4;
 	public:
 		// Constructor/Destructor and Signleton Initialization
 		Xoshiro(_In_opt_ void* dwState = nullptr);
-		~Xoshiro();
 		static Xoshiro& Instance();
 		status Reseed();
 
@@ -64,7 +62,7 @@ namespace rng {
 		Xoshiro(_In_opt_ void(Xoshiro::* const jmp)(), _In_opt_ void* dwState = nullptr);
 
 		// State, Sync Opbject (for Singleton) & internal Trampoline
-		static CRITICAL_SECTION cs;
+		static SRWLOCK Lock;
 		void(Xoshiro::* const m_Trampoline)();
 		dword m_dwState[4];
 
@@ -75,7 +73,7 @@ namespace rng {
 	};
 }
 
-namespace ALG { /* Base64A Encoder/Decoder, UUID Converters and SigScanner : shared.c */
+namespace alg { /* Base64A Encoder/Decoder, UUID Converters and SigScanner : shared.c */
 	// why -A suffix, because these functions work with raw data,
 	// Hex and Base64A don't need Unicode
 	// and it would be stupid to use Unicode outside of the programm anyways,

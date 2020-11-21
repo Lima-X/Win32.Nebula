@@ -45,7 +45,7 @@ namespace are { // Anti Reverse Engineering
 
 		// Do it manually, by reading the flag directly from the PEB
 		static bool IBasicDebuggerCheck() {
-			void* pPeb = (void*)__readfsdword(0x30);
+			void* pPeb = (void*)__readgsdword(0x60);
 			return *(byte*)((ptr)pPeb + 2);
 		}
 
@@ -145,11 +145,11 @@ namespace are { // Anti Reverse Engineering
 		// some havoc.
 		static bool IInt2DCheck() {
 			__try {
-				__asm {
+				/* __asm {
 					int 0x2d
 					xor eax, eax
 					add eax, 2
-				}
+				} Reimplement with Masm */
 			} __except (EXCEPTION_EXECUTE_HANDLER) {
 				return false;
 			}
@@ -173,19 +173,19 @@ namespace are { // Anti Reverse Engineering
 
 		LONG WINAPI IUnhandledExcepFilter(PEXCEPTION_POINTERS pExcepPointers) {
 			// Restore old UnhandledExceptionFilter
-			SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)pExcepPointers->ContextRecord->Eax);
+			SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)pExcepPointers->ContextRecord->Rax);
 
 			// Skip the exception code
-			pExcepPointers->ContextRecord->Eip += 2;
+			pExcepPointers->ContextRecord->Rip += 2; // HACK: This might not work on x64 as it only changed the names
 
 			return EXCEPTION_CONTINUE_EXECUTION;
 		}
 		void ISehUnhandledException() {
 			SetUnhandledExceptionFilter(IUnhandledExcepFilter);
-			__asm {
+			/* __asm {
 				xor eax, eax
 				div eax
-			}
+			} Reimplement with Masm */
 
 			// Execution resumes here if there is no debugger
 			// or if there is a debugger it will never
@@ -234,7 +234,7 @@ namespace are { // Anti Reverse Engineering
 		// this has to be checked and fixed, its a terrible mess atm...
 		static bool ICheckVMware() {
 			__try {
-				__asm {
+				/* __asm {
 					push ebx
 
 					mov  eax, 'VMXh'
@@ -244,7 +244,7 @@ namespace are { // Anti Reverse Engineering
 					in   eax, dx     // read port
 
 					pop  ebx
-				}
+				} Reimplement with Masm */
 			} __except (EXCEPTION_EXECUTE_HANDLER) {
 				return false;
 			}
@@ -266,26 +266,26 @@ namespace are { // Anti Reverse Engineering
 			_In_ PEXCEPTION_POINTERS ep
 		) {
 			PCONTEXT pCt = ep->ContextRecord;
-			pCt->Ebx = (dword)-1; // Not running VPC
-			pCt->Eip += 4; // skip past the "call VPC" opcodes
+			pCt->Rbx = (dword)-1; // Not running VPC
+			pCt->Rip += 4; // skip past the "call VPC" opcodes
 
 			return EXCEPTION_EXECUTE_HANDLER; // we can safely resume execution since we skipped faulty instruction
 		}
 		static BOOL ICheckVirtualPC() {
 			__try {
-				__asm {
+				/* __asm {
 					push   ebx
 
 					mov    ebx, 0 // Flag
 					mov    eax, 1 // VPC function number
-					// call VPC
+					// call VPC (vpcext  7, 0Bh)
 					__emit 0Fh
 					__emit 3Fh
 					__emit 07h
 					__emit 0Bh
 
 					pop    ebx
-				}
+				} Reimplement with Masm */
 			} __except (ICVPCExceptionFilter(GetExceptionInformation())) {
 				return FALSE;
 			}
@@ -596,7 +596,7 @@ namespace are { // Anti Reverse Engineering
 	// Prototype version that returns a functioPointer (just use void* and casts instead)
 	// int (*ImportFunctionByHash2(geter paramenters))(functionpointer parameters) {}
 	void* ImportFunctionByHash(
-		_In_ const HMODULE         hMod,
+		_In_ const HMODULE          hMod,
 		_In_ const cry::Hash::hash& pHash
 	) {
 		PIMAGE_NT_HEADERS pNth = (PIMAGE_NT_HEADERS)((ptr)hMod + ((PIMAGE_DOS_HEADER)hMod)->e_lfanew);
@@ -645,7 +645,7 @@ namespace are { // Anti Reverse Engineering
 		UNREFERENCED_PARAMETER(dwReason);
 		UNREFERENCED_PARAMETER(Reserved);
 		if (!l_bTlsFlag) {
-			::TracePoint("Executing TLS Callback: " __FUNCTION__);
+			TracePoint("Executing TLS Callback: " __FUNCTION__);
 
 			// img::IHashBinaryCheck();
 			cry::Hash::hash sha;
@@ -660,8 +660,8 @@ namespace are { // Anti Reverse Engineering
 			l_bTlsFlag = true;
 		}
 	}
-#pragma comment (linker, "/INCLUDE:__tls_used")
-#pragma comment (linker, "/INCLUDE:_TlsEntry0")
+#pragma comment (linker, "/INCLUDE:_tls_used")
+#pragma comment (linker, "/INCLUDE:TlsEntry0")
 #pragma data_seg(".CRT$XLB")
 	extern "C" PIMAGE_TLS_CALLBACK TlsEntry0 = TlsCallback;
 #pragma data_seg()

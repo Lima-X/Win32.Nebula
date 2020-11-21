@@ -383,7 +383,7 @@ int wmain(
 			nts = BCryptCloseAlgorithmProvider(ahAes, 0);
 
 			// Encode Data to Hex String
-			ALG::HexConvA h16;
+			alg::HexConvA h16;
 			void* pEncoded = malloc(nFile);
 			h16.BinToHex(pEncrypted, nFile, (char*)pEncoded);
 

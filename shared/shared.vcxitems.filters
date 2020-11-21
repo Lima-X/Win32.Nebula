@@ -2,11 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)global.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)shared.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)sub\console.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)sub\crypt.cpp">
       <Filter>sub</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)sub\crypt.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)shared.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)sub\console.cpp">
       <Filter>sub</Filter>
     </ClCompile>
   </ItemGroup>

@@ -25,7 +25,7 @@ namespace svc { // Service Center/Dispatch Level:1 (svcdsp1)
 		return s;
 	}
 
-	long svcCall(
+	long ServiceCall(
 		_In_range_(0, 0x1fff) uint16 svcId,
 		_In_opt_                     ...
 	) {

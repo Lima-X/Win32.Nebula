@@ -210,92 +210,161 @@ private:
 
 #include "shared.h"
 
+#if 0
+SigScan::SigScan(
+	_In_ const void* pData,
+	_In_       size_t nData,
+	_In_ const void* pSig,
+	_In_ const char* szMask
+)
+	: m_pData(pData),
+	m_nData(nData),
+	m_pSig(pSig),
+	m_nSig(strlen(szMask)
+) {
+	// Allocate and calculate Mask
+	size_t nMask = RoundUpToMulOfPow2(m_nSig, 8) / 8;
+	m_pMask = (byte*)malloc(nMask);
+	memset(m_pMask, 0, nMask);
+	for (size_t i = 0; i < m_nSig; i++)
+		if (szMask[i] != '?')
+			m_pMask[i / 8] |= 1 << (i % 8);
+}
+SigScan::~SigScan() {
+	free(m_pMask);
+}
+
+void* SigScan::FindSig() {
+	while (m_nData - m_nSig) {
+		size_t i;
+		for (i = 0; i < m_nSig; i++)
+			if (((m_pMask[m_nSig / 8] >> (7 - i % 8)) & 1) && ((byte*)m_pData)[i] != ((byte*)m_pSig)[i])
+				break;
+
+		if (i >= m_nSig)
+			return (void*)((*(ptr*)&m_pData) - 1);
+		(*(ptr*)&m_pData)++, m_nData--;
+	}
+
+	return nullptr;
+}
+#endif
+
+
+
+
+
+
+class SigScan2 {
+public:
+	struct Sig {
+		size_t nSize;
+		byte   SigAndMask[];
+	};
+
+	SigScan2(
+		_In_ byte   Sig[],
+		_In_ byte   Mask[],
+		_In_ size_t nSig
+	)
+		: m_nSig(nSig)
+	{
+		m_Sig = (byte*)malloc(nSig);
+		memcpy(m_Sig, Sig, nSig);
+		size_t t = RoundUpToMulOfPow2(nSig, 8) / 8;
+		m_Mask = (byte*)malloc(t);
+		memcpy(m_Mask, Mask, t);
+	}
+	~SigScan2() {
+		free(m_Sig);
+		free(m_Mask);
+	}
+
+	// Format: "XX XX ? XX"
+	static status ConvertFromIdaSigA(   // Converts a IdaSig to a RiftInternalSig
+		_In_z_    const char* szIdaSig, // The IdaSig String to convert
+		_Out_opt_       Sig*  sBuf      // The Output buffer to fill with the compact Sig (if null returns needed Size)
+	) {
+		return 0;
+	}
+
+	// Format: "\xXX\xXX\x00\xXX, xx?x"
+	static status ConvertFromCodeSigA(   // Converts a CodeSig to a RiftInternalSig
+		_In_z_    const char* szCodeSig, // The CodeSig String to convert
+		_Out_opt_       Sig* sBuf       // The Output buffer to fill with the compact Sig (if null returns needed Size)
+	) {
+		size_t nLen = 0;
+		const char* sz = szCodeSig;
+		while (*sz != ',')
+			nLen++, sz += 4;
+
+		if (sBuf) {
+			sBuf->nSize = nLen;
+			byte* pBuf = (byte*)((ptr)sBuf + sizeof(Sig));
+			for (size_t i = 0; i < nLen; i++)
+				pBuf[i] = ConvertToByteA(szCodeSig + 4 * i + 2);
+			memset(pBuf + nLen, 0, RoundUpToMulOfPow2(nLen, 8) / 8);
+			for (size_t i = 0; i < nLen; i++)
+				if ((szCodeSig + nLen * 4 + 2)[i] == 'x')
+					(pBuf + nLen)[i / 8] |= 1 << (7 - i % 8);
+		}
+
+		return sizeof(Sig) + nLen + RoundUpToMulOfPow2(nLen, 8) / 8;
+	}
+
+	status ScanRegion(
+		_In_ void* pAddr,
+		_In_ size_t nSize
+	) {
+		return 0;
+	}
+
+private:
+	static byte ConvertToByteA(
+		_In_ const char* szPair
+	) {
+		return (*szPair >= 'A' ? *szPair - '7' : *szPair - '0') << 4
+			| (*++szPair >= 'A' ? *szPair - '7' : *szPair - '0');
+	}
+
+	byte* m_Sig;
+	byte* m_Mask;
+	size_t m_nSig;
+};
+
+typedef VOID(WINAPI* Sle_t)(_In_ DWORD dwMilliseconds);
+
+VOID __stdcall Hook(dword dw) {
+	MessageBoxW(0, L"Hook Executed", 0, 0);
+}
+
+typedef NTSTATUS(NTAPI* NtQuerySystemInformation_t)(
+	_In_      ULONG  SystemInformationClass,
+	_Out_     PVOID  SystemInformation,
+	_In_      ULONG  SystemInformationLength,
+	_Out_opt_ PULONG ReturnLength
+	);
+
+
 int main() {
-	dbg::Benchmark bm(dbg::Benchmark::Resolution::MICRO);
-	bm.Begin();
+	HMODULE rk = LoadLibraryW(L"D:\\visualstudio\\repos\\Win32.rift\\out\\bin\\riftrk64.dll");
+	typedef long(__stdcall* DbgSetupForLoadLib)(_In_opt_ void* lpParameter);
+	DbgSetupForLoadLib init = (DbgSetupForLoadLib)
+		GetProcAddress(rk, "DbgSetupForLoadLib");
 
-	// void RootKitTest();
-	// RootKitTest();
+	ptr modulebase = 0x7ffc6cd10000;
 
-	// void CryptoTestFunc();
-	// CryptoTestFunc();
+	ptr offset = (ptr)init - (ptr)rk;
+	offset += modulebase;
 
+	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, false, 23240);
+	CreateRemoteThread(hProc, 0, 0, (LPTHREAD_START_ROUTINE)offset, (void*)modulebase, 0, 0);
 
+	HWND rkc = FindWindowExW(HWND_MESSAGE, NULL, L"rift-RootKit(rk)/process:0000", nullptr);
 
-
-	/*
-
-	dbg::Log& log = dbg::Log::Instance(); // Instantiate Global Logger
-
-	log.Trace("Test");
-
-	__try {
-		*(char*)0 = 0;
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		BreakPoint();
-	}
-
-	*(char*)0 = 0;
-	*/
-#if 0
-	rng::Xoshiro::Instance().XoshiroSS();
-	rng::Xoshiro::Instance().XoshiroSS();
-
-	rng::Xoshiro* xsr = new rng::Xoshiro;
-
-	xsr->XoshiroP();
-	delete xsr;
+	dword pid = 18168;
+	COPYDATASTRUCT package{ 0, 4, &pid };
+	SendMessageW(rkc, WM_COPYDATA, NULL, (LPARAM)&package);
 
 	return 0;
-
-
-	char a[] = "Dev";
-	dword key[4] = { 0x3253217f, 0xab43e898d, 0x2940be02, 0x21c74e73 };
-	XXTea btea(key);
-
-	size_t nt = btea.Encrypt(a, sizeof(a), nullptr);
-	byte* out = (byte*)malloc(nt);
-	btea.Encrypt(a, sizeof(a), out);
-
-	nt = btea.Decrypt(out, nullptr);
-	byte* out2 = (byte*)malloc(nt);
-	nt = btea.Decrypt(out, out2);
-
-
-
-	void* mem = malloc(1024 * 1024);
-	for (int i = 0; i < 1024 * 1024 / 4; i++)
-		((ulong*)mem)[i] = rng::Xoshiro::Instance().XoshiroP();
-	xTEA((ulong*)mem, 1024 * 1024 / 4, key);
-	xTEA((ulong*)mem, -(1024 * 1024 / 4), key);
-#endif
-#if 0
-	__try {
-		// *(char*)0 = 0;
-	} __except (EXCEPTION_CONTINUE_SEARCH) {}
-
-	void* VEH = AddVectoredExceptionHandler(0, ExceptionHandler);
-
-	__try {
-		*(char*)0 = 0;
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		BreakPoint();
-	}
-
-	RemoveVectoredExceptionHandler(VEH);
-
-	SetUnhandledExceptionFilter(ExceptionHandler);
-
-	__try {
-		*(char*)0 = 0;
-	} __except (EXCEPTION_CONTINUE_SEARCH) {
-		BreakPoint();
-	}
-
-	SetUnhandledExceptionFilter(nullptr);
-#endif
-
-	uint32 dw = bm.End();
-	return 0;
-
 }

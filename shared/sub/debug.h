@@ -261,8 +261,8 @@ namespace dbg {
 
 #define BreakPoint __debugbreak
 #ifdef _DEBUG
-#define TracePoint dbg::dbgTracePoint
-#define StatusAssert dbg::dbgStatusAssert
+#define TracePoint ::dbg::dbgTracePoint
+#define StatusAssert ::dbg::dbgStatusAssert
 #else
 #define TracePoint()
 #define StatusAssert()

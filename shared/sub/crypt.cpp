@@ -128,7 +128,7 @@ namespace cry {
 		_Out_ size_t* nResult
 	) {
 		*nResult = strlen(pString);
-		ALG::Base64A b64(ALG::IBase64ObfuscatedTableCbA);
+		alg::Base64A b64(alg::IBase64ObfuscatedTableCbA);
 		status nData = b64.EBase64Decode(pString, *nResult, nullptr);
 		void* pData = nullptr;
 		if (!(nData < 0))
@@ -262,11 +262,11 @@ namespace cry {
 		: private Aes,
 		private Hash {
 	public:
-		Pack(
-			_In_ const void* pBlob // Wrapped Key to Import
-		) : Aes(pBlob, &Aes(dat::e_IKey)) {
+	//	Pack(
+	//		_In_ const void* pBlob // Wrapped Key to Import
+	//	) : Aes(pBlob, &Aes(dat::e_IKey)) {
 
-		}
+	//	}
 		~Pack() {
 
 		}

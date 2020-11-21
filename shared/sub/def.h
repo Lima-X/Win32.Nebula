@@ -34,13 +34,12 @@ typedef GUID uuid;
 /* Function Status return Value:
    x=0 if Successful
    x<0 if Failure (Errorcode)
-   x>0 reserved for extra Info (also Success) */
+   x>0 reserved for extra Info (also Success)
+
+   Highest bit enabled (Bit31) indicates error */
 typedef _Success_(return >= 0) signed long status;
-/* equal to:
-struct status {
-	ulong uCode  : 31;
-	ulong fError :  1;
-}; */
+
+
 
 // Raw Pointer Type
 #ifdef _M_AMD64

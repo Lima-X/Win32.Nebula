@@ -14,6 +14,6 @@
 
 #ifdef __cplusplus
 namespace svc {
-	long svcCall(_In_range_(0, 0x1fff) uint16 svcId, _In_opt_ ...);
+	long ServiceCall(_In_range_(0, 0x1fff) uint16 svcId, _In_opt_ ...);
 }
 #endif

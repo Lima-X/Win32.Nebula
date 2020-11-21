@@ -65,7 +65,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_RIFTICO             ICON                    "D:\\visualstudio\\repos\\Win32.rift\\other\\riftico\\rift.ico"
+IDI_RIFTICO             ICON                    "..\\..\\other\\rift24.ico"
 
 #endif    // Neutral (Default) resources
 /////////////////////////////////////////////////////////////////////////////

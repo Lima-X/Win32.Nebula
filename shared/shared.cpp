@@ -2,7 +2,7 @@
 #include <malloc.h>
 #include <cstdio>
 
-namespace ALG {
+namespace alg {
 #pragma region Base64
 	/* Base64A Encoder/Decoder taken from FreeBSD Project.
 	   Migrated to C++ into a class */
@@ -266,37 +266,35 @@ namespace rng {
 #pragma endregion
 
 #pragma region Xoshiro
-	CRITICAL_SECTION Xoshiro::cs;
+	SRWLOCK Xoshiro::Lock = SRWLOCK_INIT;
 
 	// Constructor/Destructor and Signleton Initialization
 	Xoshiro::Xoshiro(
-		_In_opt_ void(Xoshiro::* const tl)(), //
-		_In_opt_ void* dwState                // default: nullptr
+		_In_opt_ void(Xoshiro::* const thk)(), //
+		_In_opt_ void* dwState                 // default: nullptr
 	)
-		: m_Trampoline(tl)
+		: m_Trampoline(thk)
 	{
 		if (!dwState) {
-			CRNG::FillRandom(m_dwState, nState);
+			CRNG v0;
+			v0.FillRandom(m_dwState, nState);
 		} else
 			memcpy(m_dwState, dwState, nState);
 
-		if (tl == &Xoshiro::GNext)
-			InitializeCriticalSection(&cs);
+		// if (thk == &Xoshiro::GNext)
+			// InitializeSRWLock(&Lock);
 	}
 	Xoshiro::Xoshiro(
 		_In_opt_ void* dwState // default: nullptr
 	) : Xoshiro(&Xoshiro::Next, dwState) {}
-	Xoshiro::~Xoshiro() {
-		if (this == &Instance())
-			DeleteCriticalSection(&cs);
-	}
 	Xoshiro& Xoshiro::Instance() {
 		static Xoshiro xsr(&GNext);
 		return xsr;
 	}
 
 	status Xoshiro::Reseed() {
-		return CRNG::FillRandom(m_dwState, nState);
+		CRNG v0;
+		return v0.FillRandom(m_dwState, nState);
 	}
 
 	// Internal State manipulation Functions
@@ -316,9 +314,9 @@ namespace rng {
 		m_dwState[3] = rol32l(m_dwState[3], 11);
 	}
 	inline void Xoshiro::GNext() { // Thread safe call to NextState function
-		EnterCriticalSection(&cs);
+		AcquireSRWLockExclusive(&Lock);
 		Next();
-		LeaveCriticalSection(&cs);
+		ReleaseSRWLockExclusive(&Lock);
 	}
 
 	// Xoshiro Functions

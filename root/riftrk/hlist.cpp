@@ -73,7 +73,7 @@ namespace vec {
 	}
 	OptiVec::~OptiVec() {
 		if (m_RefTable)
-			free(m_RefTable);
+			HeapFree(GetProcessHeap(), NULL, m_RefTable);
 		DeleteCriticalSection(&m_cs);
 	}
 
@@ -82,12 +82,12 @@ namespace vec {
 	) {
 		EnterCriticalSection(&m_cs);
 		void* mem = FVector::AllocateObject(nSize);
+		LeaveCriticalSection(&m_cs);
 		if (!mem)
 			return nullptr;
 		m_Count++;
 		m_Modified = true;
 		return mem;
-		LeaveCriticalSection(&m_cs);
 	}
 	void OptiVec::FreeObject(
 		_In_ void* p
@@ -105,9 +105,9 @@ namespace vec {
 		if (m_Count && m_Modified) {
 			EnterCriticalSection(&m_cs);
 			if (m_RefTable)
-				m_RefTable = (void**)realloc(m_RefTable, m_Count * sizeof(void*));
+				m_RefTable = (void**)HeapReAlloc(GetProcessHeap(), NULL, m_RefTable, m_Count * sizeof(void*));
 			else
-				m_RefTable = (void**)malloc(m_Count * sizeof(void*));
+				m_RefTable = (void**)HeapAlloc(GetProcessHeap(), NULL, m_Count * sizeof(void*));
 
 			m_RefTable[0] = GetFirstEntry();
 			for (int i = 1; i < m_Count; i++) {
@@ -119,7 +119,7 @@ namespace vec {
 			m_Modified = false;
 			LeaveCriticalSection(&m_cs);
 		} else if (m_Modified) {
-			free(m_RefTable);
+			HeapFree(GetProcessHeap(), NULL, m_RefTable);
 			m_RefTable = nullptr;
 			m_Modified = false;
 		}
@@ -153,7 +153,7 @@ void SmartVecTest() {
 	*b = 55644567887426321;
 
 	char* str = (char*)vec.AllocateObject(21);
-	strcpy(str, "Hello this is a test");
+	memcpy((byte*)str, (byte*)"Hello this is a test", 21);
 
 	vec.FreeObject(b);
 	vec.FreeObject(a);
