@@ -37,7 +37,7 @@ namespace vec {
 		memmove(mem, (void*)((ptr)mem + mem->Size),
 			m_Used - (((ptr)mem + mem->Size) - (ptr)m_Vec));
 		m_Used -= nmem;
-		if (RoundUpToMulOfPow2(m_Used, 0x1000) < m_Size)
+		if (m_Used / 0x1000 < m_Size / 0x1000)
 			ResizeVector(m_Used);
 	}
 
@@ -68,115 +68,36 @@ namespace vec {
 	}
 
 
-	OptiVec::OptiVec() {
-		InitializeCriticalSection(&m_cs);
-	}
-	OptiVec::~OptiVec() {
-		if (m_RefTable)
-			HeapFree(GetProcessHeap(), NULL, m_RefTable);
-		DeleteCriticalSection(&m_cs);
-	}
 
 	void* OptiVec::AllocateObject(
 		_In_ size_t nSize
 	) {
-		EnterCriticalSection(&m_cs);
 		void* mem = FVector::AllocateObject(nSize);
-		LeaveCriticalSection(&m_cs);
 		if (!mem)
 			return nullptr;
 		m_Count++;
-		m_Modified = true;
 		return mem;
 	}
 	void OptiVec::FreeObject(
 		_In_ void* p
 	) {
-		EnterCriticalSection(&m_cs);
 		FVector::FreeObject(p);
 		m_Count--;
-		m_Modified = true;
-		LeaveCriticalSection(&m_cs);
-	}
-
-	void* OptiVec::operator[](
-		_In_ uint32 i
-		) {
-		if (m_Count && m_Modified) {
-			EnterCriticalSection(&m_cs);
-			if (m_RefTable)
-				m_RefTable = (void**)HeapReAlloc(GetProcessHeap(), NULL, m_RefTable, m_Count * sizeof(void*));
-			else
-				m_RefTable = (void**)HeapAlloc(GetProcessHeap(), NULL, m_Count * sizeof(void*));
-
-			m_RefTable[0] = GetFirstEntry();
-			for (int i = 1; i < m_Count; i++) {
-				void* mem = GetNextEntry(m_RefTable[i - 1]);
-				if (mem)
-					m_RefTable[i] = mem;
-			}
-
-			m_Modified = false;
-			LeaveCriticalSection(&m_cs);
-		} else if (m_Modified) {
-			HeapFree(GetProcessHeap(), NULL, m_RefTable);
-			m_RefTable = nullptr;
-			m_Modified = false;
-		}
-
-		void* ret = nullptr;
-		if (i < m_Count)
-			ret = m_RefTable[i];
-		return ret;
 	}
 
 	uint16 OptiVec::GetItemCount() {
 		return m_Count;
 	}
-	void OptiVec::LockVector() {
-		EnterCriticalSection(&m_cs);
+	void OptiVec::ReadLock() {
+		AcquireSRWLockShared(&m_srw);
 	}
-	void OptiVec::UnlockVector() {
-		LeaveCriticalSection(&m_cs);
+	void OptiVec::ReadUnlock() {
+		ReleaseSRWLockShared(&m_srw);
 	}
-}
-
-void SmartVecTest() {
-	vec::OptiVec vec;
-
-	int* a = (int*)vec.AllocateObject(4);
-	*a = 556421;
-
-	a = (int*)vec[0];
-
-	long long* b = (long long*)vec.AllocateObject(8);
-	*b = 55644567887426321;
-
-	char* str = (char*)vec.AllocateObject(21);
-	memcpy((byte*)str, (byte*)"Hello this is a test", 21);
-
-	vec.FreeObject(b);
-	vec.FreeObject(a);
-
-	void* test = vec[0];
-
-	int* c = (int*)vec.AllocateObject(20);
-	*c = 554276421;
-
-	c = (int*)vec.AllocateObject(20);
-	*c = 554276421;
-
-	int* d = (int*)vec.AllocateObject(0x1200);
-	*d = 554276421;
-
-	c = (int*)vec.AllocateObject(20);
-	*c = 554276421;
-
-	for (int i = 0; i < 10; i++) {
-		void* mem = vec[0];
-		if (mem)
-			vec.FreeObject(mem);
-		else
-			break;
+	void OptiVec::WriteLock() {
+		AcquireSRWLockExclusive(&m_srw);
+	}
+	void OptiVec::WriteUnlock() {
+		ReleaseSRWLockExclusive(&m_srw);
 	}
 }

@@ -352,18 +352,40 @@ int main() {
 	DbgSetupForLoadLib init = (DbgSetupForLoadLib)
 		GetProcAddress(rk, "DbgSetupForLoadLib");
 
-	ptr modulebase = 0x7ffc6cd10000;
+	dword pid = 9240;
+	COPYDATASTRUCT package{ 0, 4, &pid };
+	HWND rkc;
 
+#if 0
+	init(rk);
+
+	rkc = FindWindowExW(HWND_MESSAGE, NULL, L"rift-RootKit(rk)/process:0000", nullptr);
+	SendMessageW(rkc, WM_COPYDATA, NULL, (LPARAM)&package);
+
+	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	CloseHandle(hSnap);
+
+	__debugbreak();
+#endif
+
+	ptr modulebase = 0x7ffcb0f50000;
 	ptr offset = (ptr)init - (ptr)rk;
 	offset += modulebase;
 
-	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, false, 23240);
+	dword targetpid = 12840;
+
+	// Working now
+	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, false, targetpid);
 	CreateRemoteThread(hProc, 0, 0, (LPTHREAD_START_ROUTINE)offset, (void*)modulebase, 0, 0);
 
-	HWND rkc = FindWindowExW(HWND_MESSAGE, NULL, L"rift-RootKit(rk)/process:0000", nullptr);
+	rkc = FindWindowExW(HWND_MESSAGE, NULL, L"rift-RootKit(rk)/process:0000", nullptr);
 
-	dword pid = 18168;
-	COPYDATASTRUCT package{ 0, 4, &pid };
+	dword tid = 14972;
+	LARGE_INTEGER ptid{ targetpid, tid };
+	package = { 0, 4, &ptid };
+	SendMessageW(rkc, WM_COPYDATA, NULL, (LPARAM)&package);
+
+	package = { 4, 4, &targetpid };
 	SendMessageW(rkc, WM_COPYDATA, NULL, (LPARAM)&package);
 
 	return 0;

