@@ -10,7 +10,7 @@ typedef unsigned char      uchar;
 typedef          wchar_t   wchar;
 typedef unsigned short     ushort;
 typedef unsigned long      ulong;
-typedef unsigned long long ulonglong;
+typedef unsigned long long ulong64;
 
 // Integer Types
 typedef          char      int8;

@@ -332,29 +332,27 @@ private:
 	size_t m_nSig;
 };
 
-typedef VOID(WINAPI* Sle_t)(_In_ DWORD dwMilliseconds);
+// Microsoft Detours
+#ifdef _M_AMD64
+#pragma comment(lib, "..\\..\\other\\detours\\lib.X64\\detours.lib")
+#elif _M_IX86
+#pragma comment(lib, "..\\..\\other\\detours\\lib.X86\\detours.lib")
+#endif
+#include "..\other\detours\detours.h"
 
-VOID __stdcall Hook(dword dw) {
-	MessageBoxW(0, L"Hook Executed", 0, 0);
-}
-
-typedef NTSTATUS(NTAPI* NtQuerySystemInformation_t)(
-	_In_      ULONG  SystemInformationClass,
-	_Out_     PVOID  SystemInformation,
-	_In_      ULONG  SystemInformationLength,
-	_Out_opt_ PULONG ReturnLength
-	);
 
 
 int main() {
+	void* func = GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtQuerySystemInformation");
+	MEMORY_BASIC_INFORMATION mbi;
+	VirtualQuery(func, &mbi, sizeof(mbi));
+
+here:
 	HMODULE rk = LoadLibraryW(L"D:\\visualstudio\\repos\\Win32.rift\\out\\bin\\riftrk64.dll");
 	typedef long(__stdcall* DbgSetupForLoadLib)(_In_opt_ void* lpParameter);
 	DbgSetupForLoadLib init = (DbgSetupForLoadLib)
 		GetProcAddress(rk, "DbgSetupForLoadLib");
 
-	dword pid = 9240;
-	COPYDATASTRUCT package{ 0, 4, &pid };
-	HWND rkc;
 
 #if 0
 	init(rk);
@@ -368,25 +366,28 @@ int main() {
 	__debugbreak();
 #endif
 
-	ptr modulebase = 0x7ffcb0f50000;
+	dword pid = 8708;
+	COPYDATASTRUCT package{ 0, 4, &pid };
+	HWND rkc;
+
+	ptr modulebase = 0x7ffe07030000;
 	ptr offset = (ptr)init - (ptr)rk;
 	offset += modulebase;
 
-	dword targetpid = 12840;
 
 	// Working now
-	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, false, targetpid);
+	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, false, pid);
 	CreateRemoteThread(hProc, 0, 0, (LPTHREAD_START_ROUTINE)offset, (void*)modulebase, 0, 0);
 
 	rkc = FindWindowExW(HWND_MESSAGE, NULL, L"rift-RootKit(rk)/process:0000", nullptr);
 
-	dword tid = 14972;
-	LARGE_INTEGER ptid{ targetpid, tid };
-	package = { 0, 4, &ptid };
+	const wchar* File = L"D:\\visualstudio\\repos\\Win32.rift\\out\\bin\\riftrk64.dll";
+
+	package = { 1<<4, 54 * sizeof(wchar), &File };
 	SendMessageW(rkc, WM_COPYDATA, NULL, (LPARAM)&package);
 
-	package = { 4, 4, &targetpid };
-	SendMessageW(rkc, WM_COPYDATA, NULL, (LPARAM)&package);
+//	package = { 4, 4, &targetpid };
+//	SendMessageW(rkc, WM_COPYDATA, NULL, (LPARAM)&package);
 
 	return 0;
 }

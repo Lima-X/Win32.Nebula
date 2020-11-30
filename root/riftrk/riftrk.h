@@ -43,17 +43,17 @@ namespace nt {
 		FileReparsePointInformation = 33
 	} FILE_INFORMATION_CLASS, * PFILE_INFORMATION_CLASS;
 	typedef NTSTATUS(NTAPI* NtQueryDirectoryFile_t)(
-		_In_                       HANDLE          FileHandle,
-		_In_opt_                   HANDLE          Event,
-		_In_opt_                   PVOID           ApcRoutine,
-		_In_opt_                   PVOID           ApcContext,
-		_Out_                      PVOID           IoStatusBlock,
-		_Out_writes_bytes_(Length) PVOID           FileInformation,
-		_In_                       ULONG           Length,
-		_In_                       ULONG           FileInformationClass,
-		_In_                       BOOLEAN         ReturnSingleEntry,
-		_In_opt_                   PUNICODE_STRING FileName,
-		_In_                       BOOLEAN         RestartScan
+		_In_                       HANDLE  FileHandle,
+		_In_opt_                   HANDLE  Event,
+		_In_opt_                   PVOID   ApcRoutine,
+		_In_opt_                   PVOID   ApcContext,
+		_Out_                      PVOID   IoStatusBlock,
+		_Out_writes_bytes_(Length) PVOID   FileInformation,
+		_In_                       ULONG   Length,
+		_In_                       ULONG   FileInformationClass,
+		_In_                       BOOLEAN ReturnSingleEntry,
+		_In_opt_                   PVOID   FileName,
+		_In_                       BOOLEAN RestartScan
 		);
 
 	typedef struct _SYSTEM_PROCESS_INFORMATION {
@@ -119,48 +119,40 @@ namespace hk {
 
 
 namespace vec {
-	class FVector {
+	class AnyVector {
 		struct Entry {
 			size_t Size;
 			byte   Data[];
 		};
 
 	public:
-		FVector();
-		~FVector();
+		AnyVector();
+		~AnyVector();
 
 		void* AllocateObject(_In_ size_t nSize);
 		void FreeObject(_In_ void* p);
 
+		uint32 GetItemCount();
 		void* GetFirstEntry();
 		void* GetNextEntry(_In_ void* p);
+
+		void ReadLock();
+		void ReadUnlock();
+		void WriteLock();
+		void WriteUnlock();
 
 	private:
 		status ResizeVector(_In_ size_t nSize);
 
-		void* m_Vec;       // Address of Vector
-		size_t m_Used = 0; // Size in bytes Used (this allso describes the current offset as there're no possible caves,
-						   // everything is contiguous and will be compacted as soon as possible)
-		size_t m_Size;     // Size of Table that is commited
-	};
-
-	class OptiVec : public FVector {
-	public:
-		void* AllocateObject(_In_ size_t nSize);
-		void FreeObject(_In_ void* p);
-
-		uint16 GetItemCount();
-		void OptiVec::ReadLock();
-		void OptiVec::ReadUnlock();
-		void OptiVec::WriteLock();
-		void OptiVec::WriteUnlock();
-
-	private:
-		uint16 m_Count = 0;
-		SRWLOCK m_srw = SRWLOCK_INIT;
+		void*   m_Vec;                // Address of Vector
+		size_t  m_Used = 0;           // Size in bytes Used (this allso describes the current offset as there're no possible caves,
+						              // everything is contiguous and will be compacted as soon as possible)
+		size_t  m_Size;               // Size of Table that is commited
+		uint32  m_Count = 0;          // Number of Elements stored inside the Vector
+		SRWLOCK m_srw = SRWLOCK_INIT; // Slim Read/Write Lock for Thread Synchronization
 	};
 }
 
-inline vec::OptiVec ProcessList;
-inline vec::OptiVec FileList;
-inline vec::OptiVec RegistryList;
+inline vec::AnyVector ProcessList;
+inline vec::AnyVector FileList;
+// inline vec::AnyVector RegistryList;
