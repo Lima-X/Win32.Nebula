@@ -251,10 +251,6 @@ void* SigScan::FindSig() {
 #endif
 
 
-
-
-
-
 class SigScan2 {
 public:
 	struct Sig {
@@ -342,16 +338,44 @@ private:
 
 
 
-int main() {
-	void* func = GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtQuerySystemInformation");
-	MEMORY_BASIC_INFORMATION mbi;
-	VirtualQuery(func, &mbi, sizeof(mbi));
 
-here:
+
+typedef NTSTATUS(NTAPI* NtQuerySystemInformation_t)(
+	_In_      ULONG  SystemInformationClass,
+	_Out_     PVOID  SystemInformation,
+	_In_      ULONG  SystemInformationLength,
+	_Out_opt_ PULONG ReturnLength
+	);
+
+NTSTATUS Hook(
+	_In_      ULONG  SystemInformationClass,
+	_Out_     PVOID  SystemInformation,
+	_In_      ULONG  SystemInformationLength,
+	_Out_opt_ PULONG ReturnLength
+) {
+	BreakPoint();
+	return 0;
+}
+
+int main() {
 	HMODULE rk = LoadLibraryW(L"D:\\visualstudio\\repos\\Win32.rift\\out\\bin\\riftrk64.dll");
 	typedef long(__stdcall* DbgSetupForLoadLib)(_In_opt_ void* lpParameter);
 	DbgSetupForLoadLib init = (DbgSetupForLoadLib)
 		GetProcAddress(rk, "DbgSetupForLoadLib");
+
+
+	typedef status(*DetourSyscallStub)(_In_ void** ppTarget, _In_ void* pHook);
+	DetourSyscallStub dss = (DetourSyscallStub)GetProcAddress(rk, "?DetourSyscallStub@dt@@YAJPEAPEAXPEAX@Z");
+
+	NtQuerySystemInformation_t ntqsi = (NtQuerySystemInformation_t)
+		GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtQuerySystemInformation");
+	NtQuerySystemInformation_t ntqsiREAL = ntqsi;
+
+	dss(&(void*&)ntqsiREAL, Hook);
+
+	ntqsi(0, 0, 0, 0);
+	ntqsiREAL(0, 0, 0, 0);
+
 
 
 #if 0

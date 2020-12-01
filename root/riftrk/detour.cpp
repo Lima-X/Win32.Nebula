@@ -6,8 +6,8 @@ namespace dt {
 		ThreadUpdate() {
 			void* mem;
 
+			size_t nmem = 0;
 			while (1) {
-				size_t nmem = 0;
 				mem = VirtualAlloc(nullptr, nmem, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 				NTSTATUS s = hk::NtQuerySystemInformation(0x05, mem, nmem, (ulong*)&nmem);
 				if (!s)
@@ -30,6 +30,8 @@ namespace dt {
 							m_ThreadList[i] = OpenThread(THREAD_SUSPEND_RESUME, false, TId);
 						TEntry++;
 					}
+
+					break;
 				}
 
 				if (!PEntry->NextEntryOffset)
@@ -67,28 +69,29 @@ namespace dt {
 
 	public:
 		struct SyscallTrampolineX64 {
-			struct ToDetour {
-				byte  JumpAbsoluteIndirect[6];
-				void* HookAddress;
-			} Detour;
-			struct RealTarget {
-				byte  JumpAbsoluteIndirect[8 + 6]; // First 2 Instructions of syscall stub + Indirect Absolute Jump
-				void* PatchedAddress;
-			} RealTarget;
+			// Thunk to Hook
+			byte ToDetour[4 + 8];
+			// First 2 Instructions (8b) of Target followed by an absolute jump to the rest of the Target
+			byte TargetThunk[8 + (4 + 8)];
 		};
 
-		void* FindUsablePageWithinReach(
+		void* AllocateUsablePageWithinReach(
 			_In_ void* pTarget
 		) {
 			MEMORY_BASIC_INFORMATION mbi;
 			VirtualQuery(pTarget, &mbi, sizeof(mbi));
 			ptr StartingAddress = (ptr)mbi.AllocationBase + mbi.RegionSize;
 
-			for (ptr i = StartingAddress; (i + sizeof(SyscallTrampolineX64)) - (ptr)pTarget < 0x7fffffff; i += 4096) {
+			for (ptr i = (ptr)pTarget; (i + sizeof(SyscallTrampolineX64)) - (ptr)pTarget < 0x7fffffff; i += 4096) {
 				// Get PageInformation and Check if Page is Usable
 				VirtualQuery((void*)i, &mbi, sizeof(mbi));
-				if (mbi.State == MEM_FREE)
-					return mbi.BaseAddress;
+				if (mbi.State == MEM_FREE) {
+					void* mem = VirtualAlloc(mbi.BaseAddress, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+					if (!mem)
+						continue;
+
+					return mem;
+				}
 			}
 
 			return nullptr;
@@ -102,8 +105,7 @@ namespace dt {
 
 
 		newalloc: // Allocate a new TrampolinePage
-			void* mem = FindUsablePageWithinReach(pTarget);
-			mem = VirtualAlloc(mem, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+			void* mem = AllocateUsablePageWithinReach(pTarget);
 			if (!mem)
 				return nullptr; // Couldn't Allocate Page
 
@@ -126,54 +128,58 @@ namespace dt {
 	};
 	TrampolineMgr tmgr;
 
-	void GenerateAbsoluteJump(               // Generates a 12byte Absolute jump
-		_In_ void* pTrampolineCode,
-		_In_ ptr*  pTrampolineIndirectMember
+	void GenerateAbsoluteJump( // Generates a 12byte Absolute jump
+		_In_ void* pCode,      // Address at which to generate jumpcode
+		_In_ ptr   Address     // Address to jump to
 	) {
-		*((word*&)pTrampolineCode)++ = 0x25ff;                                                // jmp [rip
-		*(dword*)pTrampolineCode = (ptr)pTrampolineIndirectMember - (ptr)pTrampolineCode + 6; // + offset]
+		*((word*&)pCode)++ = 0xb848;
+		*((qword*&)pCode)++ = Address;
+		*(word*&)pCode = 0xe0ff;
+
+	#if 0 // Old Indirect Jump (14b)
+		ptr offset = (ptr)pCode + 6;             // Relative Offset
+		*((word*&)pCode)++ = 0x25ff;             // jmp [rip
+		*(dword*)pCode = (ptr)pPointer - offset; // + offset]
+		*pPointer = Address;
+	#endif
 	}
 	void GenerateIntermediateRelativeJump( // Generates a 5byte relative jump (jump address has to be withing reach of 2gb)
-		_In_ void* pCode,                 // The Address at where to generate the Code
-		_In_ void* pTargetAddress
+		_In_ void* pCode,                  // The Address at where to generate the Code
+		_In_ ptr   Address                 // The Address to Jump to (this has to be within 2gb of the pCode)
 	) {
-		*((byte*&)pCode)++ = 0xe9; // jmp +imm32
-		*((dword*&)pCode)++ = (ptr)pTargetAddress - ((ptr)pCode + 5);
+		ptr Offset = (ptr)pCode + 5;        // Relative Offset
+		*((byte*&)pCode)++ = 0xe9;          // jmp +imm32
+		*(dword*&)pCode = Address - Offset; // Relative jump Address
 	}
 
-	status DetourSyscallStub(
+	__declspec(dllexport) status DetourSyscallStub(
 		_In_ void** ppTarget,
 		_In_ void* pHook
 	) {
 		void* pTarget = *ppTarget;
 		auto Trampoline = tmgr.AlloctateTrampolineWithinReach(pTarget);
 
-		// Setup Detour Thunk
-		GenerateAbsoluteJump(&Trampoline->Detour.JumpAbsoluteIndirect, (ptr*)&Trampoline->Detour.HookAddress);
-		Trampoline->Detour.HookAddress = pTarget;
-
-		// Setup Trampoline to Original function
-		// Copy First 2 Instructions of Syscallstub and generate Jump
-		memcpy(&Trampoline->RealTarget.JumpAbsoluteIndirect, pTarget, 8);
-		GenerateAbsoluteJump((void*)((ptr)&Trampoline->RealTarget.JumpAbsoluteIndirect + 8),
-			(ptr*)&Trampoline->RealTarget.PatchedAddress);
-		*(qword*)((ptr)pTarget + 8) = (ptr)pTarget + 8;
+		// Generate Bidirectional Trampoline (Thunk)
+		GenerateAbsoluteJump(&Trampoline->ToDetour, (ptr)pHook);
+		memcpy(&Trampoline->TargetThunk, pTarget, 8);
+		GenerateAbsoluteJump((void*)((ptr)&Trampoline->TargetThunk + 8), (ptr)pTarget + 8);
 		FlushInstructionCache(GetCurrentProcess(), Trampoline, sizeof(*Trampoline));
 
 		// Start Transaction
 		ThreadUpdate tu;
 		tu.SuspendThreads();
 
-		// Detour Targetfuction to Detourhook
-		GenerateIntermediateRelativeJump(pTarget, &Trampoline->Detour.JumpAbsoluteIndirect);
+		// Detour Targetfuction to Hook
+		dword Protect;
+		VirtualProtect(pTarget, 8, PAGE_EXECUTE_READWRITE, &Protect);
+		GenerateIntermediateRelativeJump(pTarget, (ptr)&Trampoline->ToDetour);
 		memset((void*)((ptr)pTarget + 5), 0xcc, 3); // Pad the unused 3 bytes with breakpoints
+		VirtualProtect(pTarget, 8, Protect, &Protect);
 		FlushInstructionCache(GetCurrentProcess(), pTarget, 8);
 
 		// Set Detoured funtion to Trampoline Jumper
-		*ppTarget = &Trampoline->RealTarget.JumpAbsoluteIndirect;
-
+		*ppTarget = &Trampoline->TargetThunk;
 		tu.ResumeThreads();
-
 		return 0;
 	}
 }
