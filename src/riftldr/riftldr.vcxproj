@@ -105,7 +105,6 @@
       <LinkStatus>true</LinkStatus>
       <MergeSections>
       </MergeSections>
-      <AdditionalOptions>/MERGE:.ldrc=.ldr /MERGE:.ldrd=.ldr %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -129,7 +128,6 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <MergeSections>
       </MergeSections>
-      <AdditionalOptions>/MERGE:.ldrc=.ldr /MERGE:.ldrd=.ldr %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -148,7 +146,6 @@
       <LinkStatus>true</LinkStatus>
       <MergeSections>
       </MergeSections>
-      <AdditionalOptions>/MERGE:.ldrc=.ldr /MERGE:.ldrd=.ldr %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -172,7 +169,6 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <MergeSections>
       </MergeSections>
-      <AdditionalOptions>/MERGE:.ldrc=.ldr /MERGE:.ldrd=.ldr %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -181,6 +177,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ldr.h" />
+    <ClInclude Include="ldr\tls.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

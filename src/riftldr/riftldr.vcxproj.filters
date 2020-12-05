@@ -25,5 +25,8 @@
     <ClInclude Include="ldr.h">
       <Filter>hdr</Filter>
     </ClInclude>
+    <ClInclude Include="ldr\tls.h">
+      <Filter>hdr</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

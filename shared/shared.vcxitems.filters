@@ -12,5 +12,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)sub\debug.h">
       <Filter>sub</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)shared.h" />
+    <ClInclude Include="D:\visualstudio\repos\Win32.riftV2\shared\sub\sub.h">
+      <Filter>sub</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
