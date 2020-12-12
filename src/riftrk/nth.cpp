@@ -15,7 +15,9 @@ namespace hk {
 		case nt::FileBothDirectoryInformation:   offset = 81; break;
 		case nt::FileNamesInformation:           offset = 12; break;
 		case nt::FileIdBothDirectoryInformation: offset = 89; break;
-		case nt::FileIdFullDirectoryInformation: offset = 76;
+		case nt::FileIdFullDirectoryInformation: offset = 76; break;
+		default:
+			return nullptr;
 		}
 
 		return (void*)((ptr)pData + offset);

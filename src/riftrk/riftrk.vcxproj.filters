@@ -14,16 +14,16 @@
     <ClCompile Include="detour.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="dllmain.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="nth.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="vec.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="utl.cpp">
+    <ClCompile Include="main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="rutl.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

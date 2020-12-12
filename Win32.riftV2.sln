@@ -14,6 +14,7 @@ EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		shared\shared.vcxitems*{5edaecc5-bb9d-4cdd-abf8-d8c0306a2749}*SharedItemsImports = 4
+		shared\shared.vcxitems*{de4f0368-cfe8-463e-95ee-dced67fccd3b}*SharedItemsImports = 4
 		shared\shared.vcxitems*{e7e1aa01-b370-4d91-85b2-93a096ac2f46}*SharedItemsImports = 4
 		shared\shared.vcxitems*{f510336d-e46a-4ea5-9517-6f97f1822457}*SharedItemsImports = 9
 	EndGlobalSection
@@ -26,12 +27,10 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E7E1AA01-B370-4D91-85B2-93A096AC2F46}.Debug|x64.ActiveCfg = Debug|x64
 		{E7E1AA01-B370-4D91-85B2-93A096AC2F46}.Debug|x64.Build.0 = Debug|x64
-		{E7E1AA01-B370-4D91-85B2-93A096AC2F46}.Debug|x86.ActiveCfg = Debug|Win32
-		{E7E1AA01-B370-4D91-85B2-93A096AC2F46}.Debug|x86.Build.0 = Debug|Win32
+		{E7E1AA01-B370-4D91-85B2-93A096AC2F46}.Debug|x86.ActiveCfg = Debug|x64
 		{E7E1AA01-B370-4D91-85B2-93A096AC2F46}.Release|x64.ActiveCfg = Release|x64
 		{E7E1AA01-B370-4D91-85B2-93A096AC2F46}.Release|x64.Build.0 = Release|x64
-		{E7E1AA01-B370-4D91-85B2-93A096AC2F46}.Release|x86.ActiveCfg = Release|Win32
-		{E7E1AA01-B370-4D91-85B2-93A096AC2F46}.Release|x86.Build.0 = Release|Win32
+		{E7E1AA01-B370-4D91-85B2-93A096AC2F46}.Release|x86.ActiveCfg = Release|x64
 		{5EDAECC5-BB9D-4CDD-ABF8-D8C0306A2749}.Debug|x64.ActiveCfg = Debug|x64
 		{5EDAECC5-BB9D-4CDD-ABF8-D8C0306A2749}.Debug|x64.Build.0 = Debug|x64
 		{5EDAECC5-BB9D-4CDD-ABF8-D8C0306A2749}.Debug|x86.ActiveCfg = Debug|Win32

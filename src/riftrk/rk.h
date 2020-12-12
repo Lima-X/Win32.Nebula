@@ -1,26 +1,15 @@
 #pragma once
-#define UNICODE
 
-#include <Windows.h>
-#include <intrin.h>
+#include "sub/sub.h"
 
-#include "sub/def.h"
-
-#if 0 // Microsoft Detours, has been striped as it is replaced by an internal syscallstub hook
-#ifdef _M_AMD64
-#pragma comment(lib, "..\\..\\other\\detours\\lib.X64\\detours.lib")
-#elif _M_IX86
-#pragma comment(lib, "..\\..\\other\\detours\\lib.X86\\detours.lib")
-#endif
-#include "..\other\detours\detours.h"
-#endif
+// Define NTSTATUS
+typedef _Return_type_success_(return >= 0) long NTSTATUS;
 
 constexpr u32 RoundUpToMulOfPow2(u32 num, u32 mul) {
 	return (num + (mul - 1)) & (0 - mul);
 }
 
 namespace nt {
-	typedef _Return_type_success_(return >= 0) long NTSTATUS;
 	typedef struct _UNICODE_STRING {
 		USHORT Length;
 		USHORT MaximumLength;

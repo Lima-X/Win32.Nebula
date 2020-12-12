@@ -58,7 +58,7 @@ namespace rkc {
 	#undef RKCTLC
 	}
 
-	long __stdcall MessageHandler(
+	poly __stdcall MessageHandler(
 		_In_     HWND hWnd,
 		_In_     u32  uMsg,
 		_In_opt_ poly wParam,
@@ -85,8 +85,7 @@ namespace rkc {
 	long __stdcall IOCtlSetup(
 		_In_opt_ AsyncSetupCtx* ctx
 	) {
-		WNDCLASSEXW wc;
-		__stosb((byte*)&wc, 0, sizeof(wc));
+		WNDCLASSEXW wc{};
 		wc.cbSize = sizeof(wc);
 		wc.lpfnWndProc = (WNDPROC)MessageHandler;
 		wc.lpszClassName = L"rift-RootKit(rk)/process:0000";
@@ -140,10 +139,12 @@ extern "C" __declspec(dllexport) long __stdcall DbgSetupForLoadLib(
 	GetExitCodeThread(h[1], &ThreadExitCode);
 	CloseHandle(h[1]);
 	if (ThreadExitCode != STILL_ACTIVE)
-		return false; // Indicated that something failed to load
+		return M_CREATE(S_ERROR, F_ROOTKIT, C_THREAD_DIED);
 
 	dt::DetourSyscallStub(&(void*&)hk::NtQuerySystemInformation, hk::NtQuerySystemInformationHook);
 	dt::DetourSyscallStub(&(void*&)hk::NtQueryDirectoryFile, hk::NtQuerySystemInformationHook);
+
+	return true;
 }
 
 BOOL __stdcall DllMain(

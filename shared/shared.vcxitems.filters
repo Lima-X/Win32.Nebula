@@ -4,17 +4,30 @@
     <Filter Include="sub">
       <UniqueIdentifier>{e11f07c6-db96-4abf-befc-f6adc13763d6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="nrt">
+      <UniqueIdentifier>{cc5564ba-d158-4ba7-9eaf-62ffe9f675ff}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)sub\def.h">
       <Filter>sub</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)sub\debug.h">
-      <Filter>sub</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)shared.h" />
-    <ClInclude Include="D:\visualstudio\repos\Win32.riftV2\shared\sub\sub.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)nrt\nrt.h">
+      <Filter>nrt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\sub.h">
       <Filter>sub</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\status.h">
+      <Filter>sub</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\dbg.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)nrt\nrt.cpp">
+      <Filter>nrt</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)sub\utl.cpp" />
   </ItemGroup>
 </Project>

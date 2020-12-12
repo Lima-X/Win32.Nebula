@@ -56,7 +56,7 @@ namespace dt {
 		}
 
 	private:
-		u32  m_ThreadCount = 0;
+		u32     m_ThreadCount = 0;
 		HANDLE* m_ThreadList;
 
 	};
@@ -78,12 +78,9 @@ namespace dt {
 		void* AllocateUsablePageWithinReach(
 			_In_ void* pTarget
 		) {
-			MEMORY_BASIC_INFORMATION mbi;
-			VirtualQuery(pTarget, &mbi, sizeof(mbi));
-			ptr StartingAddress = (ptr)mbi.AllocationBase + mbi.RegionSize;
-
 			for (ptr i = (ptr)pTarget; (i + sizeof(SyscallTrampolineX64)) - (ptr)pTarget < 0x7fffffff; i += 4096) {
 				// Get PageInformation and Check if Page is Usable
+				MEMORY_BASIC_INFORMATION mbi;
 				VirtualQuery((void*)i, &mbi, sizeof(mbi));
 				if (mbi.State == MEM_FREE) {
 					void* mem = VirtualAlloc(mbi.BaseAddress, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
@@ -135,13 +132,6 @@ namespace dt {
 		*((word*&)pCode)++ = 0xb848;
 		*((qword*&)pCode)++ = Address;
 		*(word*&)pCode = 0xe0ff;
-
-	#if 0 // Old Indirect Jump (14b)
-		ptr offset = (ptr)pCode + 6;             // Relative Offset
-		*((word*&)pCode)++ = 0x25ff;             // jmp [rip
-		*(dword*)pCode = (ptr)pPointer - offset; // + offset]
-		*pPointer = Address;
-	#endif
 	}
 	void GenerateIntermediateRelativeJump( // Generates a 5byte relative jump (jump address has to be withing reach of 2gb)
 		_In_ void* pCode,                  // The Address at where to generate the Code

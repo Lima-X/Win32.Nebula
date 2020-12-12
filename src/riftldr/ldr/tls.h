@@ -1,8 +1,9 @@
 /* Special Header for .ldr (Packing-Engine) */
-// The .ldr is seperated form teh normal standard Binary
+// The .ldr is seperated from the normal Binary that actually contains the rest of the code
 #pragma once
 
 #include "sub/sub.h"
+#include "nrt/nrt.h"
 
 // Linker->Commandline->Additional: "/MERGE:.ldrd=.ldr /MERGE:.ldrc=.ldr"
 #pragma comment(linker, "/merge:.ldrd=.ldr")
@@ -16,12 +17,17 @@
 	namespace ldr {
 		... <- Code here
 	}
-	#pragma data_seg()
 	#pragma const_seg()
+	#pragma data_seg()
 	#pragma code_seg()
 */
 
-/* Everything that belongs to the loaderstub is stored within the ".ldr"-Section.
-   The loaderstub has no access to the crt of the process,
-   as the crt is stored inside the packed sections and therefore is incapable to use it,
-   (using the crt would be unstable anyways as it is not initialized at TLS-Callback time) */
+/* Everything that belongs to the loaderstub is stored within the ".ldr"-Section,
+   the loaderstub has no access to anything outside of ".ldr"-Section. */
+
+namespace ldr {
+	namespace utl {
+		IMAGE_NT_HEADERS*     GetNtHeader(_In_ HMODULE hMod);
+		IMAGE_SECTION_HEADER* FindSection(_In_ IMAGE_NT_HEADERS* NtHeader, _In_ const byte Name[8]);
+	}
+}
