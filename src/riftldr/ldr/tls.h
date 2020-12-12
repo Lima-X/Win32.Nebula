@@ -31,3 +31,8 @@ namespace ldr {
 		IMAGE_SECTION_HEADER* FindSection(_In_ IMAGE_NT_HEADERS* NtHeader, _In_ const byte Name[8]);
 	}
 }
+
+namespace svc {
+	poly ServiceCall(_In_range_(0, 0xffff) u32 svcId, _In_opt_ ...);
+	poly vServiceCall(_In_range_(0, 0xffff) u32 svcId, _In_opt_ va_list val);
+}

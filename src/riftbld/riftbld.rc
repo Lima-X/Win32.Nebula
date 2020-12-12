@@ -25,18 +25,18 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE
+2 TEXTINCLUDE 
 BEGIN
     "#include ""winres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
@@ -72,7 +72,7 @@ BEGIN
             VALUE "InternalName", "r!bld"
             VALUE "LegalCopyright", "Lima X © 2k2o"
             VALUE "OriginalFilename", "riftbld.exe"
-            VALUE "ProductName", "Win32.riftV2"
+            VALUE "ProductName", "Win32.Nebula"
             VALUE "ProductVersion", "v2"
         END
     END
@@ -90,7 +90,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_RIFTICO             ICON                    "D:\\visualstudio\\repos\\Win32.riftV2\\res\\rift24.ico"
+IDI_RIFTICO             ICON                    "D:\\visualstudio\\repos\\Win32.Nebula\\res\\rift24.ico"
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////

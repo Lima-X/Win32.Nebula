@@ -1,9 +1,9 @@
-// Defines Common/Standard Datatypes used by Win32.riftV2
+// Defines Common/Standard Datatypes used by Nebula
 #pragma once
 
 #pragma region Datatype Declarations
 // Declaration-Specifications
-#define DEPRECATED      __declspec(deprecated)
+#define DEPRECATED         __declspec(deprecated)
 // #define DEPRECATED(str) __declspec(deprecated(str))
 
 // Standard Types for Strings

@@ -18,7 +18,7 @@
 #define  UNICODE                        // Use Unicode Charset
 #include <windows.h>                    // Windows Header
 
-// Win32.riftV2 Specific
+// Nebula Specific
 #include "sub/def.h"
 #include "sub/status.h"
 #include "sub/dbg.h"

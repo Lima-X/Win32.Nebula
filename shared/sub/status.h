@@ -1,6 +1,6 @@
-/* Defines the Statussystem of rift, its Values and Macors
+/* Defines the Statussystem of Nebula, its Values and Macors
    Guideline:
-       All Functions in rift that can fail or are required to return data to the caller
+       All Functions in Nebula that can fail or are required to return data to the caller
        return a value of type "status".
        If a function has to return special info to the caller it can do so through status using MOREINFO
        if the data fits within 30bits (preferably only 24bits (3bytes)),
@@ -50,9 +50,9 @@ typedef _Success_(!(return & (0b1 << 31))) signed long status;
 #define F_ROOTKIT 4 // Code from the Rootkit Module (riftrk.dll)
 #define F_BUILDER 6 // Code from the Build Tool and Patcher (riftbld.exe)
 
-// Facility Codes from 3-16 are reserved for rift
+// Facility Codes from 0-15 are reserved for Nebula
 
-#define F_CLIENT 16 // Startring with Facilitycode 8
+#define F_CLIENT 16 // 16 - 63 are reserved for the client
 #pragma endregion
 
 #pragma region Status Codes

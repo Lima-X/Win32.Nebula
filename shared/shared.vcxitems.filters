@@ -23,6 +23,9 @@
       <Filter>sub</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)sub\dbg.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\sdk.h">
+      <Filter>sub</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)nrt\nrt.cpp">

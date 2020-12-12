@@ -20,6 +20,9 @@
     <ClCompile Include="ldr\tls.cpp">
       <Filter>src\ldr</Filter>
     </ClCompile>
+    <ClCompile Include="svc.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ldr.h">
