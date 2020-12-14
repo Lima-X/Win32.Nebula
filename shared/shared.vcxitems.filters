@@ -22,8 +22,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)sub\status.h">
       <Filter>sub</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)sub\dbg.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)sub\sdk.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)sdk.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\dbg.h">
       <Filter>sub</Filter>
     </ClInclude>
   </ItemGroup>
@@ -32,5 +32,6 @@
       <Filter>nrt</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)sub\utl.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)pce.cpp" />
   </ItemGroup>
 </Project>

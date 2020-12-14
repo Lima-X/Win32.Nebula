@@ -1,4 +1,4 @@
-/* This File serves as a Base for other Headres to build on  */
+/* This File serves as a Base for other Headers to build on */
 #pragma once
 
 // Disable Useless/Inaccurate Warnings
@@ -22,3 +22,5 @@
 #include "sub/def.h"
 #include "sub/status.h"
 #include "sub/dbg.h"
+
+// The Macroprefix "N_" is reserved for Nebula's usage

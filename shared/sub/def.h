@@ -5,6 +5,8 @@
 // Declaration-Specifications
 #define DEPRECATED         __declspec(deprecated)
 // #define DEPRECATED(str) __declspec(deprecated(str))
+#define IMPORT             __declspec(dllimport)
+#define EXPORT  extern "C" __declspec(dllexport)
 
 // Standard Types for Strings
 typedef          wchar_t   wchar;

@@ -15,11 +15,11 @@ namespace dt {
 				VirtualFree(mem, 0, MEM_RELEASE);
 			}
 
-			nt::SYSTEM_PROCESS_INFORMATION* PEntry = (nt::SYSTEM_PROCESS_INFORMATION*)mem;
+			m_NtDll::SYSTEM_PROCESS_INFORMATION* PEntry = (m_NtDll::SYSTEM_PROCESS_INFORMATION*)mem;
 			u32 PId = GetCurrentProcessId();
 			while (true) {
 				if ((u32)PEntry->UniqueProcessId == PId) {
-					nt::SYSTEM_THREAD_INFORMATION* TEntry = (nt::SYSTEM_THREAD_INFORMATION*)(PEntry + 1);
+					m_NtDll::SYSTEM_THREAD_INFORMATION* TEntry = (m_NtDll::SYSTEM_THREAD_INFORMATION*)(PEntry + 1);
 
 					m_ThreadCount = PEntry->NumberOfThreads;
 					m_ThreadList = (HANDLE*)HeapAlloc(GetProcessHeap(), NULL, (m_ThreadCount - 1) * sizeof(*m_ThreadList));
@@ -36,7 +36,7 @@ namespace dt {
 
 				if (!PEntry->NextEntryOffset)
 					break;
-				PEntry = (nt::SYSTEM_PROCESS_INFORMATION*)((ptr)PEntry->NextEntryOffset + (ptr)PEntry);
+				PEntry = (m_NtDll::SYSTEM_PROCESS_INFORMATION*)((ptr)PEntry->NextEntryOffset + (ptr)PEntry);
 			}
 
 			VirtualFree(mem, 0, MEM_RELEASE);

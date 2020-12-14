@@ -60,9 +60,8 @@
       <ExceptionHandling>false</ExceptionHandling>
       <BasicRuntimeChecks>
       </BasicRuntimeChecks>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary />
-      <PreprocessorDefinitions>_DEBUG;R_RIFTLDR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;N_LDR</PreprocessorDefinitions>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
@@ -84,11 +83,11 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ExceptionHandling>false</ExceptionHandling>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary />
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <BasicRuntimeChecks />
-      <PreprocessorDefinitions>R_RIFTLDR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>N_LDR</PreprocessorDefinitions>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

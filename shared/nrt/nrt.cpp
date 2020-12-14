@@ -1,9 +1,9 @@
 #include "nrt.h"
 
-#ifdef R_RIFTLDR
-#pragma code_seg(".ldr")
-#pragma data_seg(".ldrd")
-#pragma const_seg(".ldrc")
+#ifdef N_LDR
+#pragma  code_seg(".ldr")
+#pragma  data_seg(".ldrd")
+#pragma const_seg(".ldrd")
 #endif
 typedef EXCEPTION_DISPOSITION(__cdecl* __C_SPECIFIC_HANDLER_t)(
 	_In_    EXCEPTION_RECORD*   ExceptionRecord,
@@ -12,7 +12,7 @@ typedef EXCEPTION_DISPOSITION(__cdecl* __C_SPECIFIC_HANDLER_t)(
 	_Inout_ DISPATCHER_CONTEXT* DispatcherContext
 );
 
-#ifdef R_RIFTLDR
+#ifdef N_LDR
 #pragma section(".ldrd")
 __declspec(allocate(".ldrd"))
 #endif
@@ -31,8 +31,19 @@ EXCEPTION_DISPOSITION __cdecl __C_specific_handler(
 		__fastfail((u32)M_CREATE(S_ERROR, F_NULL, C_INVALID_POINTER));
 	return ExceptionHandler(ExceptionRecord, EstablisherFrame, ContextRecord, DispatcherContext);
 }
-#ifdef R_RIFTLDR
+
+namespace nrt {
+	size_t strlen(
+		_In_ const char* sz
+	) {
+		size_t Length = 0;
+		while (*sz++)
+			Length++;
+		return Length;
+	}
+}
+#ifdef N_LDR
 #pragma const_seg()
-#pragma data_seg()
-#pragma code_seg()
+#pragma  data_seg()
+#pragma  code_seg()
 #endif

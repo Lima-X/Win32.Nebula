@@ -1,4 +1,4 @@
-// No Runtime Library : Provides subroutines for the compiler that emulate the CRT
+// No Runtime Library : Provides subroutines for the compiler/dev that emulate the CRT
 #pragma once
 #include "sub/sub.h"
 
@@ -8,3 +8,7 @@
 
 // Standard Declarations
 EXCEPTION_DISPOSITION __cdecl __C_specific_handler(_In_ EXCEPTION_RECORD* ExceptionRecord, _In_ void* EstablisherFrame, _Inout_ CONTEXT* ContextRecord, _Inout_ DISPATCHER_CONTEXT* DispatcherContext);
+
+namespace nrt {
+	size_t strlen(_In_ const char* sz);
+}
