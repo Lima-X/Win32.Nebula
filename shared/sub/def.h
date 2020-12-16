@@ -2,12 +2,6 @@
 #pragma once
 
 #pragma region Datatype Declarations
-// Declaration-Specifications
-#define DEPRECATED         __declspec(deprecated)
-// #define DEPRECATED(str) __declspec(deprecated(str))
-#define IMPORT             __declspec(dllimport)
-#define EXPORT  extern "C" __declspec(dllexport)
-
 // Standard Types for Strings
 typedef          wchar_t   wchar;
 
@@ -28,11 +22,29 @@ typedef unsigned long      dword;
 typedef unsigned long long qword;
 
 // Pointer Types
-#ifdef _M_AMD64
+#ifdef _M_X64
 typedef unsigned long long ptr;
 typedef unsigned long long poly;
 #elif _M_IX86
 typedef unsigned long      ptr;
 typedef unsigned long      poly;
 #endif
+#pragma endregion
+
+#pragma region Standard Macros
+#ifdef _M_X64
+#define __x64call
+#else
+#define __x64call NIVALID_CALLING_CONVENTION // This cause a compiler error
+#endif
+
+// #define DEPRECATED       __declspec(deprecated)
+#define DEPRECATED(str)     __declspec(deprecated(str))
+
+#define IMPORT              __declspec(dllimport)
+#define EXPORT              __declspec(dllexport)
+#define NOINLINE            __declspec(noinline)
+
+#define ALLOC_CODE(Section) __declspec(code_seg(Section))
+#define ALLOC_DATA(Section) __declspec(allocate(Section))
 #pragma endregion

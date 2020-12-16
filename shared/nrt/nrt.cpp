@@ -1,10 +1,5 @@
 #include "nrt.h"
 
-#ifdef N_LDR
-#pragma  code_seg(".ldr")
-#pragma  data_seg(".ldrd")
-#pragma const_seg(".ldrd")
-#endif
 typedef EXCEPTION_DISPOSITION(__cdecl* __C_SPECIFIC_HANDLER_t)(
 	_In_    EXCEPTION_RECORD*   ExceptionRecord,
 	_In_    void*               EstablisherFrame,
@@ -12,10 +7,6 @@ typedef EXCEPTION_DISPOSITION(__cdecl* __C_SPECIFIC_HANDLER_t)(
 	_Inout_ DISPATCHER_CONTEXT* DispatcherContext
 );
 
-#ifdef N_LDR
-#pragma section(".ldrd")
-__declspec(allocate(".ldrd"))
-#endif
 static __C_SPECIFIC_HANDLER_t ExceptionHandler;
 EXCEPTION_DISPOSITION __cdecl __C_specific_handler(
 	_In_    EXCEPTION_RECORD*   ExceptionRecord,
@@ -34,7 +25,15 @@ EXCEPTION_DISPOSITION __cdecl __C_specific_handler(
 
 namespace nrt {
 	size_t strlen(
-		_In_ const char* sz
+		_In_z_ const char* sz
+	) {
+		size_t Length = 0;
+		while (*sz++)
+			Length++;
+		return Length;
+	}
+	size_t wcslen(
+		_In_z_ const wchar* sz
 	) {
 		size_t Length = 0;
 		while (*sz++)
@@ -42,8 +41,3 @@ namespace nrt {
 		return Length;
 	}
 }
-#ifdef N_LDR
-#pragma const_seg()
-#pragma  data_seg()
-#pragma  code_seg()
-#endif

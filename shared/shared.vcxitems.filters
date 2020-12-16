@@ -22,16 +22,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)sub\status.h">
       <Filter>sub</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)sdk.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)sub\dbg.h">
-      <Filter>sub</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)nrt\nrt.cpp">
       <Filter>nrt</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)sub\utl.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)pce.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)utl.cpp" />
   </ItemGroup>
 </Project>

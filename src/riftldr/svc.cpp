@@ -1,5 +1,4 @@
 #include "ldr.h"
-#include "ldr/tls.h"
 
 namespace svc { // Service Center/Dispatch Level:0 (svcdsp0)
 	// Creates a Entry for a Service in the Servicedispatchtable (svcdspt)
@@ -18,7 +17,7 @@ namespace svc { // Service Center/Dispatch Level:0 (svcdsp0)
 
 			SDT_ENTRY(0xffff, ServiceDispatch); //
 		default:
-			Ret = -1; // Invalid Id, abort
+			Ret = (poly)-1; // Invalid Id, abort
 		}
 
 		return Ret;

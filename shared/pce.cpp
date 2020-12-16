@@ -1,13 +1,8 @@
 // Packed-Crypto-Engine
 #include "shared.h"
 
-#ifdef N_LDR
-#pragma  code_seg(".ldr")
-#pragma  data_seg(".ldrd")
-#pragma const_seg(".ldrd")
-#endif
 namespace cry {
-	class XPressH {
+	class XPress {
 		typedef unsigned long NTSTATUS;
 		typedef NTSTATUS(NTAPI* rtlccom_t)(
 			_In_                                                              USHORT CompressionFormatAndEngine,
@@ -37,13 +32,13 @@ namespace cry {
 		static constexpr USHORT COMPRESSOR_CHUCK = 0x1000;
 
 	public:
-		XPressH()
+		XPress()
 			: m_NtDll(GetModuleHandleW(L"ntdll.dll")) {
 			u32 v0;
 			RtlGetCompressionWorkSpaceSize(COMPRESSOR_MODE, (ULONG*)&m_WorkSpaceSize, (ULONG*)&v0);
 			m_WorkSpace = VirtualAlloc(nullptr, m_WorkSpaceSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 		}
-		~XPressH() {
+		~XPress() {
 			VirtualFree(m_WorkSpace, 0, MEM_RELEASE);
 		}
 
@@ -70,8 +65,3 @@ namespace cry {
 		rtlgwss_t RtlGetCompressionWorkSpaceSize = (rtlgwss_t)GetProcAddress(m_NtDll, "RtlGetCompressionWorkSpaceSize");
 	};
 }
-#ifdef N_LDR
-#pragma const_seg()
-#pragma  data_seg()
-#pragma  code_seg()
-#endif

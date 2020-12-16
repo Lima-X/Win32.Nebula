@@ -137,9 +137,9 @@ namespace dt {
 		_In_ void* pCode,                  // The Address at where to generate the Code
 		_In_ ptr   Address                 // The Address to Jump to (this has to be within 2gb of the pCode)
 	) {
-		ptr Offset = (ptr)pCode + 5;        // Relative Offset
-		*((byte*&)pCode)++ = 0xe9;          // jmp +imm32
-		*(dword*&)pCode = Address - Offset; // Relative jump Address
+		ptr Offset = (ptr)pCode + 5;                 // Relative Offset
+		*((byte*&)pCode)++ = 0xe9;                   // jmp +imm32
+		*(dword*&)pCode = (dword)(Address - Offset); // Relative jump Address
 	}
 
 	status DetourSyscallStub(

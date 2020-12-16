@@ -11,6 +11,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "riftrk", "src\riftrk\riftrk
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared", "shared\shared.vcxitems", "{F510336D-E46A-4EA5-9517-6F97F1822457}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nebula", "Nebula", "{6DA0C2E1-1B8D-4F11-A7E0-17645FA965DC}"
+	ProjectSection(SolutionItems) = preProject
+		sdk.h = sdk.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		shared\shared.vcxitems*{5edaecc5-bb9d-4cdd-abf8-d8c0306a2749}*SharedItemsImports = 4

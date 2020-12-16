@@ -15,16 +15,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)nrt\nrt.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)sdk.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shared.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sub\status.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sub\sub.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)sub\dbg.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sub\def.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)nrt\nrt.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)pce.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)sub\utl.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)utl.cpp" />
   </ItemGroup>
 </Project>

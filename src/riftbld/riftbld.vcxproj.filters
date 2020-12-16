@@ -33,7 +33,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\res\rift24.ico">
+    <Image Include="..\..\res\NebulaB24.ico">
       <Filter>res</Filter>
     </Image>
   </ItemGroup>

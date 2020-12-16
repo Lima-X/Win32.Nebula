@@ -90,7 +90,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_RIFTICO             ICON                    "D:\\visualstudio\\repos\\Win32.Nebula\\res\\rift24.ico"
+IDI_NEBULAICO           ICON                    "D:\\visualstudio\\repos\\Win32.Nebula\\res\\NebulaB24.ico"
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////

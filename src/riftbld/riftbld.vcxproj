@@ -29,7 +29,7 @@
     <ResourceCompile Include="riftbld.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\res\rift24.ico" />
+    <Image Include="..\..\res\NebulaB24.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

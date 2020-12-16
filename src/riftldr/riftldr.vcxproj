@@ -61,9 +61,8 @@
       <BasicRuntimeChecks>
       </BasicRuntimeChecks>
       <RuntimeLibrary />
-      <PreprocessorDefinitions>_DEBUG;N_LDR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG</PreprocessorDefinitions>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -86,8 +85,11 @@
       <RuntimeLibrary />
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <BasicRuntimeChecks />
-      <PreprocessorDefinitions>N_LDR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>
+      </PreprocessorDefinitions>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <Optimization>MinSpace</Optimization>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -100,16 +102,16 @@
       <MergeSections>
       </MergeSections>
       <EntryPointSymbol>CoreMain</EntryPointSymbol>
+      <AdditionalOptions>/ignore:4254 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ldr\tls.cpp" />
+    <ClCompile Include="ldr\ldr.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="svc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ldr.h" />
-    <ClInclude Include="ldr\tls.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

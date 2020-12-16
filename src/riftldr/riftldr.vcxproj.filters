@@ -17,18 +17,15 @@
     <ClCompile Include="main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="ldr\tls.cpp">
-      <Filter>src\ldr</Filter>
-    </ClCompile>
     <ClCompile Include="svc.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ldr\ldr.cpp">
+      <Filter>src\ldr</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ldr.h">
-      <Filter>hdr</Filter>
-    </ClInclude>
-    <ClInclude Include="ldr\tls.h">
       <Filter>hdr</Filter>
     </ClInclude>
   </ItemGroup>

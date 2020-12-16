@@ -1,54 +1,60 @@
-#include "tls.h"
+#include "..\ldr.h"
 
-#ifdef N_LDR
-#pragma  code_seg(".ldr")
-#pragma  data_seg(".ldrd")
-#pragma const_seg(".ldrd")
-#endif
 namespace ldr {
-	EXPORT DWORD TlsLoaderConfiguation = 0;
+	EXTERN_C EXPORT const dword TlsLoaderConfiguation = 0;
 
 	/* Thread-Local-Storage (TLS) Callback :
 	   This will start the Protection-Services,
 	   decrypt and unpack the actuall code
 	   and ensure code integrity. */
-	static bool l_bTlsFlag = false;
+	// static bool l_bTlsFlag = false;
 	void __stdcall TlsCoreLoader(
-		_In_ PVOID DllHandle,
-		_In_ DWORD dwReason,
-		_In_ PVOID Reserved
+		_In_ void* DllHandle,
+		_In_ u32   dwReason,
+		_In_ void* Reserved
 	) {
 		UNREFERENCED_PARAMETER(DllHandle);
 		UNREFERENCED_PARAMETER(Reserved);
 
 		switch (dwReason) {
 		case DLL_PROCESS_ATTACH:
-			MessageBoxW(0, L"Tls Callback Executed", L"Tls Attach", 0);
-			if (!l_bTlsFlag) {
+			{
 			#ifdef _DEBUG
 				ptr BaseAddress = (ptr)GetModuleHandleW(nullptr);
 				IMAGE_NT_HEADERS* NtHeader = utl::img::GetNtHeader((HMODULE)BaseAddress);
 
 				// This will unprotect all memory of the section and allow full access to it,
 				// its only valid for Debug-Configuration, on Release this has to be done through the builder
-				byte LoaderSegName[8] = ".ldr";
-				IMAGE_SECTION_HEADER* LoaderSection = utl::img::FindSection(NtHeader, LoaderSegName);
+				// byte LoaderSegName[8] = ".ldrx";
+				// IMAGE_SECTION_HEADER* LoaderSection = utl::img::FindSection(NtHeader, LoaderSegName);
 				dword OldProtection;
-				VirtualProtect((void*)((ptr)LoaderSection->VirtualAddress + BaseAddress), LoaderSection->Misc.VirtualSize,
-					PAGE_EXECUTE_READWRITE, &OldProtection);
+				// VirtualProtect((void*)((ptr)LoaderSection->VirtualAddress + BaseAddress), LoaderSection->Misc.VirtualSize,
+				//	PAGE_EXECUTE_READWRITE, &OldProtection);
 
 				// Simulate Inaccessable .text, .data and .rdata Sections by setting Pageprotections to NoAccess
-				byte NoAccessSections[3][8] = { ".text", ".data", ".rdata" };
-				IMAGE_SECTION_HEADER* SectionPointers[3];
-				dword OldSectionProtections[3];
-				for (u8 i = 0; i < 2; i++) {
+				byte NoAccessSections[4][8] = {
+					".ldr",
+					".ldrr",
+					".ldrw",
+					".ldrx"
+				};
+				IMAGE_SECTION_HEADER* SectionPointers[4];
+				dword OldSectionProtections[4];
+				for (u8 i = 0; i < 4; i++) {
 					SectionPointers[i] = utl::img::FindSection(NtHeader, NoAccessSections[i]);
 					if (SectionPointers[i])
 						VirtualProtect((void*)((ptr)SectionPointers[i]->VirtualAddress + BaseAddress), SectionPointers[i]->Misc.VirtualSize,
 							PAGE_NOACCESS, OldSectionProtections + i);
 				}
 			#endif
-				l_bTlsFlag = true;
+				// l_bTlsFlag = true;
+
+				auto a = utl::FNV1aHash((void*)"LdrLoadDll", 10);
+
+				auto nt = utl::img::GetModuleHandleByHash(N_NTDLL);
+				auto func = utl::img::ImportFunctionByHash(nt, a);
+
+				auto k32 = utl::img::GetModuleHandleByHash(N_KRNL32);
 
 				// cry::XPressH compressor;
 
@@ -77,25 +83,23 @@ namespace ldr {
 
 			#ifdef _DEBUG
 				// Revert Pageprotections on Blocked Sections (this simulates a Successful decryption)
-				for (u8 i = 0; i < 2; i++)
-					if (SectionPointers[i])
-						VirtualProtect((void*)((ptr)SectionPointers[i]->VirtualAddress + BaseAddress), SectionPointers[i]->Misc.VirtualSize,
-							OldSectionProtections[i], &OldProtection);
+				for (u8 i = 0; i < 4; i++)
+					if (SectionPointers[i]) {
+						ptr address = ((ptr)SectionPointers[i]->VirtualAddress + BaseAddress);
+						size_t size = SectionPointers[i]->Misc.VirtualSize;
+
+						VirtualProtect((void*)address, size, OldSectionProtections[i], &OldProtection);
+
+						// VirtualProtect((void*)((ptr)SectionPointers[i]->VirtualAddress + BaseAddress), SectionPointers[i]->Misc.VirtualSize,
+						//	OldSectionProtections[i], &OldProtection);
+					}
 			#endif
 			} break;
 		case DLL_PROCESS_DETACH:
-			MessageBoxW(0, L"Tls Callback Executed", L"Tls Detach", 0);
-			if (l_bTlsFlag) {
-				l_bTlsFlag = false;
-			}
+			;
 		}
 	}
 }
-#ifdef N_LDR
-#pragma const_seg()
-#pragma  data_seg()
-#pragma  code_seg()
-#endif
 
 /* This is porbably the worst workaround ever in this whole project (including the old one).
    But this wasnt even my choice, Microsoft's Linker has forced my hands
@@ -106,27 +110,17 @@ namespace ldr {
    @Microsoft: If you ever read this (which i doubt) FIX YOUR FUCKING LINKER,
                CAUSE RANDOMLY GETTING LNK1000 INTERNAL ERROR FUCKING SUCKS !                */
 extern "C" {
-#pragma const_seg(".tls")
-#ifndef _DEBUG
-// Merge const and nonconst data into one section
-#pragma comment(linker, "/merge:.tlsdata=.tls")
-#pragma  data_seg(".tlsdata")
-#else
-#pragma  data_seg(".ldrd")
-#endif
 	u32 _tls_index = 0;
 	const PIMAGE_TLS_CALLBACK _tls_callback[] = {
-		ldr::TlsCoreLoader,
-		nullptr
+		(PIMAGE_TLS_CALLBACK)ldr::TlsCoreLoader,
+		(PIMAGE_TLS_CALLBACK)nullptr
 	};
 
-#pragma comment (linker, "/include:_tls_used")
+	#pragma comment (linker, "/include:_tls_used")
 	extern const IMAGE_TLS_DIRECTORY64 _tls_used = {
-		(u64)0, (u64)0,            // tls data (unused)
-		(ULONGLONG)&_tls_index,    // address of tls_index
-		(ULONGLONG)&_tls_callback, // pointer to call back array
-		(u32)0, (u32)0             // tls properties
+		(ptr)0, (ptr)0,      // tls data (unused)
+		(ptr)&_tls_index,    // address of tls_index
+		(ptr)&_tls_callback, // pointer to call back array
+		(u32)0, (u32)0       // tls properties
 	};
-#pragma const_seg()
-#pragma  data_seg()
 }

@@ -2,7 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by riftbld.rc
 //
-#define IDI_RIFTICO                     101
+#define IDI_NEBULAICO                   101
 
 // Next default values for new objects
 //
