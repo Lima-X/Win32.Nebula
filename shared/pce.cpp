@@ -1,39 +1,55 @@
-// Packed-Crypto-Engine
+// Packing-Crypto-Engine
 #include "shared.h"
-
 namespace cry {
+
+#pragma region Hashing
+	BCRYPT_ALG_HANDLE Hash::s_ah;
+	u32               Hash::s_nRefCount = 0;
+	size_t Hash::s_nObj;
+
+	Hash::Hash() {
+		if (!(_InterlockedIncrement((u32*)&s_nRefCount) - 1)) {
+			// bcryoap_t BCryptOpenAlgorithmProvider = utl::ImportFunctionByHash()
+			// BCryptOpenAlgorithmProvider(&s_ah, BCRYPT_SHA256_ALGORITHM, nullptr, NULL);
+		}
+		if (!s_nObj) {
+			size_t nResult;
+			// BCryptGetProperty(s_ah, BCRYPT_OBJECT_LENGTH, (byte*)&s_nObj, sizeof(u32), (dword*)&nResult, NULL);
+		}
+		m_pObj = HeapAlloc(GetProcessHeap(), 0, s_nObj);
+	}
+	Hash::~Hash() {
+		if (m_hh)
+			// BCryptDestroyHash(m_hh);
+		HeapFree(GetProcessHeap(), 0, m_pObj);
+		if (!_InterlockedDecrement16((short*)&s_nRefCount))
+			; // BCryptCloseAlgorithmProvider(s_ah, NULL);
+	}
+
+	status Hash::HashData(
+		_In_ void* pBuffer,
+		_In_ size_t nBuffer
+	) {
+		status s = 0; //;
+		if (!m_hh)
+			// s = BCryptCreateHash(s_ah, &m_hh, (byte*)m_pObj, s_nObj, nullptr, 0, NULL);
+		// s = BCryptHashData(m_hh, (byte*)pBuffer, nBuffer, NULL);
+		return -!!s;
+	}
+	status Hash::HashFinalize() {
+		status s = 0;// BCryptFinishHash(m_hh, (byte*)&m_Hash, sizeof(sha2), NULL);
+		// s = BCryptDestroyHash(m_hh);
+		m_hh = NULL;
+		return -!!s;
+	}
+#pragma endregion
+
 	class XPress {
-		typedef unsigned long NTSTATUS;
-		typedef NTSTATUS(NTAPI* rtlccom_t)(
-			_In_                                                              USHORT CompressionFormatAndEngine,
-			_In_reads_bytes_(UncompressedBufferSize)                          PUCHAR UncompressedBuffer,
-			_In_                                                              ULONG  UncompressedBufferSize,
-			_Out_writes_bytes_to_(CompressedBufferSize, *FinalCompressedSize) PUCHAR CompressedBuffer,
-			_In_                                                              ULONG  CompressedBufferSize,
-			_In_                                                              ULONG  UncompressedChunkSize,
-			_Out_                                                             PULONG FinalCompressedSize,
-			_In_                                                              PVOID  WorkSpace
-			);
-		typedef NTSTATUS(NTAPI* rtldcom_t)(
-			_In_                                                                  USHORT CompressionFormat,
-			_Out_writes_bytes_to_(UncompressedBufferSize, *FinalUncompressedSize) PUCHAR UncompressedBuffer,
-			_In_                                                                  ULONG  UncompressedBufferSize,
-			_In_reads_bytes_(CompressedBufferSize)                                PUCHAR CompressedBuffer,
-			_In_                                                                  ULONG  CompressedBufferSize,
-			_Out_                                                                 PULONG FinalUncompressedSize,
-			_In_opt_                                                              PVOID  WorkSpace
-			);
-		typedef NTSTATUS(NTAPI* rtlgwss_t)(
-			_In_  USHORT CompressionFormatAndEngine,
-			_Out_ PULONG CompressBufferWorkSpaceSize,
-			_Out_ PULONG CompressFragmentWorkSpaceSize
-			);
-		static constexpr USHORT COMPRESSOR_MODE = 0x0104;
+		static constexpr USHORT COMPRESSOR_MODE  = 0x0104;
 		static constexpr USHORT COMPRESSOR_CHUCK = 0x1000;
 
 	public:
-		XPress()
-			: m_NtDll(GetModuleHandleW(L"ntdll.dll")) {
+		XPress() {
 			u32 v0;
 			RtlGetCompressionWorkSpaceSize(COMPRESSOR_MODE, (ULONG*)&m_WorkSpaceSize, (ULONG*)&v0);
 			m_WorkSpace = VirtualAlloc(nullptr, m_WorkSpaceSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -57,11 +73,7 @@ namespace cry {
 		}
 
 	private:
-		HMODULE   m_NtDll;
 		void*     m_WorkSpace;
 		u32       m_WorkSpaceSize;
-		rtlccom_t RtlCompressBuffer              = (rtlccom_t)GetProcAddress(m_NtDll, "RtlCompressBuffer");
-		rtldcom_t RtlDecompressBufferEx          = (rtldcom_t)GetProcAddress(m_NtDll, "RtlDecompressBufferEx");
-		rtlgwss_t RtlGetCompressionWorkSpaceSize = (rtlgwss_t)GetProcAddress(m_NtDll, "RtlGetCompressionWorkSpaceSize");
 	};
 }

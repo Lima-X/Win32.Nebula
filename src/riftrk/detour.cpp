@@ -15,11 +15,11 @@ namespace dt {
 				VirtualFree(mem, 0, MEM_RELEASE);
 			}
 
-			m_NtDll::SYSTEM_PROCESS_INFORMATION* PEntry = (m_NtDll::SYSTEM_PROCESS_INFORMATION*)mem;
+			nt::SYSTEM_PROCESS_INFORMATION* PEntry = (nt::SYSTEM_PROCESS_INFORMATION*)mem;
 			u32 PId = GetCurrentProcessId();
 			while (true) {
 				if ((u32)PEntry->UniqueProcessId == PId) {
-					m_NtDll::SYSTEM_THREAD_INFORMATION* TEntry = (m_NtDll::SYSTEM_THREAD_INFORMATION*)(PEntry + 1);
+					nt::SYSTEM_THREAD_INFORMATION* TEntry = (nt::SYSTEM_THREAD_INFORMATION*)(PEntry + 1);
 
 					m_ThreadCount = PEntry->NumberOfThreads;
 					m_ThreadList = (HANDLE*)HeapAlloc(GetProcessHeap(), NULL, (m_ThreadCount - 1) * sizeof(*m_ThreadList));
@@ -36,7 +36,7 @@ namespace dt {
 
 				if (!PEntry->NextEntryOffset)
 					break;
-				PEntry = (m_NtDll::SYSTEM_PROCESS_INFORMATION*)((ptr)PEntry->NextEntryOffset + (ptr)PEntry);
+				PEntry = (nt::SYSTEM_PROCESS_INFORMATION*)((ptr)PEntry->NextEntryOffset + (ptr)PEntry);
 			}
 
 			VirtualFree(mem, 0, MEM_RELEASE);
@@ -69,10 +69,10 @@ namespace dt {
 
 	public:
 		struct SyscallTrampolineX64 {
-			// Thunk to Hook
-			byte ToDetour[4 + 8];
-			// First 2 Instructions (8b) of Target followed by an absolute jump to the rest of the Target
-			byte TargetThunk[8 + (4 + 8)];
+			// Thunk to Hook (Absolute Jump over RAX)
+			byte ToDetour[12];
+			// Instructions (up to 40 bytes) of Target followed by an absolute jump to the rest of the Target
+			byte TargetThunk[40 + 12];
 		};
 
 		void* AllocateUsablePageWithinReach(
@@ -142,17 +142,21 @@ namespace dt {
 		*(dword*&)pCode = (dword)(Address - Offset); // Relative jump Address
 	}
 
-	status DetourSyscallStub(
-		_In_ void** ppTarget,
-		_In_ void* pHook
+	status DetourFunction(                         // Detours a binary function
+		_Inout_           void** ppTarget,         // Pointer to pointer containing the address of the Function to hook that will be filled with the new address redirecting to the original code
+		_In_              void*  pHook,            // Pointer to the Hook Function that should be inserted
+		_In_range_(5, 40) u8     InstructionLength // Count of instructionbytes to relocate into the Trampoline (must be big enough to fit a relative jump (5bytes) and small enough to fit into the trampoline (40bytes))
 	) {
-		void* pTarget = *ppTarget;
+		if (InstructionLength < 5 || InstructionLength > 40)
+			return S_CREATE(SS_WARNING, SF_ROOTKIT, SC_INVALID_PARAMETER);
+
+		auto pTarget = *ppTarget;
 		auto Trampoline = tmgr.AlloctateTrampolineWithinReach(pTarget);
 
 		// Generate Bidirectional Trampoline (Thunk)
 		GenerateAbsoluteJump(&Trampoline->ToDetour, (ptr)pHook);
-		__movsb((byte*)&Trampoline->TargetThunk, (byte*)pTarget, 8);
-		GenerateAbsoluteJump((void*)((ptr)&Trampoline->TargetThunk + 8), (ptr)pTarget + 8);
+		__movsb((byte*)&Trampoline->TargetThunk, (byte*)pTarget, InstructionLength);
+		GenerateAbsoluteJump((void*)((ptr)&Trampoline->TargetThunk + InstructionLength), (ptr)pTarget + InstructionLength);
 		FlushInstructionCache(GetCurrentProcess(), Trampoline, sizeof(*Trampoline));
 
 		// Start Transaction
@@ -163,7 +167,10 @@ namespace dt {
 		dword Protect;
 		VirtualProtect(pTarget, 8, PAGE_EXECUTE_READWRITE, &Protect);
 		GenerateIntermediateRelativeJump(pTarget, (ptr)&Trampoline->ToDetour);
-		__stosb((byte*)((ptr)pTarget + 5), 0xcc, 3); // Pad the unused 3 bytes with breakpoints
+	#ifdef _DEBUG
+		// Pad the unused bytes within the target function with breakpoints
+		__stosb((byte*)((ptr)pTarget + 5), 0xcc, InstructionLength - 5);
+	#endif
 		VirtualProtect(pTarget, 8, Protect, &Protect);
 		FlushInstructionCache(GetCurrentProcess(), pTarget, 8);
 

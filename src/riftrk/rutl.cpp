@@ -1,13 +1,5 @@
 #include "rk.h"
 
-// NoCRT Allocators for Objects
-void* __cdecl operator new(size_t size) {
-	return HeapAlloc(GetProcessHeap(), NULL, size);
-}
-void __cdecl operator delete(void* mem) {
-	HeapFree(GetProcessHeap(), NULL, mem);
-}
-
 #ifdef _DEBUG
 // #pragma comment(lib, "dbghelp.lib")
 #include <dbghelp.h>
@@ -28,7 +20,11 @@ void CreateDump(
 	_In_ EXCEPTION_POINTERS* ExceptionInfo
 ) {
 	wchar MiniDumpFile[MAX_PATH];
-	wsprintfW(MiniDumpFile, L"C:\\rift\\MiniDumps\\riftrk\\PId_%d.dmp", GetCurrentProcessId());
+	auto NT = utl::GetModuleHandleByHash(N_NTDLL);
+	auto func = utl::ImportFunctionByHash(NT, utl::FNV1aHash((void*)"swprintf", 8));
+
+	((int(*)(wchar*, size_t, const wchar*, ...))func)
+		(MiniDumpFile, MAX_PATH, L"C:\\rift\\MiniDumps\\riftrk\\PId_%d.dmp", GetCurrentProcessId());
 
 	// Create Dumpfile and Allocate Directory if necessary
 	HANDLE hFile = CreateFileW(MiniDumpFile, GENERIC_READ | GENERIC_WRITE,
@@ -85,7 +81,8 @@ long __stdcall VMinidumpExceptionFilter(
 	return EXCEPTION_CONTINUE_SEARCH;
 
 	CreateDump(ExceptionInfo);
-	__fastfail(-1);
+	__fastfail((u32)-1);
+	return - 1;
 }
 // Incase an Excpetion makes it past the VectoredHandlers and the Process Specific ones
 // this Handler will call the original UnHandlerExceptionFilter and respond to its returnvalue
@@ -102,12 +99,9 @@ long __stdcall UhMinidumpExceptionFilter(
 	return 0;
 }
 
-
-
 status RegisterMinidump() {
 	OldFilter = SetUnhandledExceptionFilter(UhMinidumpExceptionFilter);
 	void* v0 = AddVectoredExceptionHandler(true, VMinidumpExceptionFilter);
 	return !v0;
 }
-
 #endif

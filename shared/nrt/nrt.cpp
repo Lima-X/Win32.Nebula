@@ -19,8 +19,16 @@ EXCEPTION_DISPOSITION __cdecl __C_specific_handler(
 	HMODULE hNtDll = GetModuleHandleW(L"ntdll.dll");
 	ExceptionHandler = (__C_SPECIFIC_HANDLER_t)GetProcAddress(hNtDll, "__C_specific_handler");
 	if (!ExceptionHandler)
-		__fastfail((u32)M_CREATE(S_ERROR, F_NULL, C_INVALID_POINTER));
+		__fastfail((u32)S_CREATE(SS_ERROR, SF_NULL, SC_INVALID_POINTER));
 	return ExceptionHandler(ExceptionRecord, EstablisherFrame, ContextRecord, DispatcherContext);
+}
+
+// Allocators for Objects
+void* __cdecl operator new(size_t size) {
+	return HeapAlloc(GetProcessHeap(), NULL, size);
+}
+void __cdecl operator delete(void* mem) {
+	HeapFree(GetProcessHeap(), NULL, mem);
 }
 
 namespace nrt {

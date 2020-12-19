@@ -7,32 +7,25 @@
 
 #include "shared.h"
 
+#pragma region Protected Sections
 // Ldr Sections
-#pragma section(".ldrr", read)       // Constsection
-#pragma section(".ldrw", write)      // Datasection
-// #pragma section(".ldrx", execute) // Text/Code -Section
+#pragma section(".nbr", read)       // Constsection
+#pragma section(".nbw", write)      // Datasection
+// #pragma section(".nbx", execute) // Text/Code -Section
 
 // Merge ldr sections
 #ifndef _DEBUG
 #pragma warning(disable : 4330)
-#pragma section(".ldr", read, write, execute)
+#pragma section(".nb", read, write, execute)
 // #pragma comment(linker, "/ignore:4254") // Doesnt work in a pragma because WHO KNOWS WHY, so i set it in the Commandline.. smh
-#pragma comment(linker, "/merge:.ldrr=.ldr")
-#pragma comment(linker, "/merge:.ldrw=.ldr")
-#pragma comment(linker, "/merge:.ldrx=.ldr")
+#pragma comment(linker, "/merge:.nbr=.nb")
+#pragma comment(linker, "/merge:.nbw=.nb")
+#pragma comment(linker, "/merge:.nbx=.nb")
 #endif
-#define N_PROTECTEDR ALLOC_DATA(".ldrr")
-#define N_PROTECTEDW ALLOC_DATA(".ldrw")
-#define N_PROTECTEDX ALLOC_CODE(".ldrx")
-
-#pragma region Loader FNV-1a Hashes
-#define N_NTDLL 0xfd96b5caa3a9c6d9 // L"ntdll.dll"
-
-
-#define N_KRNL32 0x7f1bf8b449d16c2d // L"kernel32.dll"
-
+#define N_PROTECTEDR ALLOC_DATA(".nbr")
+#define N_PROTECTEDW ALLOC_DATA(".nbw")
+#define N_PROTECTEDX ALLOC_CODE(".nbx")
 #pragma endregion
-
 
 namespace ldr {
 

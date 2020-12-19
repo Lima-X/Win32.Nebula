@@ -1,20 +1,8 @@
 #pragma once
 
-#include "sub/sub.h"
+#include "shared.h"
 
-// Define NTSTATUS
-typedef _Return_type_success_(return >= 0) long NTSTATUS;
-
-constexpr u32 RoundUpToMulOfPow2(u32 num, u32 mul) {
-	return (num + (mul - 1)) & (0 - mul);
-}
-
-namespace m_NtDll {
-	typedef struct _UNICODE_STRING {
-		USHORT Length;
-		USHORT MaximumLength;
-		PWCH   Buffer;
-	} UNICODE_STRING, * PUNICODE_STRING;
+namespace nt {
 	typedef struct _CLIENT_ID {
 		HANDLE UniqueProcess;
 		HANDLE UniqueThread;
@@ -91,13 +79,13 @@ namespace m_NtDll {
 }
 
 namespace hk {
-	extern m_NtDll::NtQueryDirectoryFile_t NtQueryDirectoryFile;
+	extern nt::NtQueryDirectoryFile_t NtQueryDirectoryFile;
 	NTSTATUS NTAPI NtQueryDirectoryFileHook(
 		_In_ HANDLE FileHandle, _In_opt_ HANDLE Event, _In_opt_ PVOID ApcRoutine, _In_opt_ PVOID ApcContext, _Out_ PVOID IoStatusBlock,
 		_Out_writes_bytes_(Length) PVOID FileInformation, _In_ ULONG Length, _In_ ULONG FileInformationClass,
-		_In_ BOOLEAN ReturnSingleEntry, _In_opt_ m_NtDll::PUNICODE_STRING FileName, _In_ BOOLEAN RestartScan
+		_In_ BOOLEAN ReturnSingleEntry, _In_opt_ PUNICODE_STRING FileName, _In_ BOOLEAN RestartScan
 	);
-	extern m_NtDll::NtQuerySystemInformation_t NtQuerySystemInformation;
+	extern nt::NtQuerySystemInformation_t NtQuerySystemInformation;
 	NTSTATUS NTAPI NtQuerySystemInformationHook(
 		_In_      ULONG  SystemInformationClass,
 		_Out_     PVOID  SystemInformation,
@@ -107,7 +95,7 @@ namespace hk {
 }
 
 namespace dt {
-	status DetourSyscallStub(_In_ void** ppTarget, _In_ void* pHook);
+	status DetourFunction(_Inout_ void** ppTarget, _In_ void* pHook, _In_range_(5, 40) u8 InstructionLength);
 }
 
 namespace vec {

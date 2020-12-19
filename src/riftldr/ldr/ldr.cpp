@@ -16,45 +16,50 @@ namespace ldr {
 		UNREFERENCED_PARAMETER(DllHandle);
 		UNREFERENCED_PARAMETER(Reserved);
 
+		// utl::fnv a[20];
+		// a[0]  = utl::FNV1aHash((void*)"BCryptCloseAlgorithmProvider", 28);
+		// a[1]  = utl::FNV1aHash((void*)"BCryptCreateHash",             16);
+		// a[2]  = utl::FNV1aHash((void*)"BCryptDecrypt",                13);
+		// a[3]  = utl::FNV1aHash((void*)"BCryptDestroyHash",            17);
+		// a[4]  = utl::FNV1aHash((void*)"BCryptDestroyHash",            17);
+		// a[5]  = utl::FNV1aHash((void*)"BCryptDestroyKey",             16);
+		// a[6]  = utl::FNV1aHash((void*)"BCryptEncrypt",                13);
+		// a[7]  = utl::FNV1aHash((void*)"BCryptExportKey",              15);
+		// a[8]  = utl::FNV1aHash((void*)"BCryptFinishHash",             16);
+		// a[9]  = utl::FNV1aHash((void*)"BCryptGenerateSymmetricKey",   26);
+		// a[10] = utl::FNV1aHash((void*)"BCryptGenRandom",              15);
+		// a[11] = utl::FNV1aHash((void*)"BCryptGetProperty",            17);
+		// a[12] = utl::FNV1aHash((void*)"BCryptHashData",               14);
+		// a[13] = utl::FNV1aHash((void*)"BCryptImportKey",              15);
+		// a[14] = utl::FNV1aHash((void*)"BCryptOpenAlgorithmProvider",  27);
+		// a[15] = utl::FNV1aHash((void*)"BCryptSetProperty",            17);
+
+
+
+
+
 		switch (dwReason) {
 		case DLL_PROCESS_ATTACH:
 			{
+				auto BaseAddress = (handle)GetModuleHandleW(nullptr);
+				auto* NtHeader = utl::GetNtHeader(BaseAddress);
+				const char ProtectedSections[4][8] = { ".nb", ".nbr", ".nbw", ".nbx" };
 			#ifdef _DEBUG
-				ptr BaseAddress = (ptr)GetModuleHandleW(nullptr);
-				IMAGE_NT_HEADERS* NtHeader = utl::img::GetNtHeader((HMODULE)BaseAddress);
-
-				// This will unprotect all memory of the section and allow full access to it,
-				// its only valid for Debug-Configuration, on Release this has to be done through the builder
-				// byte LoaderSegName[8] = ".ldrx";
-				// IMAGE_SECTION_HEADER* LoaderSection = utl::img::FindSection(NtHeader, LoaderSegName);
-				dword OldProtection;
-				// VirtualProtect((void*)((ptr)LoaderSection->VirtualAddress + BaseAddress), LoaderSection->Misc.VirtualSize,
-				//	PAGE_EXECUTE_READWRITE, &OldProtection);
-
-				// Simulate Inaccessable .text, .data and .rdata Sections by setting Pageprotections to NoAccess
-				byte NoAccessSections[4][8] = {
-					".ldr",
-					".ldrr",
-					".ldrw",
-					".ldrx"
-				};
+				// Simulate Inaccessable protected Sections by setting Pageprotections to NoAccess
 				IMAGE_SECTION_HEADER* SectionPointers[4];
 				dword OldSectionProtections[4];
 				for (u8 i = 0; i < 4; i++) {
-					SectionPointers[i] = utl::img::FindSection(NtHeader, NoAccessSections[i]);
+					SectionPointers[i] = utl::FindSection(NtHeader, ProtectedSections[i]);
 					if (SectionPointers[i])
-						VirtualProtect((void*)((ptr)SectionPointers[i]->VirtualAddress + BaseAddress), SectionPointers[i]->Misc.VirtualSize,
+						VirtualProtect((void*)((ptr)SectionPointers[i]->VirtualAddress + (ptr)BaseAddress), SectionPointers[i]->Misc.VirtualSize,
 							PAGE_NOACCESS, OldSectionProtections + i);
 				}
 			#endif
 				// l_bTlsFlag = true;
 
-				auto a = utl::FNV1aHash((void*)"LdrLoadDll", 10);
 
-				auto nt = utl::img::GetModuleHandleByHash(N_NTDLL);
-				auto func = utl::img::ImportFunctionByHash(nt, a);
 
-				auto k32 = utl::img::GetModuleHandleByHash(N_KRNL32);
+
 
 				// cry::XPressH compressor;
 
@@ -68,12 +73,12 @@ namespace ldr {
 
 				   2. Ensure integrity of the loaderstub (selfhashing (sha256-bcrypt))
 
-				   4. Start Protection-Services (Protect TLS Stage-2):
+				   3. Start Protection-Services (Protect TLS Stage-2):
 					  - MemoryScanner
 					  - Test for Virtual Environment
 					  - Run all Debugger Checks
 
-				   3. Decrypt & unpack the core (per registered section):
+				   4. Decrypt & unpack the core (per registered section):
 					  - Undo Base-Relocations in region (fix corrupted data)
 					  - Decrypt (aes256cbc-bcrypt)
 					  - Unpack (LZ77+Huffman (RtlCompressBuffer))
@@ -81,13 +86,52 @@ namespace ldr {
 					  - Ensure integrity of unpacked code/data (hashing (sha256 per section))
 				*/
 
+			// Stage 4:
+				// Load bcrypt.dll
+				wchar SystemDirectory[MAX_PATH];
+				GetSystemDirectoryW(SystemDirectory, MAX_PATH);
+				wchar BCryptDll[MAX_PATH];
+				utl::GetSystemDllbyHash(SystemDirectory, N_BCRYPTDLL, BCryptDll);
+				handle BCry = LoadLibraryW(BCryptDll);
+				auto BCryptOpenAlgorithmProvider = (cry::bcryoap_t)utl::ImportFunctionByHash(BCry, N_BCOALGPRO);
+
+				i64 BaseDelta = (i64)BaseAddress - 0x140000000;
+				for (u8 i = 0; i < 4; i++) {
+					auto Section = utl::FindSection(NtHeader, ProtectedSections[i]);
+					if (!Section)
+						continue;
+
+					// Reverse Relocs (reverse damage done by Ldr to the protected sections)
+					void* SectionAddress = (void*)((ptr)Section->VirtualAddress + (ptr)BaseAddress);
+					dword OldProtection;
+					VirtualProtect(SectionAddress, Section->Misc.VirtualSize, PAGE_READWRITE, &OldProtection);
+					status SLdr = utl::ApplyBaseRelocationsOnSection(BaseAddress, Section, nullptr, -BaseDelta);
+					if(S_ERROR(SLdr))
+					VirtualProtect(SectionAddress, Section->Misc.VirtualSize, PAGE_READWRITE, &OldProtection);
+
+					// Decrypt Aes256Cbc
+					BCRYPT_ALG_HANDLE AesAlg;
+
+					// BCryptOpenAlgorithmProvider(&AesAlg, BCRYPT_AES_ALGORITHM, nullptr, 0); // Obfuscate "AES" (BCRYPT_AES_ALGORITHM)
+					// BCryptImportKey()
+
+
+					// Uncompress LZ77+Huffman
+
+
+
+					// Reapply BaseRelocations
+					utl::ApplyBaseRelocationsOnSection(BaseAddress, Section, nullptr, BaseDelta);
+				}
+
 			#ifdef _DEBUG
 				// Revert Pageprotections on Blocked Sections (this simulates a Successful decryption)
 				for (u8 i = 0; i < 4; i++)
 					if (SectionPointers[i]) {
-						ptr address = ((ptr)SectionPointers[i]->VirtualAddress + BaseAddress);
+						ptr address = ((ptr)SectionPointers[i]->VirtualAddress + (ptr)BaseAddress);
 						size_t size = SectionPointers[i]->Misc.VirtualSize;
 
+						dword OldProtection;
 						VirtualProtect((void*)address, size, OldSectionProtections[i], &OldProtection);
 
 						// VirtualProtect((void*)((ptr)SectionPointers[i]->VirtualAddress + BaseAddress), SectionPointers[i]->Misc.VirtualSize,

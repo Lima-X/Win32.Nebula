@@ -7,12 +7,12 @@ typedef          wchar_t   wchar;
 
 // Integer Types
 typedef          char      i8;
-typedef unsigned char      u8;
 typedef          short     i16;
-typedef unsigned short     u16;
 typedef          int       i32;
-typedef unsigned int       u32;
 typedef          long long i64;
+typedef unsigned char      u8;
+typedef unsigned short     u16;
+typedef unsigned int       u32;
 typedef unsigned long long u64;
 
 // CPU Types
@@ -23,11 +23,14 @@ typedef unsigned long long qword;
 
 // Pointer Types
 #ifdef _M_X64
-typedef unsigned long long ptr;
-typedef unsigned long long poly;
+typedef unsigned long long ptr;    // A pointer as a raw value used for pointer arithmetic (prefered over "void*")
+typedef unsigned long long poly;   // A polymorthic scalar type that can be used to store anything fitting
+typedef          void*     handle; // A handle is a polymorthic type that stores a reference or value associated to an object
+                                   // this value has to be translated and processed by the corresponding api (similar to WinAPI's)
 #elif _M_IX86
-typedef unsigned long      ptr;
-typedef unsigned long      poly;
+typedef unsigned long ptr;
+typedef unsigned long poly;
+typedef          poly handle;
 #endif
 #pragma endregion
 
