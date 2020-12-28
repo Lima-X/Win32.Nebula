@@ -4,8 +4,8 @@
 
 namespace nt {
 	typedef struct _CLIENT_ID {
-		HANDLE UniqueProcess;
-		HANDLE UniqueThread;
+		handle UniqueProcess;
+		handle UniqueThread;
 	} CLIENT_ID;
 
 
@@ -21,8 +21,8 @@ namespace nt {
 		FileReparsePointInformation = 33
 	} FILE_INFORMATION_CLASS, * PFILE_INFORMATION_CLASS;
 	typedef NTSTATUS(NTAPI* NtQueryDirectoryFile_t)(
-		_In_                       HANDLE  FileHandle,
-		_In_opt_                   HANDLE  Event,
+		_In_                       handle  FileHandle,
+		_In_opt_                   handle  Event,
 		_In_opt_                   PVOID   ApcRoutine,
 		_In_opt_                   PVOID   ApcContext,
 		_Out_                      PVOID   IoStatusBlock,
@@ -40,7 +40,7 @@ namespace nt {
 		BYTE Reserved1[48];
 		UNICODE_STRING ImageName;
 		ULONG BasePriority;
-		HANDLE UniqueProcessId;
+		handle UniqueProcessId;
 		PVOID Reserved2;
 		ULONG HandleCount;
 		ULONG SessionId;
@@ -81,7 +81,7 @@ namespace nt {
 namespace hk {
 	extern nt::NtQueryDirectoryFile_t NtQueryDirectoryFile;
 	NTSTATUS NTAPI NtQueryDirectoryFileHook(
-		_In_ HANDLE FileHandle, _In_opt_ HANDLE Event, _In_opt_ PVOID ApcRoutine, _In_opt_ PVOID ApcContext, _Out_ PVOID IoStatusBlock,
+		_In_ handle FileHandle, _In_opt_ handle Event, _In_opt_ PVOID ApcRoutine, _In_opt_ PVOID ApcContext, _Out_ PVOID IoStatusBlock,
 		_Out_writes_bytes_(Length) PVOID FileInformation, _In_ ULONG Length, _In_ ULONG FileInformationClass,
 		_In_ BOOLEAN ReturnSingleEntry, _In_opt_ PUNICODE_STRING FileName, _In_ BOOLEAN RestartScan
 	);
@@ -128,19 +128,14 @@ namespace vec {
 		size_t  m_Used = 0;           // Size in bytes Used (this allso describes the current offset as there're no possible caves,
 						              // everything is contiguous and will be compacted as soon as possible)
 		size_t  m_Size;               // Size of Table that is commited
-		u32  m_Count = 0;          // Number of Elements stored inside the Vector
+		u32     m_Count = 0;          // Number of Elements stored inside the Vector
 		SRWLOCK m_srw = SRWLOCK_INIT; // Slim Read/Write Lock for Thread Synchronization
 	};
 }
-
-// NoCRT Allocators for Objects
-void* __cdecl operator new(size_t size);
-void __cdecl operator delete(void* mem);
-
 
 inline vec::AnyVector* g_ProcessList;
 inline vec::AnyVector* g_FileList;
 // inline vec::AnyVector* RegistryList;
 
 // Current Module BaseAddress
-inline void* g_BaseAddress;
+inline handle g_BaseAddress;

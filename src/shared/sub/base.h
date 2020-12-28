@@ -7,21 +7,26 @@
 #pragma warning(disable : 4267)
 #pragma warning(disable : 4302)
 #pragma warning(disable : 4311)
+#pragma warning(disable : 4595)
 #pragma warning(disable : 4706)
 
+
 // Language (C/C++) Specific
-#include <intrin.h>
+#define _CRT_SECURE_NO_WARNINGS
+#define _VCRTIMP __declspec(dllimport) // Shitty hack in order to prevent the compiler from complain about
+                                       // C++ overloaded inline functions being "redefined" by importing
+#include <intrin.h>                    // Intrinsics (this is redundant as the windows header also includes this)
 
 // Windows (NT) Specific
 #define _WIN32_WINNT         0x06010000 // Windows 7 and up
 #define  WIN32_LEAN_AND_MEAN            // Reduce Header Size
-#define  UNICODE                        // Use Unicode Charset
 #include <windows.h>                    // Windows Header
 
 // Nebula Specific
 #include "sub/def.h"
 #include "sub/status.h"
-// #include "sub/dbg.h"
+#include "rtl.h"
+#include "..\dbg.h"
 
 // The Macroprefix "N_" is reserved for Nebula's usage
 #pragma region Loader FNV-1a Hashes

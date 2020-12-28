@@ -66,7 +66,11 @@ typedef _Success_(!(return & (0b1 << 31))) signed long status;
 #define SC_INVALID_POINTER     6 // Pointer to Object is invalid (NullPointer)
 #define SC_INVALID_DATA        7 // Invalid/Malformed data was found
 #define SC_UNSUPPORTED         8 // A unsupported feature was requested
-#define SC_INVALID_HADNLE      9 // A invalid handle was found/translated
+#define SC_INVALID_HANDLE      9 // A invalid handle was found/translated
+#define SC_COULDNT_ATTACH     10 // Could not attach to protocol
+#define SC_INCOMPLETE         11 // Opearation remains incomplete
+
+
 
 #define SC_CLIENT 65536 // Status Codes from 65536 (0x10000) - 16777216 (0xffffff) are reserved for the Client
 #pragma endregion

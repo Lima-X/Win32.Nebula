@@ -10,7 +10,7 @@ namespace vec {
 	AnyVector::AnyVector()
 		: m_Vec(VirtualAlloc(nullptr, 0x1000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)),
 		m_Size(0x1000) {
-	#if _DEBUG
+	#ifdef _DEBUG
 		__stosb((byte*)m_Vec, 0xcc, m_Size);
 	#endif
 	}

@@ -1,37 +1,20 @@
 // No Runtime Library: Provides subroutines for the compiler/dev that emulate the CRT
 #pragma once
+// Link against ntdll (Full link through private lib)
+#pragma comment(lib, "ntdllp.lib")
 
-#include "sub/sub.h"
-
-// Inline Definitions / Macros
-#define memset(_Dst, _Val, _Size) __stosb((byte*)_Dst, (byte*)_Val, _Size)
-#define memcpy(_Dst, _Src, _Size) __movsb((byte*)_Dst, (byte*)_Src, _Size)
-
-constexpr u32 RoundUpToMulOfPow2(u32 num, u32 mul) {
-	return (num + (mul - 1)) & (0 - mul);
-}
-
-// Standard Declarations
-EXCEPTION_DISPOSITION __cdecl __C_specific_handler(_In_ EXCEPTION_RECORD* ExceptionRecord, _In_ void* EstablisherFrame, _Inout_ CONTEXT* ContextRecord, _Inout_ DISPATCHER_CONTEXT* DispatcherContext);
-
-void* __cdecl operator new(size_t size);
-void __cdecl operator delete(void* mem);
-
-namespace nrt {
-	size_t strlen(_In_z_ const char* sz);
-	size_t wcslen(_In_z_ const wchar* sz);
-}
-
-#pragma region NtAPI Declarations
 typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 typedef struct _UNICODE_STRING {
-	USHORT                                                  Length;
-	USHORT                                                  MaximumLength;
-	_Field_size_bytes_part_opt_(MaximumLength, Length) PWCH Buffer;
+	                                                   USHORT Length;
+	                                                   USHORT MaximumLength;
+	_Field_size_bytes_part_opt_(MaximumLength, Length) PWCH   Buffer;
 } UNICODE_STRING, * PUNICODE_STRING;
 
-#pragma comment(lib, "ntdll.lib")
+#ifdef __cplusplus
 extern "C" {
+#else
+{
+#endif
 	NTSYSAPI VOID NTAPI	RtlInitUnicodeString(
 		_Out_      UNICODE_STRING* DestinationString,
 		_In_opt_z_ PCWSTR          SourceString
@@ -68,6 +51,9 @@ extern "C" {
 		_Out_ PULONG CompressFragmentWorkSpaceSize
 	);
 
+	IMPORT int __cdecl swprintf_s(wchar_t* buffer, size_t sizeOfBuffer, const wchar_t* format, ...);
+	IMPORT int __cdecl vswprintf_s(wchar_t* buffer, size_t numberOfElements, const wchar_t* format, va_list argptr);
+	IMPORT int __cdecl vsprintf_s(char* buffer, size_t numberOfElements, const char* format, va_list argptr);
+	// IMPORT wchar_t* __cdecl wcschr(const wchar_t* str, wchar_t c);
 }
 #pragma endregion
-

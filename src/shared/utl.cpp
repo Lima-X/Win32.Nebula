@@ -2,6 +2,7 @@
 #include "shared.h"
 
 namespace utl {
+#pragma region Image
 	IMAGE_NT_HEADERS* GetNtHeader(
 		_In_ handle Module
 	) {
@@ -54,7 +55,7 @@ namespace utl {
 			ListIterator = ListIterator->Flink;
 
 			auto DllName = (UNICODE_STRING*)((ptr)ListIterator + 0x48); // Get DllBaseName
-			auto ModuleNameSize = nrt::wcslen(ModuleName) * sizeof(*ModuleName);
+			auto ModuleNameSize = wcslen(ModuleName) * sizeof(*ModuleName);
 			if (DllName->Length == ModuleNameSize)
 				if (RtlCompareMemory(DllName->Buffer, ModuleName, ModuleNameSize) == ModuleNameSize)
 					return (handle)((ptr)ListIterator + 0x20); // Get DllBaseAddress
@@ -72,10 +73,14 @@ namespace utl {
 		LIST_ENTRY* ListIterator = InMemoryOrderModuleList;
 		while (ListIterator->Flink != InMemoryOrderModuleList) {
 			ListIterator = ListIterator->Flink;
-
 			auto DllName = (UNICODE_STRING*)((ptr)ListIterator + 0x48); // Get DllBaseName
-			RtlDowncaseUnicodeString(&LowerName, DllName, false);
-			if (FNV1aHash(LowerName.Buffer, DllName->Length) == Hash)
+
+			// Convert string to lowercase
+			__movsb((byte*)Buffer, (byte*)DllName->Buffer, DllName->Length);
+			Buffer[DllName->Length / 2] = L'\0';
+			_wcslwr(Buffer);
+
+			if (FNV1aHash(Buffer, DllName->Length) == Hash)
 				return (handle)((ptr)ListIterator + 0x20); // Get DllBaseAddress
 		}
 
@@ -97,7 +102,7 @@ namespace utl {
 
 		for (u32 i = 0; i < ExportDirectory->NumberOfNames; i++) {
 			auto FunctionName = (const char*)((ptr)ppNameTable[i] + ModuleBase);
-			auto InternalHash = FNV1aHash((void*)FunctionName, nrt::strlen(FunctionName));
+			auto InternalHash = FNV1aHash((void*)FunctionName, strlen(FunctionName));
 
 			if (InternalHash == Hash) {
 				auto OrdinalTable = (word*)((ptr)ExportDirectory->AddressOfNameOrdinals + ModuleBase);
@@ -124,7 +129,7 @@ namespace utl {
 		wcscat_t wcscat = (wcscat_t)ImportFunctionByHash(NT, N_CRTWCSCAT);
 
 		wchar InternalPath[MAX_PATH];
-		__movsb((byte*)InternalPath, (byte*)SearchPath, (nrt::wcslen(SearchPath) + 1) * sizeof(wchar));
+		__movsb((byte*)InternalPath, (byte*)SearchPath, (wcslen(SearchPath) + 1) * sizeof(wchar));
 		wcscat(InternalPath, L"\\*.dll");
 
 		typedef wchar* (__cdecl*wcslwr_t)(
@@ -133,14 +138,14 @@ namespace utl {
 		wcslwr_t _wcslwr = (wcslwr_t)ImportFunctionByHash(NT, N_CRTWCSLWR);
 
 		WIN32_FIND_DATAW fd;
-		HANDLE hFind = FindFirstFileW(InternalPath, &fd);
+		handle hFind = FindFirstFileW(InternalPath, &fd);
 		if (hFind == INVALID_HANDLE_VALUE)
-			return S_CREATE(SS_ERROR, SF_NULL, SC_INVALID_HADNLE);
+			return S_CREATE(SS_ERROR, SF_NULL, SC_INVALID_HANDLE);
 		do {
 			if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
 				_wcslwr(fd.cFileName);
-				if (FNV1aHash(fd.cFileName, nrt::wcslen(fd.cFileName) * sizeof(wchar)) == Hash) {
-					__movsb((byte*)Path, (byte*)SearchPath, (nrt::wcslen(SearchPath) + 1) * sizeof(wchar));
+				if (FNV1aHash(fd.cFileName, wcslen(fd.cFileName) * sizeof(wchar)) == Hash) {
+					__movsb((byte*)Path, (byte*)SearchPath, (wcslen(SearchPath) + 1) * sizeof(wchar));
 					wcscat(Path, L"\\");
 					wcscat(Path, fd.cFileName);
 					return SUCCESS;
@@ -196,6 +201,15 @@ namespace utl {
 			// Advance to next reloc Block
 			(ptr&)Iterator += Iterator->SizeOfBlock;
 		}
+
+		return SUCCESS;
+	}
+#pragma endregion
+
+	status CreatePath(           // Creates a directory with all its intermediats
+		_In_z_ const wchar* Path // The FilePath to create
+	) {
+
 
 		return SUCCESS;
 	}

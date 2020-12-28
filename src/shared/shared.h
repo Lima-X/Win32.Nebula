@@ -1,11 +1,12 @@
 // This File is shared between the core Projects and provides intercompatibility between them.
 #pragma once
 
-#include "sub/sub.h"
-#include "nrt/nrt.h"
+#include "sub/base.h"
+#include "itl.h"
 
 #include <bcrypt.h>
 
+#ifdef __cplusplus
 namespace utl {
 	typedef unsigned long long fnv;
 	constexpr fnv FNV1aHash(_In_ void* Data, _In_ size_t Size);
@@ -17,6 +18,8 @@ namespace utl {
 	void*                 ImportFunctionByHash(_In_ handle Module, _In_ fnv Hash);
 	handle                GetModuleHandleByHash(_In_ fnv Hash);
 	status                ApplyBaseRelocationsOnSection(_In_ handle Module, _In_ IMAGE_SECTION_HEADER* Section, _In_opt_ void* Address, _In_ i64 RelocationDelta);
+
+	status                CreatePath(_In_z_ const wchar* Path);
 }
 
 namespace cry {
@@ -27,21 +30,25 @@ namespace cry {
 		_In_     ULONG              dwFlags
 		);
 
-	class Hash {
+	class BHash {
 	public:
 		struct sha2 {
 			byte hash[32];
 		} m_Hash;
 
-		Hash();
-		~Hash();
+		BHash(
+			_In_z_ const wchar* AlgorithmId = nullptr
+		);
+		~BHash();
 		status HashData(_In_ void* pBuffer, _In_ size_t nBuffer);
 		status HashFinalize();
 	private:
-		static u32                s_nRefCount;
-		static BCRYPT_ALG_HANDLE  s_ah;
-		       BCRYPT_HASH_HANDLE m_hh;
-		       void*              m_pObj;
-		static size_t             s_nObj;
+		volatile static u32                s_nRefCount;
+		         static handle             s_BCry;
+		         static BCRYPT_ALG_HANDLE  s_ah;
+		         static size_t             s_nObj;
+		                BCRYPT_HASH_HANDLE m_hh;
+		                void*              m_pObj;
 	};
 }
+#endif

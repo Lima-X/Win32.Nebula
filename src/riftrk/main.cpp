@@ -80,7 +80,7 @@ namespace rkc {
 
 	struct AsyncSetupCtx {
 		HINSTANCE hInstDll;
-		HANDLE    hReadEvent;
+		handle    hReadEvent;
 	};
 	long __stdcall IOCtlSetup(
 		_In_opt_ AsyncSetupCtx* ctx
@@ -95,7 +95,7 @@ namespace rkc {
 		if (!awc)
 			return -1;
 
-		HWND hWnd = CreateWindowExW(NULL, MAKEINTATOM(awc), wc.lpszClassName,
+		HWND hWnd = CreateWindowExW(NULL, (const wchar*)awc, wc.lpszClassName,
 			NULL, 0, 0, 0, 0, HWND_MESSAGE, NULL, wc.hInstance, nullptr);
 		if (!hWnd) {
 			UnregisterClassW(wc.lpszClassName, wc.hInstance);
@@ -127,7 +127,7 @@ extern "C" __declspec(dllexport) long __stdcall DbgSetupForLoadLib(
 	g_BaseAddress = hInstDll;
 
 	// Setup IOCtl Handling (RootKit Control)
-	HANDLE h[2];
+	handle h[2];
 	h[0] = CreateEventW(nullptr, false, false, nullptr);
 	rkc::AsyncSetupCtx ctx = { (HINSTANCE)hInstDll, h[0] };
 	h[1] = CreateThread(nullptr, 0x1000, (LPTHREAD_START_ROUTINE)rkc::IOCtlSetup, &ctx, 0, nullptr);

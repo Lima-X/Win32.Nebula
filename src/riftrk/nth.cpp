@@ -25,8 +25,8 @@ namespace hk {
 
 	nt::NtQueryDirectoryFile_t NtQueryDirectoryFile;
 	NTSTATUS NTAPI NtQueryDirectoryFileHook(
-		_In_                       HANDLE          FileHandle,
-		_In_opt_                   HANDLE          Event,
+		_In_                       handle          FileHandle,
+		_In_opt_                   handle          Event,
 		_In_opt_                   PVOID           ApcRoutine,
 		_In_opt_                   PVOID           ApcContext,
 		_Out_                      PVOID           IoStatusBlock,

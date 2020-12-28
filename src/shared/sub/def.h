@@ -28,9 +28,9 @@ typedef unsigned long long poly;   // A polymorthic scalar type that can be used
 typedef          void*     handle; // A handle is a polymorthic type that stores a reference or value associated to an object
                                    // this value has to be translated and processed by the corresponding api (similar to WinAPI's)
 #elif _M_IX86
-typedef unsigned long ptr;
-typedef unsigned long poly;
-typedef          poly handle;
+typedef unsigned long  ptr;
+typedef unsigned long  poly;
+typedef          void* handle;
 #endif
 #pragma endregion
 
@@ -38,16 +38,18 @@ typedef          poly handle;
 #ifdef _M_X64
 #define __x64call
 #else
-#define __x64call NIVALID_CALLING_CONVENTION // This cause a compiler error
+#define __x64call INVALID_CALLING_CONVENTION // This cause a compiler error
 #endif
 
-// #define DEPRECATED       __declspec(deprecated)
-#define DEPRECATED(str)     __declspec(deprecated(str))
+#define GENERIC_READWRITE   0xc0000000 // (GENERIC_READ | GENERIC_WRITE)
 
-#define IMPORT              __declspec(dllimport)
-#define EXPORT              __declspec(dllexport)
-#define NOINLINE            __declspec(noinline)
+#define DEPRECATED             __declspec(deprecated)
+#define DEPRECATED_STR(String) __declspec(deprecated(String))
 
-#define ALLOC_CODE(Section) __declspec(code_seg(Section))
-#define ALLOC_DATA(Section) __declspec(allocate(Section))
+#define IMPORT                 __declspec(dllimport)
+#define EXPORT                 __declspec(dllexport)
+#define NOINLINE               __declspec(noinline)
+
+#define ALLOC_CODE(Section)    __declspec(code_seg(Section))
+#define ALLOC_DATA(Section)    __declspec(allocate(Section))
 #pragma endregion

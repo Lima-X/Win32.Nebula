@@ -16,28 +16,6 @@ namespace ldr {
 		UNREFERENCED_PARAMETER(DllHandle);
 		UNREFERENCED_PARAMETER(Reserved);
 
-		// utl::fnv a[20];
-		// a[0]  = utl::FNV1aHash((void*)"BCryptCloseAlgorithmProvider", 28);
-		// a[1]  = utl::FNV1aHash((void*)"BCryptCreateHash",             16);
-		// a[2]  = utl::FNV1aHash((void*)"BCryptDecrypt",                13);
-		// a[3]  = utl::FNV1aHash((void*)"BCryptDestroyHash",            17);
-		// a[4]  = utl::FNV1aHash((void*)"BCryptDestroyHash",            17);
-		// a[5]  = utl::FNV1aHash((void*)"BCryptDestroyKey",             16);
-		// a[6]  = utl::FNV1aHash((void*)"BCryptEncrypt",                13);
-		// a[7]  = utl::FNV1aHash((void*)"BCryptExportKey",              15);
-		// a[8]  = utl::FNV1aHash((void*)"BCryptFinishHash",             16);
-		// a[9]  = utl::FNV1aHash((void*)"BCryptGenerateSymmetricKey",   26);
-		// a[10] = utl::FNV1aHash((void*)"BCryptGenRandom",              15);
-		// a[11] = utl::FNV1aHash((void*)"BCryptGetProperty",            17);
-		// a[12] = utl::FNV1aHash((void*)"BCryptHashData",               14);
-		// a[13] = utl::FNV1aHash((void*)"BCryptImportKey",              15);
-		// a[14] = utl::FNV1aHash((void*)"BCryptOpenAlgorithmProvider",  27);
-		// a[15] = utl::FNV1aHash((void*)"BCryptSetProperty",            17);
-
-
-
-
-
 		switch (dwReason) {
 		case DLL_PROCESS_ATTACH:
 			{
@@ -112,7 +90,7 @@ namespace ldr {
 					// Decrypt Aes256Cbc
 					BCRYPT_ALG_HANDLE AesAlg;
 
-					// BCryptOpenAlgorithmProvider(&AesAlg, BCRYPT_AES_ALGORITHM, nullptr, 0); // Obfuscate "AES" (BCRYPT_AES_ALGORITHM)
+					BCryptOpenAlgorithmProvider(&AesAlg, BCRYPT_AES_ALGORITHM, nullptr, 0); // Obfuscate "AES" (BCRYPT_AES_ALGORITHM)
 					// BCryptImportKey()
 
 

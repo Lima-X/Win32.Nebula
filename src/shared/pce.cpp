@@ -3,14 +3,17 @@
 namespace cry {
 
 #pragma region Hashing
-	BCRYPT_ALG_HANDLE Hash::s_ah;
-	u32               Hash::s_nRefCount = 0;
-	size_t Hash::s_nObj;
+	         handle   BHash::s_BCry;
+	BCRYPT_ALG_HANDLE BHash::s_ah;
+	volatile u32      BHash::s_nRefCount = 0;
+             size_t   BHash::s_nObj;
 
-	Hash::Hash() {
+	BHash::BHash(
+		_In_z_ const wchar* AlgorithmId
+	) {
 		if (!(_InterlockedIncrement((u32*)&s_nRefCount) - 1)) {
 			// bcryoap_t BCryptOpenAlgorithmProvider = utl::ImportFunctionByHash()
-			// BCryptOpenAlgorithmProvider(&s_ah, BCRYPT_SHA256_ALGORITHM, nullptr, NULL);
+			// BCryptOpenAlgorithmProvider(&s_ah, AlgorithmId ? AlgorithmId : BCRYPT_SHA256_ALGORITHM, nullptr, NULL);
 		}
 		if (!s_nObj) {
 			size_t nResult;
@@ -18,7 +21,7 @@ namespace cry {
 		}
 		m_pObj = HeapAlloc(GetProcessHeap(), 0, s_nObj);
 	}
-	Hash::~Hash() {
+	BHash::~BHash() {
 		if (m_hh)
 			// BCryptDestroyHash(m_hh);
 		HeapFree(GetProcessHeap(), 0, m_pObj);
@@ -26,7 +29,7 @@ namespace cry {
 			; // BCryptCloseAlgorithmProvider(s_ah, NULL);
 	}
 
-	status Hash::HashData(
+	status BHash::HashData(
 		_In_ void* pBuffer,
 		_In_ size_t nBuffer
 	) {
@@ -36,7 +39,7 @@ namespace cry {
 		// s = BCryptHashData(m_hh, (byte*)pBuffer, nBuffer, NULL);
 		return -!!s;
 	}
-	status Hash::HashFinalize() {
+	status BHash::HashFinalize() {
 		status s = 0;// BCryptFinishHash(m_hh, (byte*)&m_Hash, sizeof(sha2), NULL);
 		// s = BCryptDestroyHash(m_hh);
 		m_hh = NULL;

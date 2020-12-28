@@ -14,14 +14,14 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)nrt\nrt.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)itl.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)shared.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\rtl.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sub\status.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)sub\sub.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)sub\base.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)sub\def.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)nrt\nrt.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)pce.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)utl.cpp" />
   </ItemGroup>

@@ -1,19 +1,62 @@
-// This Defines Debugging related code used to Debug, Trace/Log and Test Code
+/* Debug Library: Defines debugging related code used to debug, trace/log and test code,
+                  all contianed within one header as a almost standalone library,
+				  that is mutually excluded in non debug builds. */
 #pragma once
-#ifdef __cplusplus
-#include <cstdio>
+#define _DEBUG
 
+#if defined(_DEBUG) && defined(__cplusplus)
+#pragma comment(lib, "ntdllp.lib")
+#include <windows.h>
+#pragma comment(lib, "dbghelp.lib")
+#include <dbghelp.h>
+
+__declspec(dllimport) ULONG __cdecl vDbgPrint(_In_z_ _Printf_format_string_ PCSTR Format, ...);
+__declspec(dllimport) int __cdecl swprintf_s(wchar_t* buffer, size_t sizeOfBuffer, const wchar_t* format, ...);
+
+// will be renamed to dbg when the original old code has been fully regfactored modified
+namespace dbg2 {
+	inline status CreateDump(                                   // Generates a MiniDumpFile of the current process
+		_In_z_   const wchar*              Path,         // The path at which to create the dumpfile and write to
+		_In_opt_       EXCEPTION_POINTERS* ExceptionInfo // Optional exceptionpointers incase an exception occoured
+	) {
+		auto Heap = GetProcessHeap();
+		auto Temporary1 = (wchar*)HeapAlloc(Heap, 0, MAX_PATH);
+
+		// Search for Basename
+		GetModuleFileNameW(GetModuleHandleW(nullptr), Temporary1, MAX_PATH);
+		size_t StringLength = wcslen(Temporary1);
+		auto BaseName = Temporary1 + StringLength;
+		while (*--BaseName != L'\\');
+
+		// Create Dumpfile
+		auto Temporary2 = (wchar*)HeapAlloc(Heap, 0, MAX_PATH);
+		swprintf_s(Temporary2, MAX_PATH, L"\\%s%04d_%#018llx.dmp", ++BaseName, GetCurrentProcessId(), __rdtsc());
+		auto MiniDumpFileName = Temporary1;
+		wcscpy(MiniDumpFileName, Path);
+		wcscat(MiniDumpFileName, Temporary2);
+		HeapFree(Heap, 0, Temporary2);
+		handle hFile = CreateFileW(MiniDumpFileName, GENERIC_READWRITE,
+			FILE_SHARE_READ, nullptr, CREATE_ALWAYS, NULL, NULL);
+		HeapFree(Heap, 0, MiniDumpFileName);
+		if (hFile == INVALID_HANDLE_VALUE)
+			return S_CREATE(SS_ERROR, SF_NULL, SC_INVALID_HANDLE);
+
+		// Create and Write Minidump
+		MINIDUMP_EXCEPTION_INFORMATION mdei;
+		mdei.ExceptionPointers = ExceptionInfo;
+		mdei.ThreadId = GetCurrentThreadId();
+		mdei.ClientPointers = false;
+		MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
+			hFile, MiniDumpNormal, &mdei, nullptr, nullptr);
+
+		CloseHandle(hFile);
+		return SUCCESS;
+	}
+}
+
+// Old Code, will be fixed up, refactored, moved to dbg2 or removed
 namespace dbg {
-#pragma region Debugging
-	/* Because of how the C Preprocessor works (Macro's)
-	   Im forced to either rely on:
-	   - WPO and LTO optimizations (which I would actually trust ~~but dont want to~~ (actually using them now))
-	   - Use some weird as fucker to reform the expression into something else that is valid but goes into nothing
-	   - Use plain C to write my "Debugging API" which will be ugly and wont fit the C++ style im aiming for */
-
-#ifdef _DEBUG
-
-	inline bool CheckIfFormatRequired(
+	DEPRECATED inline bool CheckIfFormatRequired(
 		_In_z_ const char* sz
 	) {
 		for (u16 i = 0; sz[i] != NULL; i++) {
@@ -29,25 +72,25 @@ namespace dbg {
 
 #pragma region Direct Debugging (through Debugger)
 	// This is fucked but works for whatever reason
-	inline void dbgTracePoint(
-		_In_z_   const char* sz,
+	DEPRECATED inline void DbgTracePoint(
+		_In_z_   const char* String,
 		_In_opt_             ...
 	) {
-		bool b = CheckIfFormatRequired(sz);
+		bool b = CheckIfFormatRequired(String);
 
 		char* psz = (char*)VirtualAlloc(nullptr, 0x1000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 		if (!psz)
 			return;
 
-		size_t nLen = strlen(sz);
+		size_t nLen = strlen(String);
 		// Format if needed
 		if (b) {
 			va_list va;
-			va_start(va, sz);
-			vsprintf_s(psz, 0x1000, sz, va);
+			va_start(va, String);
+			vsprintf_s(psz, 0x1000, String, va);
 			va_end(va);
 		} else
-			memcpy(psz, sz, nLen + 1);
+			memcpy(psz, String, nLen + 1);
 		if (psz[nLen - 1] != '\n')
 			*(word*)&psz[nLen] = '\0\n';
 
@@ -55,20 +98,20 @@ namespace dbg {
 		VirtualFree((void*)psz, NULL, MEM_RELEASE);
 	}
 
-	inline void dbgStatusAssert(
-		_In_           status s,
-		_In_     const char* sz,
-		_In_opt_       ...
+	DEPRECATED inline void DbgStatusAssert(
+		_In_           status Status,
+		_In_z_   const char*  String,
+		_In_opt_              ...
 	) {
-		if (s < 0) {
-			dbgTracePoint(sz, s);
-			RaiseException(s, EXCEPTION_NONCONTINUABLE, NULL, NULL);
+		if (S_ISSUE(Status)) {
+			DbgTracePoint(String, Status);
+			RaiseException(Status, EXCEPTION_NONCONTINUABLE, NULL, NULL);
 		}
 	}
 #pragma endregion
 
 #pragma region Intermediate/Developmental Debugging
-	class Benchmark {
+	class DbgBenchmark {
 	public:
 		typedef void nul;
 		enum class Resolution : u32 {
@@ -78,7 +121,7 @@ namespace dbg {
 			NANO = 1000000000
 		};
 
-		Benchmark(
+		DbgBenchmark(
 			_In_ Resolution res = Resolution::MILLI
 		)
 		#ifdef _DEBUG
@@ -87,7 +130,7 @@ namespace dbg {
 				QueryPerformanceFrequency(&m_liFrequenzy);
 		#else
 			{
-			#endif
+		#endif
 			}
 
 		void Begin() {
@@ -113,16 +156,16 @@ namespace dbg {
 	#ifdef _DEBUG
 		static LARGE_INTEGER m_liFrequenzy;
 		const  Resolution    m_res;
-		LARGE_INTEGER m_liBegin;
-		LARGE_INTEGER m_liEnd;
+		       LARGE_INTEGER m_liBegin;
+		       LARGE_INTEGER m_liEnd;
 	#endif
 		};
-	inline LARGE_INTEGER Benchmark::m_liFrequenzy;
+	inline LARGE_INTEGER DbgBenchmark::m_liFrequenzy;
 
-	class Log {
+	class DbgLog {
 	public:
-		static Log& Instance() {
-			static Log instance;
+		static DbgLog& Instance() {
+			static DbgLog instance;
 			return instance;
 		}
 
@@ -164,13 +207,13 @@ namespace dbg {
 		}
 
 	private:
-		Log() {
+		DbgLog() {
 			m_hFile = CreateFileW(L"rift.log", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
 				nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 			PTOP_LEVEL_EXCEPTION_FILTER uef = [](EXCEPTION_POINTERS* ctx) -> long {
-				Log log = Instance();
-				log.Trace("Unhandled Exception caught! @: %#010x, Exception:%#010x",
+				auto log = Instance();
+				log.Trace("Unhandled Exception caught! @: %#018x, Exception:%#018x",
 					ctx->ExceptionRecord->ExceptionAddress, ctx->ExceptionRecord->ExceptionCode);
 				CloseHandle(log.m_hFile);
 
@@ -179,19 +222,19 @@ namespace dbg {
 			SetUnhandledExceptionFilter(uef);
 
 			PVECTORED_EXCEPTION_HANDLER veh = [](EXCEPTION_POINTERS* ctx) -> long {
-				Instance().Trace("Exception occurred! @: %#010x, Exception:%#010x\nTrying to resume Execution.",
+				Instance().Trace("Exception occurred! @: %#018x, Exception:%#018x\nTrying to resume Execution.",
 					ctx->ExceptionRecord->ExceptionAddress, ctx->ExceptionRecord->ExceptionCode);
 
 				return EXCEPTION_CONTINUE_SEARCH;
 			};
 			AddVectoredExceptionHandler(NULL, veh);
 		}
-		~Log() {
+		~DbgLog() {
 			CloseHandle(m_hFile);
 		}
 
 		static status WriteToLog(
-			_In_ HANDLE h,
+			_In_ handle h,
 			_In_ void* pBuf,
 			_In_ size_t nBuf
 		) {
@@ -208,7 +251,7 @@ namespace dbg {
 		}
 
 		static long RecursiveException(EXCEPTION_POINTERS* ctx) {
-			HANDLE hFile = Log::Instance().m_hFile;
+			handle hFile = DbgLog::Instance().m_hFile;
 			WriteToLog(hFile, (char*)"\nRecursive Exception occurred!\n"
 				"Can't continue search/execution, aborting Process", 80);
 			CloseHandle(hFile);
@@ -217,7 +260,7 @@ namespace dbg {
 		}
 
 
-		HANDLE m_hFile;
+		handle m_hFile;
 	};
 #pragma endregion
 
@@ -228,7 +271,7 @@ namespace dbg {
 		_In_z_ const wchar* szDll,
 		_In_         dword  dwPid
 	) {
-		HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPid);
+		handle hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPid);
 		if (!hProc)
 			return -1; // Failed to open target Process
 
@@ -241,7 +284,7 @@ namespace dbg {
 		void* pLoadLibraryW = GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "LoadLibraryW");
 		if (!pLoadLibraryW)
 			return -4; // Failed to get Loaderfunctionaddress
-		HANDLE hRemoteThread = CreateRemoteThread(hProc, NULL, 0, (LPTHREAD_START_ROUTINE)pLoadLibraryW, rpDllPath, NULL, NULL);
+		handle hRemoteThread = CreateRemoteThread(hProc, NULL, 0, (LPTHREAD_START_ROUTINE)pLoadLibraryW, rpDllPath, NULL, NULL);
 		if (!hRemoteThread)
 			return -5; // Failed to create remote Thread
 
@@ -255,15 +298,16 @@ namespace dbg {
 		return dwRemote;
 	}
 #pragma endregion
-#endif
 }
 #endif
 
-#define BreakPoint __debugbreak
+#define BreakPoint   __debugbreak
 #ifdef _DEBUG
-#define TracePoint ::dbg::dbgTracePoint
+#define CreateDump   ::dbg2::CreateDump
+#define TracePoint   ::dbg::dbgTracePoint
 #define StatusAssert ::dbg::dbgStatusAssert
 #else
+#define CreateDump()
 #define TracePoint()
 #define StatusAssert()
 #endif

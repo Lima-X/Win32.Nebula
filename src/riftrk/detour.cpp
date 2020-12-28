@@ -22,7 +22,7 @@ namespace dt {
 					nt::SYSTEM_THREAD_INFORMATION* TEntry = (nt::SYSTEM_THREAD_INFORMATION*)(PEntry + 1);
 
 					m_ThreadCount = PEntry->NumberOfThreads;
-					m_ThreadList = (HANDLE*)HeapAlloc(GetProcessHeap(), NULL, (m_ThreadCount - 1) * sizeof(*m_ThreadList));
+					m_ThreadList = (handle*)HeapAlloc(GetProcessHeap(), NULL, (m_ThreadCount - 1) * sizeof(*m_ThreadList));
 
 					for (u32 i = 0; i < m_ThreadCount; i++) {
 						u32 TId = (u32)TEntry->ClientId.UniqueThread;
@@ -57,7 +57,7 @@ namespace dt {
 
 	private:
 		u32     m_ThreadCount = 0;
-		HANDLE* m_ThreadList;
+		handle* m_ThreadList;
 
 	};
 
