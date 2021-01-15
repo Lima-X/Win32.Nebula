@@ -22,7 +22,7 @@ struct Opr {
 		ExceptionParameterList[0] = this;
 		memset(this, 0, sizeof(*this));
 
-		auto Heap = GetProcessHeap();
+		auto m_Heap = GetProcessHeap();
 		auto Iterator = CommandLine;
 		auto CmdlLength = wcslen(CommandLine);
 
@@ -31,7 +31,7 @@ struct Opr {
 			if (*Iterator == L'/') {
 				// Parse Comment
 				size_t CommentLength = (ptr)(Iterator - 1) - (ptr)CommandLine;
-				Comment = (wchar*)HeapAlloc(Heap, 0, CommentLength + sizeof(*Comment));
+				Comment = (wchar*)HeapAlloc(m_Heap, 0, CommentLength + sizeof(*Comment));
 				memcpy(Comment, CommandLine, CommentLength);
 				Comment[CommentLength / sizeof(*Comment)] = L'\0';
 
@@ -56,9 +56,9 @@ struct Opr {
 
 			if (*Iterator == L'-') {
 				if (ParameterList) {
-					ParameterList = (Parameter*)HeapReAlloc(Heap, 0, ParameterList, ++ParameterCount * sizeof(Parameter));
+					ParameterList = (Parameter*)HeapReAlloc(m_Heap, 0, ParameterList, ++ParameterCount * sizeof(Parameter));
 				} else
-					ParameterList = (Parameter*)HeapAlloc(Heap, 0, ++ParameterCount * sizeof(Parameter));
+					ParameterList = (Parameter*)HeapAlloc(m_Heap, 0, ++ParameterCount * sizeof(Parameter));
 
 				// Find Colon Delimiter (Max at position 5 supported)
 				const wchar* ColonDelimiter = nullptr;
@@ -84,7 +84,7 @@ struct Opr {
 
 					size_t ArgumentLength = (ptr)Delimiter - (ptr)Iterator;
 					auto ParameterOffset = (ParameterCount - 1);
-					ParameterList[ParameterOffset].Argument = (wchar*)HeapAlloc(Heap, 0, ArgumentLength + 2);
+					ParameterList[ParameterOffset].Argument = (wchar*)HeapAlloc(m_Heap, 0, ArgumentLength + 2);
 					memcpy(ParameterList[ParameterOffset].Argument, Iterator, ArgumentLength);
 					ParameterList[ParameterOffset].Argument[ArgumentLength / sizeof(wchar)] = L'\0';
 				} else // Flaglist
@@ -99,14 +99,14 @@ struct Opr {
 
 	}
 	~Opr() {
-		auto Heap = GetProcessHeap();
+		auto m_Heap = GetProcessHeap();
 		if (Comment)
-			HeapFree(Heap, 0, (void*)Comment);
+			HeapFree(m_Heap, 0, (void*)Comment);
 		if (ParameterList) {
 			for (u8 i = 0; i < ParameterCount; i++)
 				if (ParameterList[i].Argument)
-					HeapFree(Heap, 0, (void*)ParameterList[i].Argument);
-			HeapFree(Heap, 0, (void*)ParameterList);
+					HeapFree(m_Heap, 0, (void*)ParameterList[i].Argument);
+			HeapFree(m_Heap, 0, (void*)ParameterList);
 		}
 	}
 
@@ -135,18 +135,32 @@ private:
 	}
 };
 
-i32 BuilderEntry() {
-	Console Con;
-	// Con.PrintFEx(L"FUCK YOU\n %s\nhi\nnew", 0,            L"asshole");
+long __stdcall UnhandleExceptionHandler(
+	_In_ EXCEPTION_POINTERS* ExceptionInfo
+) {
+	Con->PrintFEx(CON_ERROR, L"Unhandle exception occurred @ %#018llx !", ExceptionInfo->ExceptionRecord->ExceptionAddress);
+	if (S_SUCCESS(CreateDump(nullptr, ExceptionInfo))) {
+		Con->PrintFEx(CON_MESSAGE, L"Created minidumpfile in current directory.");
+		ExitProcess(ExceptionInfo->ExceptionRecord->ExceptionCode);
+	} else {
+		Con->PrintFEx(CON_ERROR, L"Failed to dump process, halting process for debugger.");
+		NtSuspendProcess(GetCurrentProcessId());
+	}
 
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+i32 BuilderEntry() {
+	SetUnhandledExceptionFilter(UnhandleExceptionHandler);
+	Con = new Console;
 	Opr* Op = nullptr;
 	__try {
 		Op = new Opr(GetCommandLineW());
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 		delete Op;
-		Con.PrintFEx(L"Invalid commandline syntax", CON_ERROR);
-		return EXCEPTION_CONTINUE_SEARCH;
+		Con->PrintFEx(CON_ERROR, L"Invalid commandline syntax");
+		return S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_COMMAND);
 	}
+	// Prolouge End
 
 	switch (Op->OperatorTag) {
 	case 0:
@@ -157,6 +171,8 @@ i32 BuilderEntry() {
 		;
 	}
 
+	// Epiloge Start
 	delete Op;
+	delete Con;
 	return SUCCESS;
 }

@@ -1,50 +1,39 @@
-// Nebula-SDK/API Header declaring everything needed for
+/* Nebula-SDK/API Header provides all Names and Declarations required
+   in order to code Plugins/Extensions and Payloads */
 #pragma once
 
-// if SAL is unavailable define them to resolve to nothing
-#ifndef _In_opt_
-#define _In_opt_
-#endif
-#ifndef _In_range_
-#define _In_range_()
-#endif
-#ifndef _Success_()
-#define _Success_()
-#endif
+#ifndef _NSDK   // This block automatically activates the SDK
+#define _NSDK 1 // enabling certain features and providing delcarations
+#endif          // (disableing this field )
 
-#include <stdarg.h>
-#include "sub/def.h"
-#include "sub/status.h"
-
-#ifdef _M_X64
-#define __x64call
-#else
-#define __x64call INVALID_CALLING_CONVENTION // This cause a compiler error
+#ifdef _NSDK_PROVIDE_DEBUG
+#include "dbg.h"
 #endif
+#include "base.h"
 
 #ifdef __cplusplus
-namespace svc {
-	typedef poly(__x64call*ServiceCall_t)(
-		_In_range_(0, 0xffff) u32 svcId,
-		_In_opt_                  ...
-		);
-	typedef poly(__x64call*vServiceCall_t)(
-		_In_range_(0, 0xffff) u32     svcId,
-		_In_opt_              va_list val
-		);
-
-	   inline  ServiceCall_t  ServiceCall;
-	// inline vServiceCall_t vServiceCall;
-}
-#else
-typedef poly(__x64call*NbServiceCall_t)(
-	_In_range_(0, 0xffff) u32 svcId,
-	_In_opt_                  ...
-	);
-typedef poly(__x64call*vNbServiceCall_t)(
+#if _NSDK
+typedef poly(__x64call*vServiceCall_t)(
 	_In_range_(0, 0xffff) u32     svcId,
 	_In_opt_              va_list val
 	);
-   extern  NbServiceCall_t  NbServiceCall;
-// extern vNbServiceCall_t vNbServiceCall;
+inline vServiceCall_t vServiceCall;
+
+/* Example: Call a servicefunction and pass 2 parameters
+	poly ParameterList[2];
+	ParameterList[0] = "String Part 1";
+	ParameterList[1] = 0x1234;
+	poly ReturnValue;
+	status StatusCode = vServiceCall(SERVICE_ID, &ReturnValue, (va_list)ParameterList);
+*/
 #endif
+#endif
+
+#pragma region ModuleEntry
+#define N_ONLOAD    1
+#define N_RUNMOD    2
+#define N_UNLOAD    3
+#define N_FATAL     4
+#define N_VIOLATION	5
+
+#pragma endregion

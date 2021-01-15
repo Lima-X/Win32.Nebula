@@ -1,28 +1,25 @@
-// No Runtime Library: Provides subroutines for the compiler/dev that emulate the CRT
+// This File is shared between the core Projects and provides intercompatibility between them.
 #pragma once
-// Link against ntdll (Full link through private lib)
-#pragma comment(lib, "ntdllp.lib")
 
-typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
-typedef struct _UNICODE_STRING {
-	                                                   USHORT Length;
-	                                                   USHORT MaximumLength;
-	_Field_size_bytes_part_opt_(MaximumLength, Length) PWCH   Buffer;
-} UNICODE_STRING, * PUNICODE_STRING;
+#include "..\base.h"
+#include "..\dbg.h"
+#include "itl.h"
+
+#define _NSDK 0 // Explicitly Disables Active Components of the SDK as we are inside the core
+#include "..\sdk.h"
+
+#pragma region Runtime Library
+// No Runtime Library: Provides subroutines for the compiler/dev that emulate the CRT
+#pragma comment(lib, "ntdllp.lib") // Link against ntdll (Full link through private lib)
 
 #ifdef __cplusplus
 extern "C" {
 #else
 {
 #endif
-	NTSYSAPI VOID NTAPI	RtlInitUnicodeString(
-		_Out_      UNICODE_STRING* DestinationString,
-		_In_opt_z_ PCWSTR          SourceString
-	);
-
 	NTSYSAPI NTSTATUS NTAPI RtlDowncaseUnicodeString(
-		_Inout_ UNICODE_STRING* DestinationString,
-		_In_    UNICODE_STRING* SourceString,
+		_Inout_ UNICODE_STRING * DestinationString,
+		_In_    UNICODE_STRING * SourceString,
 		_In_    BOOLEAN         AllocateDestinationString
 	);
 
@@ -50,6 +47,9 @@ extern "C" {
 		_Out_ PULONG CompressBufferWorkSpaceSize,
 		_Out_ PULONG CompressFragmentWorkSpaceSize
 	);
+	NTSYSAPI NTSTATUS NTAPI NtSuspendProcess(
+		_In_ LONG ProcessId
+	);
 
 	IMPORT int __cdecl swprintf_s(wchar_t* buffer, size_t sizeOfBuffer, const wchar_t* format, ...);
 	IMPORT int __cdecl vswprintf_s(wchar_t* buffer, size_t numberOfElements, const wchar_t* format, va_list argptr);
@@ -57,3 +57,30 @@ extern "C" {
 	// IMPORT wchar_t* __cdecl wcschr(const wchar_t* str, wchar_t c);
 }
 #pragma endregion
+
+#ifdef __cplusplus
+namespace utl {
+	void                  rc4crypt(_In_ void* Buffer, _In_ size_t BufferSize, _In_ void* Key, _In_range_(5, 256) size_t KeyLength, _Out_ void* Output);
+
+
+	IMAGE_NT_HEADERS*     GetNtHeader(_In_ handle hMod);
+	IMAGE_SECTION_HEADER* FindSection(_In_ IMAGE_NT_HEADERS* NtHeader, _In_ const char Name[8]);
+
+	status                CreatePath(_In_z_ const wchar* Path);
+
+	class rc4 {
+	public:
+		void ksa(_In_ void* Key, _In_range_(1, 256) size_t KeyLength);
+		byte prg();
+
+		void crypt(_In_ void* Buffer, _In_ size_t BufferSize, _Out_ void* Output);
+		void rc4random(_Out_ void* Buffer, _In_ size_t BufferSize);
+
+	private:
+		// RC4-State
+		byte m_SBox[256];
+		u8 m_i = 0;
+		u8 m_j = 0;
+	};
+}
+#endif

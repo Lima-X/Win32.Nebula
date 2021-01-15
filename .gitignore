@@ -5,6 +5,8 @@
 
 ## Nebula Files BEGIN ##
 note/
+.in/
+out/sdk
 ## Nebula Files END   ##
 
 # User-specific files

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shared.h"
+#include "core.h"
 
 /* Commandline usage:
    "/[Operation]" : Specifies the operation to execute (this must be the first operand)
@@ -62,7 +62,7 @@ public:
 
 	status Cls();
 	status PrintF(_In_z_ const wchar* Text, _In_opt_ ...);
-	status PrintFEx(_In_z_ const wchar* Text, err ErrorLevel, _In_opt_ ...);
+	status PrintFEx(_In_opt_ err ErrorLevel, _In_z_ const wchar* Text, _In_opt_ ...);
 
 protected:
 	// Console Input/Output(/Error) Handle
@@ -78,3 +78,24 @@ private:
 	       size_t m_BufferSize;  // The size of data inside the temporery Buffer (Pool)
 	       err    m_ErrorLevel;  // The currently used ErrorLevel
 };
+
+class FileMap {
+public:
+	// Add support for readonly Pages
+	FileMap(
+		_In_z_ const wchar* szFile,
+		_In_         dword  dwProtection = PAGE_READWRITE
+	);
+	~FileMap();
+
+	const void*  Data() const;
+	      size_t Size() const;
+
+private:
+	void*  m_Mapping;
+	size_t m_FileSize;
+	handle m_hMap;
+	handle m_hFile;
+};
+
+inline Console* Con;

@@ -23,7 +23,6 @@ Console::Console(
 	#endif
 
 		m_Buffer = VirtualAlloc(nullptr, 0x10000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-
 	}
 }
 Console::~Console() {
@@ -34,16 +33,16 @@ Console::~Console() {
 
 status Console::Cls() {
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
-	status s = SUCCESS;
+	status Status = SUCCESS;
 
-	s= !GetConsoleScreenBufferInfo(m_ConsoleOutput, &csbi);
+	Status = !GetConsoleScreenBufferInfo(m_ConsoleOutput, &csbi);
 	dword dw;
-	s = !FillConsoleOutputCharacterW(m_ConsoleOutput, 0, csbi.dwSize.X * csbi.dwSize.Y, { 0, 0 }, &dw);
-	s = !GetConsoleScreenBufferInfo(m_ConsoleOutput, &csbi);
-	s = !FillConsoleOutputAttribute(m_ConsoleOutput, csbi.wAttributes, csbi.dwSize.X * csbi.dwSize.Y, { 0, 0 }, &dw);
-	s = !SetConsoleCursorPosition(m_ConsoleOutput, { 0, 0 });
+	Status = !FillConsoleOutputCharacterW(m_ConsoleOutput, 0, csbi.dwSize.X * csbi.dwSize.Y, { 0, 0 }, &dw);
+	Status = !GetConsoleScreenBufferInfo(m_ConsoleOutput, &csbi);
+	Status = !FillConsoleOutputAttribute(m_ConsoleOutput, csbi.wAttributes, csbi.dwSize.X * csbi.dwSize.Y, { 0, 0 }, &dw);
+	Status = !SetConsoleCursorPosition(m_ConsoleOutput, { 0, 0 });
 
-	return s ? S_CREATE(SS_WARNING, SF_NULL, SC_INCOMPLETE) : s;
+	return Status ? S_CREATE(SS_WARNING, SF_NULL, SC_INCOMPLETE) : Status;
 }
 
 status Console::vPrintFormatW(_In_z_ const wchar* Text, _In_opt_ va_list Va) {
@@ -96,51 +95,46 @@ status Console::PrintF(
 	_In_opt_ ...
 ) {
 	va_list Va; va_start(Va, Text);
+	m_ErrorLevel = CON_MESSAGE;
 	status Status = vPrintFormatW(Text, Va);
 	va_end(Va);
 	return Status;
 }
 status Console::PrintFEx(
-	_In_z_   const wchar* Text,
 	_In_opt_       err    ErrorLevel,
+	_In_z_   const wchar* Text,
 	_In_opt_              ...
 ) {
-	va_list Va; va_start(Va, ErrorLevel);
-	m_ErrorLevel = ErrorLevel;
+	va_list Va; va_start(Va, Text);
+	m_ErrorLevel = ErrorLevel ? ErrorLevel : CON_MESSAGE;
 	status Status = vPrintFormatW(Text, Va);
 	va_end(Va);
 	return Status;
 }
 #pragma endregion
 
-class FileMap {
-public:
-	// Add support for readonly Pages
-	FileMap(
-		_In_z_ const wchar* szFile,
-		_In_         dword  dwProtection = PAGE_READWRITE
-	) {
-		if ((m_hFile = CreateFileW(szFile, GENERIC_READWRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr)) == INVALID_HANDLE_VALUE)
-			RaiseException((dword)S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_HANDLE), 0, 0, nullptr);
-		if (!(m_hMap = CreateFileMappingW(m_hFile, nullptr, dwProtection, 0, 0, nullptr)))
-			RaiseException((dword)S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_HANDLE), 0, 0, nullptr);
-		if(!(m_Mapping = MapViewOfFile(m_hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0)))
-			RaiseException((dword)S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_POINTER), 0, 0, nullptr);
-		MEMORY_BASIC_INFORMATION mbi;
-		m_MappingSize = VirtualQuery(m_Mapping, &mbi, 0);
-	}
-	~FileMap() {
-		UnmapViewOfFile(m_Mapping);
-		CloseHandle(m_hMap);
-		CloseHandle(m_hFile);
-	}
+#pragma region FileMapping
+FileMap::FileMap(
+	_In_z_ const wchar* szFile,
+	_In_         dword  dwProtection
+) {
+	if ((m_hFile = CreateFileW(szFile, GENERIC_READWRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr)) == INVALID_HANDLE_VALUE)
+		RaiseException((dword)S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_HANDLE), 0, 0, nullptr);
+	if (!(m_hMap = CreateFileMappingW(m_hFile, nullptr, dwProtection, 0, 0, nullptr)))
+		RaiseException((dword)S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_HANDLE), 0, 0, nullptr);
+	if(!(m_Mapping = MapViewOfFile(m_hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0)))
+		RaiseException((dword)S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_POINTER), 0, 0, nullptr);
+	if(!GetFileSizeEx(m_hFile, (LARGE_INTEGER*)&m_FileSize))
+		RaiseException((dword)S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_SIZE), 0, 0, nullptr);
+}
+FileMap::~FileMap() {
+	FlushViewOfFile(m_hMap, m_FileSize);
+	UnmapViewOfFile(m_Mapping);
+	CloseHandle(m_hMap);
+	FlushFileBuffers(m_hFile);
+	CloseHandle(m_hFile);
+}
 
-	const void* Data() const { return m_Mapping; }
-	const size_t& Size() const { return m_MappingSize; }
-
-private:
-	void*  m_Mapping;
-	size_t m_MappingSize;
-	handle m_hMap;
-	handle m_hFile;
-};
+const void*  FileMap::Data() const { return m_Mapping; }
+      size_t FileMap::Size() const { return m_FileSize; }
+#pragma endregion

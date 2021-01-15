@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rkmgr", "rkmgr\rkmgr.vcxproj", "{2C1D9272-9A62-4169-A851-58E4E6BA53AE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "riftrk", "riftrk\riftrk.vcxproj", "{DE4F0368-CFE8-463E-95EE-DCED67FCCD3B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x32 = Debug|x32
+		Debug|x64 = Debug|x64
+		Release|x32 = Release|x32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2C1D9272-9A62-4169-A851-58E4E6BA53AE}.Debug|x32.ActiveCfg = Debug|x64
+		{2C1D9272-9A62-4169-A851-58E4E6BA53AE}.Debug|x64.ActiveCfg = Debug|x64
+		{2C1D9272-9A62-4169-A851-58E4E6BA53AE}.Debug|x64.Build.0 = Debug|x64
+		{2C1D9272-9A62-4169-A851-58E4E6BA53AE}.Release|x32.ActiveCfg = Release|x64
+		{2C1D9272-9A62-4169-A851-58E4E6BA53AE}.Release|x64.ActiveCfg = Release|x64
+		{2C1D9272-9A62-4169-A851-58E4E6BA53AE}.Release|x64.Build.0 = Release|x64
+		{DE4F0368-CFE8-463E-95EE-DCED67FCCD3B}.Debug|x32.ActiveCfg = Debug|Win32
+		{DE4F0368-CFE8-463E-95EE-DCED67FCCD3B}.Debug|x32.Build.0 = Debug|Win32
+		{DE4F0368-CFE8-463E-95EE-DCED67FCCD3B}.Debug|x64.ActiveCfg = Debug|x64
+		{DE4F0368-CFE8-463E-95EE-DCED67FCCD3B}.Debug|x64.Build.0 = Debug|x64
+		{DE4F0368-CFE8-463E-95EE-DCED67FCCD3B}.Release|x32.ActiveCfg = Release|Win32
+		{DE4F0368-CFE8-463E-95EE-DCED67FCCD3B}.Release|x32.Build.0 = Release|Win32
+		{DE4F0368-CFE8-463E-95EE-DCED67FCCD3B}.Release|x64.ActiveCfg = Release|x64
+		{DE4F0368-CFE8-463E-95EE-DCED67FCCD3B}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0858485C-79F4-466F-BA52-322902DDA64B}
+	EndGlobalSection
+EndGlobal

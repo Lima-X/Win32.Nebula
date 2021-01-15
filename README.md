@@ -1,69 +1,43 @@
 # Win32.Nebula
-Nebula is a \[**P**\]acked and \[**P**\]rotected \[**M**\]odule \[**L**\]oader. (**PPML**)\
-Named after a space phenomenon that describes a interstellar cloud\
-(its internally still refered to as _rift or rift as this was the original Name)
+Nebula is a **P**acked and **P**rotected **M**odule **L**oader. (**PPML**)\
+Named after a space phenomenon that describes a interstellar cloud.\
+(it may internally still be refered to as _rift or rift)
 
-Nebula aims to be able to launch a payload of choice in a protected environment hidden from the eyes of a user.\
-It tries to achive this by using many well know malware techniques and even some less know ones.\
-Im planning to add a lot more features to this even stuff outside of the original intentions such as a PE-File infector.
+Nebula aims to be able to launch a payload of choice in a protected environment.\
+It tries to achive this by using various techniques used to obfuscated and protect code,\
+these include well known tricks commonly used in e.g. malware, anticheats and others.\
+It serves as an absolute base and will provide a small framework through an SDK and API.\
+This Framwork will have basic functionality in order to control the loader from a payload,\
+but will be extensible through a dynamic service interface allowing extenstions,
+that can be attached to Nebula, to allow registering functions that the payload may use.
 
 This project is currently in development and currently serves as a POC or template to build onto.\
-In the future this could be build out into a fully fletched "basic"-protector.
+In the future this could be build out into a fully fledged "basic"-protector.
 
 ## Components:
-- **riftldr:**\
-  Main executable containing the Core-Loader (S1 & S2) and its packed resources,
-  as well as many other features and services.
+Nebula is mainly split into 2 components, the base (loader) and its builder utility.\
+- The loader can/will be shiped in 2 forms,
+  either as a standalone executable which will be prepacked
+  and will require the payload to be in a dll like form specifically made to respond to the laoder.
+  The builder would be responsible to attach this payload to teh loader binary.\
+  Or as a static lib which could be linked into a payload executable by setting it up to be the entrypoint,
+  the builder would later finalize the image by obfuscating the rest and properly linking up the functions.
 
-- **riftbld:**\
-  Build utility used to compress/encrypt,
-  obfuscate internal data, patch Nebula and more.\
-  what will be featured in her only depends on what i plan to add in riftldr itself
-
-
-- **riftrk:**\
-  The rootKit dll that will primarily hide processes, files and maybe more.
-
-## Feature List:
-Note: Some of them have not been implmented yet...
-
-- Usermode Rootkit:
-  - hide processes
-  - hide files
-  - hide registry
-  - limit access to specific Handles
-
-- Anti Reverse-Engineering:
-  - Anti analysis
-  - Anti debugging
-  - basic anti module injection
-  - Binary integrity checks
-  - Self decryption/decompression
-  - Self monitoring
-
-General:
-- Function obfuscation
-- String and resource encryption
-- Resource compression
-- Manualmapping for modules and remote processes
-- PE-File infection
-- Process hollowing
-- Threadhijacking
-
-more to come or to be added to the list...
+- The builder that is responsible for patching, crypting, packing and generally messing with binaries.\
+  It provides the interface for modifying images used by the loader or the loader itself.\
+  It serves as a tool to finalize the binary into and turn it into a proper executable image.
 
 ## Disclaimer:
-**Im aware that this is totaly malware or could be used for malware.\
-It is not meant to be used with malicous intends
-and should only serve as a learning resource,
-demonstration or proof of concept (PoC).**
+**Im totally aware that this could be used for malware.**\
+It is not meant to be used for malicous intends and should only serve as a learning resource,
+demonstration or proof of concept (PoC).
 
 **I do not encourage the spreading of malware for several obvious reasons.\
 ! THE CREATOR IS NOT RESPONSIBLE FOR ANYTHING DONE USING THIS SOFTWARE !**
 
 ### Why did I decide to make this public then ?
-The reason is the same as why you can find alot of open source projects that could be used for malicous purposes.\
-Or why you can find books about how Rootkits work and how to build them, as well as other stuff.
+The reason is the same as why you can find alot of other open source projects that could be used for malicous purposes.\
+Or why you can find books about how rootkits work and how to build them, as well as other stuff.
 
 It serves as a learning resource and most of the techniques contained are already publicly optainable,\
 the actual bad guys already have all the knowledge if not even more...

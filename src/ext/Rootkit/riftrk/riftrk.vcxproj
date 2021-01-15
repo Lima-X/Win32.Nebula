@@ -191,8 +191,6 @@
     <ClCompile Include="detour.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nth.cpp" />
-    <ClCompile Include="rutl.cpp" />
-    <ClCompile Include="vec.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rk.h" />

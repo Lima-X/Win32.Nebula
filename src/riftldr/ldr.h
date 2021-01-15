@@ -1,46 +1,78 @@
+// LoaderModule
 #pragma once
 
-// Merge const and nonconst data into one section
-#ifndef _DEBUG
-#pragma comment(linker, "/merge:.rdata=.data")
-#endif
-
-#include "shared.h"
+#include "core.h"
 
 #pragma region Protected Sections
-// Ldr Sections
-#pragma section(".nbr", read)       // Constsection
-#pragma section(".nbw", write)      // Datasection
-// #pragma section(".nbx", execute) // Text/Code -Section
-
-// Merge ldr sections
-#ifndef _DEBUG
 #pragma warning(disable : 4330)
-// #pragma comment(linker, "/ignore:4254") // Doesnt work in a pragma because WHO KNOWS WHY, so i set it in the Commandline.. smh
+// Protected sections
+#pragma section(".nbr", read)  // Constsection
+#pragma section(".nbw", write) // Datasection
 
 // Merge protected sections
-#pragma section(".nb", read, write, execute)
-#pragma comment(linker, "/merge:.nbr=.nb")
-#pragma comment(linker, "/merge:.nbw=.nb")
-#pragma comment(linker, "/merge:.nbx=.nb")
-
+#pragma comment(linker, "/merge:.nbr=.nb0")
+#pragma comment(linker, "/merge:.nbw=.nb0")
+#pragma comment(linker, "/merge:.nbx=.nb0")
 // Merge loader code into a loader section
-#pragma section(".ldr", read, write, execute)
 #pragma comment(linker, "/merge:.text=.ldr")
-#pragma comment(linker, "/merge:.data=.ldr")
+// #pragma comment(linker, "/merge:.data=.ldr")
 #pragma comment(linker, "/merge:.rdata=.ldr")
 
-#endif
+// Declaration Protection Specification
 #define N_PROTECTEDR ALLOC_DATA(".nbr")
 #define N_PROTECTEDW ALLOC_DATA(".nbw")
 #define N_PROTECTEDX ALLOC_CODE(".nbx")
 #pragma endregion
 
 namespace ldr {
-
+	#undef SearchPath
+	status GetSystemDllbyHash(_In_ wchar* SearchPath, _In_ u64 Hash, _Out_ wchar* Path);
+	void*  ImportFunctionByHash(_In_ handle Module, _In_ u64 Hash);
+	handle GetModuleHandleByHash(_In_ u64 Hash);
+	status ApplyBaseRelocationsOnSection(_In_ handle Module, _In_ IMAGE_SECTION_HEADER* Section, _In_opt_ void* Address, _In_ i64 RelocationDelta);
 }
 
 namespace svc {
 	poly ServiceCall(_In_range_(0, 0xffff) u32 svcId, _In_opt_ ...);
 	poly ServiceDispatch(_In_range_(0, 0xffff) u32 svcId, _In_opt_ va_list val);
 }
+
+namespace utl {
+	void* CryptPointer(_In_ void* Pointer);
+
+}
+
+class svc2 {
+	typedef poly(__x64call* ServiceFunctionPointer)(va_list VariableArgumentList);
+	struct FunctionDispatchEntry {
+		handle                 ModuleAssociation;
+		u64                    FunctionId;
+		ServiceFunctionPointer FunctionPointer;
+	};
+
+public:
+	svc2();
+	~svc2();
+
+	status RegisterServiceFunction(_In_ u64 FunctionId, _In_ ServiceFunctionPointer FunctionPointer);
+	status vServiceCall(_In_ u64 ServiceId, _Out_ poly* ReturnValue, _In_ va_list ServiceParameters);
+
+private:
+	status SearchListForEntry(
+		_In_  u64 ServiceId,
+		_Out_ FunctionDispatchEntry*& FunctionEntry
+	);
+
+	handle m_Heap;
+};
+inline svc2* ServiceMgr;
+
+// Global Managment Information
+struct {
+	struct {
+		u64 ProcessCookie;
+		u64 HardwareId;
+		u64 SessionId;
+	} Process;
+	handle ModuleBase;
+} inline g_;

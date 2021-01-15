@@ -1,28 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="sub">
-      <UniqueIdentifier>{e11f07c6-db96-4abf-befc-f6adc13763d6}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)sub\def.h">
-      <Filter>sub</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)shared.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)sub\status.h">
-      <Filter>sub</Filter>
-    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)core.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)itl.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)sub\rtl.h">
-      <Filter>sub</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)sub\base.h">
-      <Filter>sub</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)pce.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)utl.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)core.cpp" />
   </ItemGroup>
 </Project>

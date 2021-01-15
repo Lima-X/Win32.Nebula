@@ -14,18 +14,9 @@
     <ClCompile Include="main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="ldr.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="are.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="utl.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ldr.h">
+    <ClInclude Include="mgr.h">
       <Filter>hdr</Filter>
     </ClInclude>
   </ItemGroup>

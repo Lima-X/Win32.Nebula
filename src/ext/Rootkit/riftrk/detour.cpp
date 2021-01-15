@@ -4,42 +4,42 @@ namespace dt {
 	class ThreadUpdate {
 	public:
 		ThreadUpdate() {
-			void* mem;
+			void* Memory;
 
 			size_t nmem = 0;
 			while (1) {
-				mem = VirtualAlloc(nullptr, nmem, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-				NTSTATUS s = hk::NtQuerySystemInformation(0x05, mem, nmem, (dword*)&nmem);
+				Memory = VirtualAlloc(nullptr, nmem, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+				NTSTATUS s = hk::NtQuerySystemInformation(0x05, Memory, nmem, (dword*)&nmem);
 				if (!s)
 					break;
-				VirtualFree(mem, 0, MEM_RELEASE);
+				VirtualFree(Memory, 0, MEM_RELEASE);
 			}
 
-			nt::SYSTEM_PROCESS_INFORMATION* PEntry = (nt::SYSTEM_PROCESS_INFORMATION*)mem;
+			auto ProcessEntry = (SYSTEM_PROCESS_INFORMATION*)Memory;
 			u32 PId = GetCurrentProcessId();
 			while (true) {
-				if ((u32)PEntry->UniqueProcessId == PId) {
-					nt::SYSTEM_THREAD_INFORMATION* TEntry = (nt::SYSTEM_THREAD_INFORMATION*)(PEntry + 1);
+				if ((u32)ProcessEntry->UniqueProcessId == PId) {
+					auto ThreadEntry = (SYSTEM_THREAD_INFORMATION*)(ProcessEntry + 1);
 
-					m_ThreadCount = PEntry->NumberOfThreads;
+					m_ThreadCount = ProcessEntry->NumberOfThreads;
 					m_ThreadList = (handle*)HeapAlloc(GetProcessHeap(), NULL, (m_ThreadCount - 1) * sizeof(*m_ThreadList));
 
 					for (u32 i = 0; i < m_ThreadCount; i++) {
-						u32 TId = (u32)TEntry->ClientId.UniqueThread;
+						u32 TId = (u32)ThreadEntry->ClientId.UniqueThread;
 						if (TId != GetCurrentThreadId()) // Ignore its own Thread
 							m_ThreadList[i] = OpenThread(THREAD_SUSPEND_RESUME, false, TId);
-						TEntry++;
+						ThreadEntry++;
 					}
 
 					break;
 				}
 
-				if (!PEntry->NextEntryOffset)
+				if (!ProcessEntry->NextEntryOffset)
 					break;
-				PEntry = (nt::SYSTEM_PROCESS_INFORMATION*)((ptr)PEntry->NextEntryOffset + (ptr)PEntry);
+				ProcessEntry = (SYSTEM_PROCESS_INFORMATION*)((ptr)ProcessEntry->NextEntryOffset + (ptr)ProcessEntry);
 			}
 
-			VirtualFree(mem, 0, MEM_RELEASE);
+			VirtualFree(Memory, 0, MEM_RELEASE);
 		}
 		~ThreadUpdate() {
 			for (u32 i = 0; i < m_ThreadCount; i++)
@@ -58,7 +58,6 @@ namespace dt {
 	private:
 		u32     m_ThreadCount = 0;
 		handle* m_ThreadList;
-
 	};
 
 	class TrampolineMgr {
@@ -96,10 +95,10 @@ namespace dt {
 		SyscallTrampolineX64* AlloctateTrampolineWithinReach(
 			_In_ void* pTarget
 		) {
+			// TODO: Finish this by properly allocating pages and managing them
 			// Go through allocated TrampolineList first and check if code is withing region,
 			// if so use that trampoline instead, if no trampoline has been allocated yet
 			// or no trampoline is within 2gb reach allocate a new one
-
 
 		newalloc: // Allocate a new TrampolinePage
 			void* mem = AllocateUsablePageWithinReach(pTarget);
@@ -123,7 +122,7 @@ namespace dt {
 		TrampolinePage* m_TPArray = nullptr;
 		size_t          m_TPSize = 0;
 	};
-	TrampolineMgr tmgr;
+	TrampolineMgr ThkMgr;
 
 	void GenerateAbsoluteJump( // Generates a 12byte Absolute jump
 		_In_ void* pCode,      // Address at which to generate jumpcode
@@ -151,7 +150,7 @@ namespace dt {
 			return S_CREATE(SS_WARNING, SF_ROOTKIT, SC_INVALID_PARAMETER);
 
 		auto pTarget = *ppTarget;
-		auto Trampoline = tmgr.AlloctateTrampolineWithinReach(pTarget);
+		auto Trampoline = ThkMgr.AlloctateTrampolineWithinReach(pTarget);
 
 		// Generate Bidirectional Trampoline (Thunk)
 		GenerateAbsoluteJump(&Trampoline->ToDetour, (ptr)pHook);

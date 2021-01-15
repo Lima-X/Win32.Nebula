@@ -1,39 +1,6 @@
-// Collection of Utility Functions
-#include "shared.h"
+#include "ldr.h"
 
-namespace utl {
-#pragma region Image
-	IMAGE_NT_HEADERS* GetNtHeader(
-		_In_ handle Module
-	) {
-		if (((IMAGE_DOS_HEADER*)Module)->e_magic != IMAGE_DOS_SIGNATURE)
-			return nullptr; // Invalid signature
-
-		IMAGE_NT_HEADERS* NtHeader = (IMAGE_NT_HEADERS*)((ptr)Module + ((IMAGE_DOS_HEADER*)Module)->e_lfanew);
-		if (NtHeader->Signature != IMAGE_NT_SIGNATURE)
-			return nullptr; // Invalid signature
-		if (NtHeader->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC)
-			return nullptr; // Invalid signature
-
-		return NtHeader;
-	}
-
-	IMAGE_SECTION_HEADER* FindSection(
-		_In_ IMAGE_NT_HEADERS* NtHeader,
-		_In_ const char        Name[8]
-	) {
-		// Iterate over sections
-		IMAGE_SECTION_HEADER* SectionHeader = IMAGE_FIRST_SECTION(NtHeader);
-		for (u8 i = 0; i < NtHeader->FileHeader.NumberOfSections; i++) {
-			if (*(qword*)SectionHeader->Name == *(qword*)Name)
-				return SectionHeader;
-
-			SectionHeader++;
-		}
-
-		return nullptr;
-	}
-
+namespace ldr {
 	// GS:0x60(void*) -> PEB Linear Address
 	// PEB:LoaderData(void*)                                    @ offset 0x18 (x64)
 	// PEB_LDR_DATA:InMemoryOrderModuleList(LIST_ENTRY)         @ offset 0x20 (x64)
@@ -63,35 +30,33 @@ namespace utl {
 
 		return nullptr;
 	}
-	handle GetModuleHandleByHash(
-		_In_ fnv Hash
+	handle GetModuleHandleByHash( // Gets the modulehandle by hash over the InMemoryOrderModuleList
+		_In_ u64 Hash             // The DllBaseName hash to search for
 	) {
-		wchar Buffer[MAX_PATH];
-		UNICODE_STRING LowerName = { 0, MAX_PATH, Buffer };
-
-		LIST_ENTRY* InMemoryOrderModuleList = GetModuleList();
-		LIST_ENTRY* ListIterator = InMemoryOrderModuleList;
+		auto InMemoryOrderModuleList = GetModuleList();
+		auto ListIterator = InMemoryOrderModuleList;
 		while (ListIterator->Flink != InMemoryOrderModuleList) {
 			ListIterator = ListIterator->Flink;
 			auto DllName = (UNICODE_STRING*)((ptr)ListIterator + 0x48); // Get DllBaseName
 
 			// Convert string to lowercase
+			wchar Buffer[MAX_PATH];
 			__movsb((byte*)Buffer, (byte*)DllName->Buffer, DllName->Length);
 			Buffer[DllName->Length / 2] = L'\0';
 			_wcslwr(Buffer);
 
-			if (FNV1aHash(Buffer, DllName->Length) == Hash)
-				return (handle)((ptr)ListIterator + 0x20); // Get DllBaseAddress
+			if (utl::Fnv1a64Hash(Buffer, DllName->Length) == Hash)
+				return *(handle*)((ptr)ListIterator + 0x20); // Get DllBaseAddress
 		}
 
 		return nullptr;
 	}
 
-	void* ImportFunctionByHash(
-		_In_ const handle Module,
-		_In_ const fnv    Hash
+	void* ImportFunctionByHash(   // Imports a function and retrieves its pointer by hash
+		_In_ const handle Module, // The module to search in
+		_In_ const u64    Hash    // The functionhash to search for
 	) {
-		auto NtHeader = GetNtHeader(Module);
+		auto NtHeader = utl::GetNtHeader(Module);
 		if (!NtHeader)
 			return nullptr;
 
@@ -102,7 +67,7 @@ namespace utl {
 
 		for (u32 i = 0; i < ExportDirectory->NumberOfNames; i++) {
 			auto FunctionName = (const char*)((ptr)ppNameTable[i] + ModuleBase);
-			auto InternalHash = FNV1aHash((void*)FunctionName, strlen(FunctionName));
+			auto InternalHash = utl::Fnv1a64Hash((void*)FunctionName, strlen(FunctionName));
 
 			if (InternalHash == Hash) {
 				auto OrdinalTable = (word*)((ptr)ExportDirectory->AddressOfNameOrdinals + ModuleBase);
@@ -117,25 +82,28 @@ namespace utl {
 	#undef SearchPath            // Because WinAPI
 	status GetSystemDllbyHash(   // Locates a system Dll by hash
 		_In_  wchar* SearchPath, // The Path to search for a matching dll
-		_In_  fnv    Hash,       // The hash of teh DllBaseName (Lowercase hash)
+		_In_  u64    Hash,       // The hash of teh DllBaseName (Lowercase hash)
 		_Out_ wchar* Path        // A buffer the full path of a matching dll will be written to
 	) {
+	#if 0 // Just Import it, no reason to hide (crt functions)
 		typedef wchar* (__cdecl* wcscat_t)(
 			_Inout_z_       wchar* strDestination,
 			_In_z_    const wchar* strSource
 			);
-
 		handle NT = GetModuleHandleByHash(N_NTDLL);
 		wcscat_t wcscat = (wcscat_t)ImportFunctionByHash(NT, N_CRTWCSCAT);
+	#endif
 
 		wchar InternalPath[MAX_PATH];
 		__movsb((byte*)InternalPath, (byte*)SearchPath, (wcslen(SearchPath) + 1) * sizeof(wchar));
 		wcscat(InternalPath, L"\\*.dll");
 
-		typedef wchar* (__cdecl*wcslwr_t)(
+	#if 0 // Same as above
+		typedef wchar* (__cdecl* wcslwr_t)(
 			wchar* str
 			);
 		wcslwr_t _wcslwr = (wcslwr_t)ImportFunctionByHash(NT, N_CRTWCSLWR);
+	#endif
 
 		WIN32_FIND_DATAW fd;
 		handle hFind = FindFirstFileW(InternalPath, &fd);
@@ -144,7 +112,7 @@ namespace utl {
 		do {
 			if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
 				_wcslwr(fd.cFileName);
-				if (FNV1aHash(fd.cFileName, wcslen(fd.cFileName) * sizeof(wchar)) == Hash) {
+				if (utl::Fnv1a64Hash(fd.cFileName, wcslen(fd.cFileName) * sizeof(wchar)) == Hash) {
 					__movsb((byte*)Path, (byte*)SearchPath, (wcslen(SearchPath) + 1) * sizeof(wchar));
 					wcscat(Path, L"\\");
 					wcscat(Path, fd.cFileName);
@@ -159,10 +127,10 @@ namespace utl {
 	status ApplyBaseRelocationsOnSection(              // Applies Relocations on a Addressrange
 		_In_     handle                Module,         // BaseAddress of the Module from which the .reloc section should be used from
 		_In_     IMAGE_SECTION_HEADER* Section,        // A pointer to the sectionheader of which to apply the relocs
-		_In_opt_ void*                 Address,        // The Address at which the relocations should be applied at (if null relocs will be applied to mapped image of BaseAddress)
+		_In_opt_ void* Address,        // The Address at which the relocations should be applied at (if null relocs will be applied to mapped image of BaseAddress)
 		_In_     i64                   RelocationDelta // The pointerdelta that should be applied
 	) {
-		auto NtHeader = GetNtHeader(Module);
+		auto NtHeader = utl::GetNtHeader(Module);
 		auto BaseRelocations = &NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
 		if (!Section)
 			return S_CREATE(SS_ERROR, SF_NULL, SC_INVALID_PARAMETER);
@@ -203,24 +171,5 @@ namespace utl {
 		}
 
 		return SUCCESS;
-	}
-#pragma endregion
-
-	status CreatePath(           // Creates a directory with all its intermediats
-		_In_z_ const wchar* Path // The FilePath to create
-	) {
-
-
-		return SUCCESS;
-	}
-
-	constexpr fnv FNV1aHash( // Generates a 64-Bit wide FNV-1a hash
-		_In_ void*  Data,    // Pointer to data to hash
-		_In_ size_t Size     // Size of data to hash in bytes
-	) {
-		fnv Hash = 0xcbf29ce484222325;
-		while (Size--)
-			Hash = (Hash ^ *((byte*&)Data)++) * 0x00000100000001b3;
-		return Hash;
 	}
 }

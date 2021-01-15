@@ -2,42 +2,43 @@
                   all contianed within one header as a almost standalone library,
 				  that is mutually excluded in non debug builds. */
 #pragma once
-#define _DEBUG
-
-#if defined(_DEBUG) && defined(__cplusplus)
 #pragma comment(lib, "ntdllp.lib")
 #include <windows.h>
 #pragma comment(lib, "dbghelp.lib")
 #include <dbghelp.h>
 
-__declspec(dllimport) ULONG __cdecl vDbgPrint(_In_z_ _Printf_format_string_ PCSTR Format, ...);
-__declspec(dllimport) int __cdecl swprintf_s(wchar_t* buffer, size_t sizeOfBuffer, const wchar_t* format, ...);
-
-// will be renamed to dbg when the original old code has been fully regfactored modified
+extern "C" {
+	__declspec(dllimport) ULONG __cdecl vDbgPrint(_In_z_ _Printf_format_string_ PCSTR Format, ...);
+	__declspec(dllimport) int __cdecl swprintf_s(wchar_t* buffer, size_t sizeOfBuffer, const wchar_t* format, ...);
+	__declspec(dllimport) int __cdecl vsprintf_s(char* buffer, size_t numberOfElements, const char* format, va_list argptr);
+}
 namespace dbg2 {
-	inline status CreateDump(                                   // Generates a MiniDumpFile of the current process
-		_In_z_   const wchar*              Path,         // The path at which to create the dumpfile and write to
-		_In_opt_       EXCEPTION_POINTERS* ExceptionInfo // Optional exceptionpointers incase an exception occoured
+	inline status DbgCreateDump(                           // Generates a MiniDumpFile of the current process
+		_In_opt_z_ const wchar* Path,                      // The path at which to create the dumpfile and write to
+		_In_opt_         EXCEPTION_POINTERS* ExceptionInfo // Optional exceptionpointers incase an exception occoured
 	) {
 		auto Heap = GetProcessHeap();
-		auto Temporary1 = (wchar*)HeapAlloc(Heap, 0, MAX_PATH);
+		auto ModuleFile = (wchar*)HeapAlloc(Heap, 0, MAX_PATH);
 
 		// Search for Basename
-		GetModuleFileNameW(GetModuleHandleW(nullptr), Temporary1, MAX_PATH);
-		size_t StringLength = wcslen(Temporary1);
-		auto BaseName = Temporary1 + StringLength;
+		GetModuleFileNameW(GetModuleHandleW(nullptr), ModuleFile, MAX_PATH);
+		size_t StringLength = wcslen(ModuleFile);
+		auto BaseName = ModuleFile + StringLength;
 		while (*--BaseName != L'\\');
 
 		// Create Dumpfile
-		auto Temporary2 = (wchar*)HeapAlloc(Heap, 0, MAX_PATH);
-		swprintf_s(Temporary2, MAX_PATH, L"\\%s%04d_%#018llx.dmp", ++BaseName, GetCurrentProcessId(), __rdtsc());
-		auto MiniDumpFileName = Temporary1;
-		wcscpy(MiniDumpFileName, Path);
-		wcscat(MiniDumpFileName, Temporary2);
-		HeapFree(Heap, 0, Temporary2);
-		handle hFile = CreateFileW(MiniDumpFileName, GENERIC_READWRITE,
+		auto TargetFile = (wchar*)HeapAlloc(Heap, 0, MAX_PATH);
+		auto AppandingOffset = 0;
+		if (Path) {
+			wcscpy(TargetFile, Path);
+		    AppandingOffset = wcslen(Path);
+			TargetFile[AppandingOffset++] = L'\\';
+		}
+		swprintf_s(TargetFile + AppandingOffset, MAX_PATH, L"%s%04d_%#018llx.dmp", ++BaseName, GetCurrentProcessId(), __rdtsc());
+		HeapFree(Heap, 0, ModuleFile);
+		handle hFile = CreateFileW(TargetFile, GENERIC_READWRITE,
 			FILE_SHARE_READ, nullptr, CREATE_ALWAYS, NULL, NULL);
-		HeapFree(Heap, 0, MiniDumpFileName);
+		HeapFree(Heap, 0, TargetFile);
 		if (hFile == INVALID_HANDLE_VALUE)
 			return S_CREATE(SS_ERROR, SF_NULL, SC_INVALID_HANDLE);
 
@@ -54,6 +55,8 @@ namespace dbg2 {
 	}
 }
 
+#if defined(_DEBUG) && defined(__cplusplus)
+// will be renamed to dbg when the original old code has been fully regfactored modified
 // Old Code, will be fixed up, refactored, moved to dbg2 or removed
 namespace dbg {
 	DEPRECATED inline bool CheckIfFormatRequired(
@@ -302,12 +305,11 @@ namespace dbg {
 #endif
 
 #define BreakPoint   __debugbreak
+#define CreateDump   ::dbg2::DbgCreateDump
 #ifdef _DEBUG
-#define CreateDump   ::dbg2::CreateDump
-#define TracePoint   ::dbg::dbgTracePoint
-#define StatusAssert ::dbg::dbgStatusAssert
+#define TracePoint   ::dbg::DbgTracePoint
+#define StatusAssert ::dbg::DbgStatusAssert
 #else
-#define CreateDump()
 #define TracePoint()
 #define StatusAssert()
 #endif
