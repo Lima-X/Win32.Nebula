@@ -2,12 +2,84 @@
 #include "ldr.h"
 
 namespace utl {
-	void* CryptPointer(
+	// TODO: proper 2way function has to be implemented
+	DEPRECATED_STR("Old Pointer Encoding function (this one works both ways and is not optimal for the job)")
+	void* CodePointer(
+		_In_ void* Pointer
+	) {
+		return (void*)((ptr)Pointer ^ g_.ProcessCookie);
+	}
+
+
+	poly CryptPointer2(
+		_In_ poly x
+	) {
+		// encode 2.0:
+		// usermode memory has a addressrange of 0x0000xxxxxxxxxxxx
+		// the upper 16bits are reserved for kernel (0xffffxxxxxxxxxxxx,
+		// technically we have 17 bits because usermode is still limited to the lower 44bits)
+		// we can use those 16 bits in order to store a state used in a lagorithim to encode / decode the object
+		// we can also automatically detect if its encoded and therefore automatically select the operation
+
+		// encoded codestate format
+		// bbbbb - b           - bbbbb/bbbbb
+		// 57rot | encoded bit | 64rot
+
+		dword RtlState;
+
+	#define MX ((x >> 59) & 0x1f) // The offset to rotate | 0xfc00000000000000
+	#define IX (59 - MX)          // Mathematical inverse MX
+		if (x >> 58 & 1) { // encoded pointer -> decode
+			x ^= g_.ProcessCookie;
+
+			// rotate [57:0] left
+			u64 valp1 = (x << MX) & 0x3ffffffffffffff;
+			u64 valp2 = (x >> IX) & ((u64)1 << MX) - 1;
+			x = (valp1 | valp2) | x & 0xfc00000000000000;
+
+			// Translation and removal of state
+			x = (u64)_rotr(x, (x >> 53) & 0x1f) | x & 0xffffffff00000000;             // 0x03e0000000000000 | 0x00000000>>>>>>><
+			x = (u64)_rotl(x >> 16, (x >> 48) & 0x1f) << 16 | x & 0xffff00000000ffff; // 0x001f000000000000 | 0x0000><<<<<<<0000
+			x &= 0x0000ffffffffffff;
+		} else { // normal pointer -> encode
+			// Translation and state introduction
+			x |= (u64)RtlRandomEx(&RtlState) << 48;                                   // x[63:48] = Random
+			x = (u64)_rotr(x >> 16, (x >> 48) & 0x1f) << 16 | x & 0xffff00000000ffff; // 0x001f000000000000 | 0x0000>>>>>>><0000
+			x = (u64)_rotl(x, (x >> 53) & 0x1f) | x & 0xffffffff00000000;             // 0x03e0000000000000 | 0x00000000><<<<<<<
+
+			// rotate [57:0] right
+			u64 valp1 = (x >> MX) & 0x3ffffffffffffff;
+			u64 valp2 = (x << IX) & (((u64)1 << MX) - 1 << IX);
+			x = (valp1 | valp2) | x & 0xfc00000000000000;
+
+			// Finalize (enable encoded bit)
+			x |= (u64)1 << 58;
+			x ^= g_.ProcessCookie & ~((u64)1 << 58);
+		}
+	#undef IX
+	#undef MX
+
+		return x;
+	}
+
+	handle EncodePointer(
 		_In_ void* Pointer
 	) {
 
 
-		return Pointer;
+
+	// handle = ptr ^ Cookie
+	// t = Cookie >> COffset & 0x3f
+	// rol(handle, t)
+	//	return (handle)_rotl64((u64)Pointer ^ g_.ProcessCookie,
+	//		g_.ProcessCookie >> g_.CookieOffset & 0x3f);
+		return 0;
+	}
+	void* DecodePointer(
+		_In_ handle Handle
+	) {
+		return (void*)(_rotr64((u64)Handle, g_.ProcessCookie)
+			^ g_.ProcessCookie >> g_.CookieOffset & 0x3f);
 	}
 
 

@@ -1,10 +1,5 @@
 #include "ldr.h"
 
-
-poly __x64call ServiceFunctionTest(va_list VariableArgumentList) {
-	return va_arg(VariableArgumentList, ptr) * va_arg(VariableArgumentList, ptr);
-}
-
 #pragma region Startup-Loader
 /* Thread-Local-Storage (TLS) Callback :
    This will start the Protection-Services,
@@ -36,26 +31,31 @@ void __stdcall TlsCoreLoader(
 			}
 		#endif
 
+			auto Status = ValidateImportAddressTable(BaseAddress);
+
 			// Setup ProcessCookie (required for CryptPointer)
-			auto nt = ldr::GetModuleHandleByHash(N_NTDLL);
-			typedef ULONG(NTAPI* rtlrandex_t)(
-				PULONG Seed
-				);
-			auto RtlRandomEx = (rtlrandex_t)ldr::ImportFunctionByHash(nt, N_RTLRANDEX);
 			dword RtlState;
-			g_.Process.ProcessCookie = (u64)RtlRandomEx(&RtlState) << 32 | RtlRandomEx(&RtlState);
+			g_.ProcessCookie = (u64)RtlRandomEx(&RtlState) << 32 | RtlRandomEx(&RtlState);
+			g_.CookieOffset = RtlRandomEx(&RtlState) & 0x1f;
+
+
+
 
 			// Initializing ServiceManager
 			ServiceMgr = new svc2;
-			ServiceMgr->RegisterServiceFunction(0x21, ServiceFunctionTest);
-			ServiceMgr->RegisterServiceFunction(0x21, ServiceFunctionTest);
-			poly ret;
-			auto a = ServiceMgr->CallService(0x21, &ret, 0, 2);
 
-			ptr Parameters[2];
+			auto coded = utl::CryptPointer2((poly)ServiceMgr);
+			auto decod = utl::CryptPointer2(coded);
+
+			void SetupMemoryScanner();
+			SetupMemoryScanner();
+
+
+			poly Parameters[2];
 			Parameters[0] = 23;
 			Parameters[1] = 43;
-			a = ServiceMgr->vServiceCall(0x21, &ret, (va_list)Parameters);
+			poly ret;
+			auto a = ServiceMgr->ServiceCall(0x21, &ret, (poly)Parameters);
 
 
 
@@ -158,10 +158,10 @@ extern "C" {
 // New Service Dispatch System (will replace svc1)
 #pragma region ServiceCentre
 svc2::svc2() {
-	m_Heap = HeapCreate(0, 0, 0);
+	m_DispatchTable = HeapCreate(0, 0, 0);
 }
 svc2::~svc2() {
-	HeapDestroy(m_Heap);
+	HeapDestroy(m_DispatchTable);
 }
 
 status svc2::SearchListForEntry(
@@ -170,16 +170,17 @@ status svc2::SearchListForEntry(
 ) {
 	PROCESS_HEAP_ENTRY HeapEntry;
 	HeapEntry.lpData = nullptr;
-	HeapLock(m_Heap);
-	while (HeapWalk(m_Heap, &HeapEntry))
+
+	HeapLock(m_DispatchTable);
+	while (HeapWalk(m_DispatchTable, &HeapEntry))
 		if (HeapEntry.wFlags & PROCESS_HEAP_ENTRY_BUSY) {
 			FunctionEntry = (FunctionDispatchEntry*)HeapEntry.lpData;
 			if (FunctionEntry->FunctionId == ServiceId) {
-				HeapUnlock(m_Heap);
+				HeapUnlock(m_DispatchTable);
 				return SUCCESS;
 			}
 		}
-	HeapUnlock(m_Heap);
+	HeapUnlock(m_DispatchTable);
 
 	if (GetLastError() != ERROR_NO_MORE_ITEMS)
 		return S_CREATE(SS_ERROR, SF_CORE, SC_UNKNOWN);
@@ -190,18 +191,18 @@ status svc2::RegisterServiceFunction(
 	_In_ u64                    FunctionId,
 	_In_ ServiceFunctionPointer FunctionPointer
 ) {
-	HeapLock(m_Heap);
+	HeapLock(m_DispatchTable);
 
 	// Test if ServiceId has been used already
 	FunctionDispatchEntry* Entry;
 	status Status = SearchListForEntry(FunctionId, Entry);
 	if (S_CODE(Status) != SC_NOT_FOUND) {
-		HeapUnlock(m_Heap);
+		HeapUnlock(m_DispatchTable);
 		return S_CREATE(SS_ERROR, SF_CORE, SC_ALREADY_EXISTS);
 	}
 	Status = SUCCESS;
 
-	auto ServiceEntry = (FunctionDispatchEntry*)HeapAlloc(m_Heap, 0, sizeof(FunctionDispatchEntry));
+	auto ServiceEntry = (FunctionDispatchEntry*)HeapAlloc(m_DispatchTable, 0, sizeof(FunctionDispatchEntry));
 
 	// Associate Function to Module
 	MEMORY_BASIC_INFORMATION mbi;
@@ -214,16 +215,17 @@ status svc2::RegisterServiceFunction(
 		Status = S_CREATE(SS_WARNING, SF_CORE, SC_SEARCH_UNSUCCESSFUL);
 	}
 
+	// Register function
 	ServiceEntry->FunctionId = FunctionId;
 	ServiceEntry->FunctionPointer = FunctionPointer;
-	HeapUnlock(m_Heap);
+	HeapUnlock(m_DispatchTable);
 	return Status;
 }
 
-status svc2::vServiceCall(
-	_In_  u64     ServiceId,
-	_Out_ poly*   ReturnValue,
-	_In_  va_list ServiceParameters
+status svc2::ServiceCall(            // Calls the requested servicefunction
+	_In_     u64   ServiceId,        // identifier for the servicefunction
+	_Out_    poly* ReturnValue,      // the result returned by the servicefunction
+	_In_opt_ poly  ServiceParameters // A polymorpthic value to be passed throuh
 ) {
 	FunctionDispatchEntry* Entry;
 	auto Status = SearchListForEntry(ServiceId, Entry);
@@ -233,12 +235,12 @@ status svc2::vServiceCall(
 	*ReturnValue = Entry->FunctionPointer(ServiceParameters);
 	return SUCCESS;
 }
-extern "C" status CallService(
-	_In_  u64     ServiceId,
-	_Out_ poly*   ReturnValue,
-	_In_  va_list ServiceParameters
+extern "C" status cCallService( // As in svc::ServiceCall
+	_In_  u64   ServiceId,
+	_Out_ poly* ReturnValue,
+	_In_  poly  ServiceParameters
 ) {
-	return ServiceMgr->vServiceCall(ServiceId, ReturnValue, ServiceParameters);
+	return ServiceMgr->ServiceCall(ServiceId, ReturnValue, ServiceParameters);
 }
 #pragma endregion
 

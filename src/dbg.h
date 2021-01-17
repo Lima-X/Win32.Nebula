@@ -7,53 +7,99 @@
 #pragma comment(lib, "dbghelp.lib")
 #include <dbghelp.h>
 
+#ifdef __cplusplus
 extern "C" {
-	__declspec(dllimport) ULONG __cdecl vDbgPrint(_In_z_ _Printf_format_string_ PCSTR Format, ...);
+#endif
+	__declspec(dllimport) ULONG __stdcall vDbgPrintEx(_In_ ULONG ComponentId, _In_ ULONG Level, _In_z_ PCCH Format, _In_ va_list arglist);
 	__declspec(dllimport) int __cdecl swprintf_s(wchar_t* buffer, size_t sizeOfBuffer, const wchar_t* format, ...);
 	__declspec(dllimport) int __cdecl vsprintf_s(char* buffer, size_t numberOfElements, const char* format, va_list argptr);
+#ifdef __cplusplus
 }
-namespace dbg2 {
-	inline status DbgCreateDump(                           // Generates a MiniDumpFile of the current process
-		_In_opt_z_ const wchar* Path,                      // The path at which to create the dumpfile and write to
-		_In_opt_         EXCEPTION_POINTERS* ExceptionInfo // Optional exceptionpointers incase an exception occoured
-	) {
-		auto Heap = GetProcessHeap();
-		auto ModuleFile = (wchar*)HeapAlloc(Heap, 0, MAX_PATH);
+#endif
 
-		// Search for Basename
-		GetModuleFileNameW(GetModuleHandleW(nullptr), ModuleFile, MAX_PATH);
-		size_t StringLength = wcslen(ModuleFile);
-		auto BaseName = ModuleFile + StringLength;
-		while (*--BaseName != L'\\');
+inline long DbgCreateDump(                             // Generates a MiniDumpFile of the current process
+	_In_opt_z_ const wchar_t* Path,                    // The path at which to create the dumpfile and write to
+	_In_opt_         EXCEPTION_POINTERS* ExceptionInfo // Optional exceptionpointers incase an exception occoured
+) {
+	auto Heap = GetProcessHeap();
+	auto ModuleFile = (wchar_t*)HeapAlloc(Heap, 0, MAX_PATH);
 
-		// Create Dumpfile
-		auto TargetFile = (wchar*)HeapAlloc(Heap, 0, MAX_PATH);
-		auto AppandingOffset = 0;
-		if (Path) {
-			wcscpy(TargetFile, Path);
-		    AppandingOffset = wcslen(Path);
-			TargetFile[AppandingOffset++] = L'\\';
-		}
-		swprintf_s(TargetFile + AppandingOffset, MAX_PATH, L"%s%04d_%#018llx.dmp", ++BaseName, GetCurrentProcessId(), __rdtsc());
-		HeapFree(Heap, 0, ModuleFile);
-		handle hFile = CreateFileW(TargetFile, GENERIC_READWRITE,
-			FILE_SHARE_READ, nullptr, CREATE_ALWAYS, NULL, NULL);
-		HeapFree(Heap, 0, TargetFile);
-		if (hFile == INVALID_HANDLE_VALUE)
-			return S_CREATE(SS_ERROR, SF_NULL, SC_INVALID_HANDLE);
+	// Search for Basename
+	GetModuleFileNameW(GetModuleHandleW(nullptr), ModuleFile, MAX_PATH);
+	size_t StringLength = wcslen(ModuleFile);
+	auto BaseName = ModuleFile + StringLength;
+	while (*--BaseName != L'\\');
 
-		// Create and Write Minidump
-		MINIDUMP_EXCEPTION_INFORMATION mdei;
-		mdei.ExceptionPointers = ExceptionInfo;
-		mdei.ThreadId = GetCurrentThreadId();
-		mdei.ClientPointers = false;
-		MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
-			hFile, MiniDumpNormal, &mdei, nullptr, nullptr);
-
-		CloseHandle(hFile);
-		return SUCCESS;
+	// Create Dumpfile
+	auto TargetFile = (wchar_t*)HeapAlloc(Heap, 0, MAX_PATH);
+	auto AppandingOffset = 0;
+	if (Path) {
+		wcscpy(TargetFile, Path);
+		AppandingOffset = wcslen(Path);
+		TargetFile[AppandingOffset++] = L'\\';
 	}
+	swprintf_s(TargetFile + AppandingOffset, MAX_PATH, L"%s%04d_%#018llx.dmp", ++BaseName, GetCurrentProcessId(), __rdtsc());
+	HeapFree(Heap, 0, ModuleFile);
+	handle hFile = CreateFileW(TargetFile, GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ, nullptr, CREATE_ALWAYS, NULL, NULL);
+	HeapFree(Heap, 0, TargetFile);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return S_CREATE(SS_ERROR, SF_NULL, SC_INVALID_HANDLE); // TODO: unrefernce parts of nebula that are used in here
+
+	// Create and Write Minidump
+	MINIDUMP_EXCEPTION_INFORMATION mdei;
+	mdei.ExceptionPointers = ExceptionInfo;
+	mdei.ThreadId = GetCurrentThreadId();
+	mdei.ClientPointers = false;
+	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
+		hFile, MiniDumpNormal, &mdei, nullptr, nullptr);
+
+	CloseHandle(hFile);
+	return SUCCESS;
 }
+
+#ifdef _DEBUG
+#define DBG_ERROR   0 //
+#define DBG_WARNING 1 //
+#define DBG_SUCCESS 2 //
+#define DBG_MESSAGE 3 //
+inline void DbgTracePoint(
+	_In_opt_ u32         ErrorLevel,
+	_In_z_   const char* FormatString,
+	_In_opt_             ...
+) {
+	auto Buffer = (char*)VirtualAlloc(nullptr, 0x1000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	auto Iterator = Buffer;
+
+	// Print errorlevel symbol
+	*Iterator++ = '[';
+	switch (ErrorLevel) {
+	case DBG_ERROR:   *Iterator++ = 'X'; break;
+	case DBG_WARNING: *Iterator++ = '!'; break;
+	case DBG_SUCCESS: *Iterator++ = 'S'; break;
+	case DBG_MESSAGE: *Iterator++ = '+';
+	}
+	*Iterator++ = ']'; *Iterator++ = ' ';
+
+	// Generate alligned Buffer
+	while (*FormatString) {
+		*Iterator++ = *FormatString;
+		if (*FormatString++ == '\n') {
+			for (auto i = 0; i < 4; i++)
+				*Iterator++ = ' ';
+		};
+	}
+	*Iterator = '\n'; // Auto Newline
+
+	// Print Message
+	va_list Arguments;
+	va_start(Arguments, FormatString);
+	vDbgPrintEx(0x65, ErrorLevel, Buffer, Arguments);
+	va_end(Arguments);
+
+	VirtualFree(Buffer, 0, MEM_RELEASE);
+}
+#endif
 
 #if defined(_DEBUG) && defined(__cplusplus)
 // will be renamed to dbg when the original old code has been fully regfactored modified
@@ -307,7 +353,7 @@ namespace dbg {
 #define BreakPoint   __debugbreak
 #define CreateDump   ::dbg2::DbgCreateDump
 #ifdef _DEBUG
-#define TracePoint   ::dbg::DbgTracePoint
+#define TracePoint   DbgTracePoint
 #define StatusAssert ::dbg::DbgStatusAssert
 #else
 #define TracePoint()

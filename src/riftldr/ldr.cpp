@@ -6,6 +6,7 @@ namespace ldr {
 	// PEB_LDR_DATA:InMemoryOrderModuleList(LIST_ENTRY)         @ offset 0x20 (x64)
 	// LDR_DATA_TABLE_ENTRY:InMemoryOrderModuleList(LIST_ENTRY) @ offset 0x10 (x64)
 	// LDR_DATA_TABLE_ENTRY:DllBase(void*)                      @ offset 0x30 (x64)
+	// LDR_DATA_TABLE_ENTRY:SizeOfImage(ULONG)                  @ offset 0x40 (x64)
 	// LDR_DATA_TABLE_ENTRY:BaseDllName(UNICODE_STRING)         @ offset 0x58 (x64)
 	LIST_ENTRY* GetModuleList() {
 		auto PEB = (void*)__readgsqword(0x60);        // Get PEB

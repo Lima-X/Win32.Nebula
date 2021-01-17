@@ -50,6 +50,9 @@ extern "C" {
 	NTSYSAPI NTSTATUS NTAPI NtSuspendProcess(
 		_In_ LONG ProcessId
 	);
+	NTSYSAPI ULONG NTAPI RtlRandomEx(
+		_Inout_ PULONG Seed
+	);
 
 	IMPORT int __cdecl swprintf_s(wchar_t* buffer, size_t sizeOfBuffer, const wchar_t* format, ...);
 	IMPORT int __cdecl vswprintf_s(wchar_t* buffer, size_t numberOfElements, const wchar_t* format, va_list argptr);

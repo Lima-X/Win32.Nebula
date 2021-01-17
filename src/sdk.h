@@ -24,7 +24,7 @@ inline vServiceCall_t vServiceCall;
 	ParameterList[0] = "String Part 1";
 	ParameterList[1] = 0x1234;
 	poly ReturnValue;
-	status StatusCode = vServiceCall(SERVICE_ID, &ReturnValue, (va_list)ParameterList);
+	status StatusCode = vServiceCall(SERVICE_ID, &ReturnValue, (poly)ParameterList);
 */
 #endif
 #endif

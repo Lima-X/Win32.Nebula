@@ -70,6 +70,7 @@ typedef          void* handle;
 #endif
 
 #define GENERIC_READWRITE      0xc0000000 // (GENERIC_READ | GENERIC_WRITE)
+#define MEM_ALLOC              0x00003000 // (MEM_RESERVE | MEM_COMMIT)
 
 #define DEPRECATED             __declspec(deprecated)
 #define DEPRECATED_STR(String) __declspec(deprecated(String))
@@ -159,6 +160,7 @@ typedef _Success_(!(return & (0b1 << 31))) signed long status;
 #define SC_INVALID_COMMAND    13 // An invalid command was requested
 #define SC_NOT_FOUND          14 // The element searched for was not found
 #define SC_ALREADY_EXISTS     15 // Object already exists
+#define SC_INVALID_SIGNATURE  16 // A signature to validate an object did not match
 
 #define SC_CLIENT 65536 // Status Codes from 65536 (0x10000) - 16777216 (0xffffff) are reserved for the Client
 #pragma endregion
@@ -167,7 +169,7 @@ typedef _Success_(!(return & (0b1 << 31))) signed long status;
 #define S_SEVERITY(s)  (s >> 30)           // Gets the Serverity Flags
 #define S_FACILITY(s)  ((s >> 24) & 0x3f)  // Gets the Facility Id
 #define S_CODE(s)      (s & 0xffffff)      // Gets the Statuscode
-#define S_MESSAGE(s)   (s & 0xdfffffff)    // Gets the Message
+#define S_MESSAGE(s)   (s & 0x3fffffff)    // Gets the Message
 
 #define S_SUCCESS(s)   !(s >> 31)          // Checks if status idicates no Issues (neither an Error nor Warning)
 #define S_WARNING(s)   ((s >> 30) == 0b11) // Checks if status idicates an Warning
@@ -196,8 +198,15 @@ typedef _Success_(!(return & (0b1 << 31))) signed long status;
 #define N_RTLDECBUF 0xf4e7dfe9f97daee1 // "RtlDecompressBufferEx"
 #define N_RTLCOMWWS 0x2f4628d5a07bd77d // "RtlGetCompressionWorkSpaceSize"
 #define N_RTLRANDEX 0xa12ac26abe63b26f // "RtlRandomEx"
+#define N_NTQUERYVM 0x8ef72532eaeee49f // "NtQueryVirtualMemory"
 // #define N_CRTWCSCAT 0x48400801361a0cf8 // "wcscat"
 // #define N_CRTWCSLWR 0x830509af3f20a316 // "_wcslwr"
+
+// Nebula Hashses:
+#define N_ADDEXCLUS 0x165dc6731b1c1c81 // "AddMemoryRegionExclusion"
+#define N_REMEXCLUS 0x10e5c1ef8abb14e2 // "RemoveMemoryRegionExclusion"
+#define N_SCANVASPC 0xabd01abea3896cb0 // "ScanUserModeVirtualMemory"
+
 
 // Kernel32 will likely never beused as ntdll is prefered for all hidden functions
 #define N_KRNL32DLL 0x7f1bf8b449d16c2d // L"kernel32.dll"
