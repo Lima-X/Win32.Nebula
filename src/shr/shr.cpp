@@ -1,5 +1,5 @@
-// Collection of Core Utility Functions that are shared by the Loader and Builder
-#include "core.h"
+// Collection of shared utility functions between the Loader and Builder
+#include "nbp.h"
 
 namespace utl {
 #pragma region Image

@@ -1,11 +1,11 @@
-// This File is shared between the core Projects and provides intercompatibility between them.
+// Nebula-private, internal file shared between the core projects, provides intercompatibility
 #pragma once
 
 #include "..\base.h"
 #include "..\dbg.h"
 #include "itl.h"
 
-#define _NSDK 0 // Explicitly Disables Active Components of the SDK as we are inside the core
+#define _NB_SDK 0 // Explicitly disables active components of the SDK as we are inside the core
 #include "..\sdk.h"
 
 #pragma region Runtime Library

@@ -11,9 +11,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="ldr.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -21,6 +18,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="utl.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="core.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

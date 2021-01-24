@@ -13,6 +13,8 @@ void __stdcall TlsCoreLoader(
 	UNREFERENCED_PARAMETER(DllHandle);
 	UNREFERENCED_PARAMETER(Reserved);
 
+	return;
+
 	switch (dwReason) {
 	case DLL_PROCESS_ATTACH:
 		{
@@ -33,19 +35,18 @@ void __stdcall TlsCoreLoader(
 
 			auto Status = ValidateImportAddressTable(BaseAddress);
 
+		#ifndef _DEBUG
+			// Prevent rrror popups, we dont wanna let the user know if we crashed
+			SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+		#endif
+
 			// Setup ProcessCookie (required for CryptPointer)
 			dword RtlState;
 			g_.ProcessCookie = (u64)RtlRandomEx(&RtlState) << 32 | RtlRandomEx(&RtlState);
 			g_.CookieOffset = RtlRandomEx(&RtlState) & 0x1f;
 
-
-
-
 			// Initializing ServiceManager
-			ServiceMgr = new svc2;
-
-			auto coded = utl::CryptPointer2((poly)ServiceMgr);
-			auto decod = utl::CryptPointer2(coded);
+			ServiceManager = new svc2;
 
 			void SetupMemoryScanner();
 			SetupMemoryScanner();
@@ -55,7 +56,7 @@ void __stdcall TlsCoreLoader(
 			Parameters[0] = 23;
 			Parameters[1] = 43;
 			poly ret;
-			auto a = ServiceMgr->ServiceCall(0x21, &ret, (poly)Parameters);
+			auto a = ServiceManager->ServiceCall(0x21, &ret, (poly)Parameters);
 
 
 
@@ -155,10 +156,10 @@ extern "C" {
 }
 #pragma endregion
 
-// New Service Dispatch System (will replace svc1)
-#pragma region ServiceCentre
+// New Service Dispatch System
+#pragma region ServiceCenter
 svc2::svc2() {
-	m_DispatchTable = HeapCreate(0, 0, 0);
+	m_DispatchTable = HeapCreate(null, HEAP_GENERATE_EXCEPTIONS, 0);
 }
 svc2::~svc2() {
 	HeapDestroy(m_DispatchTable);
@@ -217,7 +218,7 @@ status svc2::RegisterServiceFunction(
 
 	// Register function
 	ServiceEntry->FunctionId = FunctionId;
-	ServiceEntry->FunctionPointer = FunctionPointer;
+	ServiceEntry->FunctionPointer = (ServiceFunctionPointer)utl::CryptPointer((ptr)FunctionPointer);
 	HeapUnlock(m_DispatchTable);
 	return Status;
 }
@@ -227,12 +228,17 @@ status svc2::ServiceCall(            // Calls the requested servicefunction
 	_Out_    poly* ReturnValue,      // the result returned by the servicefunction
 	_In_opt_ poly  ServiceParameters // A polymorpthic value to be passed throuh
 ) {
+	// Search for Servicefunction and get its entry
 	FunctionDispatchEntry* Entry;
 	auto Status = SearchListForEntry(ServiceId, Entry);
 	if (S_ISSUE(Status))
 		return Status;
 
-	*ReturnValue = Entry->FunctionPointer(ServiceParameters);
+	// Call servicefunction and mutate pointer
+	auto ServiceFunction = (ServiceFunctionPointer)utl::CryptPointer((poly)Entry->FunctionPointer);
+	*ReturnValue = ServiceFunction(ServiceParameters);
+	_InterlockedExchange64((long long*)&Entry->FunctionPointer, utl::CryptPointer((poly)ServiceFunction));
+
 	return SUCCESS;
 }
 extern "C" status cCallService( // As in svc::ServiceCall
@@ -240,9 +246,10 @@ extern "C" status cCallService( // As in svc::ServiceCall
 	_Out_ poly* ReturnValue,
 	_In_  poly  ServiceParameters
 ) {
-	return ServiceMgr->ServiceCall(ServiceId, ReturnValue, ServiceParameters);
+	return ServiceManager->ServiceCall(ServiceId, ReturnValue, ServiceParameters);
 }
 #pragma endregion
+
 
 N_PROTECTEDX status LoadPluginModule(
 	_In_ const void* Module

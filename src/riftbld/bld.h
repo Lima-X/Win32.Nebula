@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.h"
+#include "nbp.h"
 
 /* Commandline usage:
    "/[Operation]" : Specifies the operation to execute (this must be the first operand)

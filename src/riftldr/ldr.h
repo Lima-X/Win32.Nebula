@@ -1,7 +1,7 @@
-// LoaderModule
+// Nebula Core - self protecting "nano" kernel
 #pragma once
 
-#include "core.h"
+#include "nbp.h"
 
 #pragma region Protected Sections
 #pragma warning(disable : 4330)
@@ -41,9 +41,9 @@ namespace svc {
 }
 
 namespace utl {
-	void* CodePointer(_In_ void* Pointer);
-	poly CryptPointer2(_In_ poly x);
-
+	poly CryptPointer(_In_ poly x);
+	status GenerateSessionId(_Out_ u64& SessionId);
+	status GenerateHardwareId(_Out_ u64& HardwareId);
 }
 
 class svc2 {
@@ -66,11 +66,13 @@ private:
 
 	handle m_DispatchTable; // Function-Dispatch-Table (HeapList storing the Services)
 };
-inline svc2* ServiceMgr;
+inline svc2* ServiceManager;
 
 // Global Managment Information
 // has to be named because of a stupid compiler bug lol, bug report at:
 // https://developercommunity.visualstudio.com/content/problem/1312147/c17-global-unnamed-inline-struct-may-not-be-the-sa.html
+// Apparently its not a compilerbug, however i do not aggree with the way this is handled and this really doesnt seem to be
+// Standard conform.
 struct _NebulaInternalGlobalData {
 	handle ModuleBase;
 

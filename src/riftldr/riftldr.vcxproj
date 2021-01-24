@@ -57,7 +57,7 @@
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
-    <Import Project="..\shared\shared.vcxitems" Label="Shared" />
+    <Import Project="..\shr\shr.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='DebugExecutable|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -93,7 +93,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugExecutable|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
-      <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ExceptionHandling>false</ExceptionHandling>
@@ -103,6 +102,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalOptions>
       </AdditionalOptions>
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -123,7 +123,6 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugLibrary|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
-      <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ExceptionHandling>false</ExceptionHandling>
@@ -134,6 +133,7 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalOptions>
       </AdditionalOptions>
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -157,7 +157,6 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
       <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ExceptionHandling>false</ExceptionHandling>
@@ -170,6 +169,7 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
       <PreprocessorDefinitions>_EXE</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -196,7 +196,6 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
       <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ExceptionHandling>false</ExceptionHandling>
@@ -210,6 +209,7 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
       <PreprocessorDefinitions>_LIB</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
+      <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -234,7 +234,7 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
   <ItemGroup>
     <ClCompile Include="are.cpp" />
     <ClCompile Include="ldr.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="core.cpp" />
     <ClCompile Include="utl.cpp" />
   </ItemGroup>
   <ItemGroup>

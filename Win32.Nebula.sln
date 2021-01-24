@@ -14,13 +14,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nebula", "Nebula", "{6DA0C2
 		src\sdk.h = src\sdk.h
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared", "src\shared\shared.vcxitems", "{F510336D-E46A-4EA5-9517-6F97F1822457}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shr", "src\shr\shr.vcxitems", "{F510336D-E46A-4EA5-9517-6F97F1822457}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		src\shared\shared.vcxitems*{5edaecc5-bb9d-4cdd-abf8-d8c0306a2749}*SharedItemsImports = 4
-		src\shared\shared.vcxitems*{e7e1aa01-b370-4d91-85b2-93a096ac2f46}*SharedItemsImports = 4
-		src\shared\shared.vcxitems*{f510336d-e46a-4ea5-9517-6f97f1822457}*SharedItemsImports = 9
+		src\shr\shr.vcxitems*{5edaecc5-bb9d-4cdd-abf8-d8c0306a2749}*SharedItemsImports = 4
+		src\shr\shr.vcxitems*{e7e1aa01-b370-4d91-85b2-93a096ac2f46}*SharedItemsImports = 4
+		src\shr\shr.vcxitems*{f510336d-e46a-4ea5-9517-6f97f1822457}*SharedItemsImports = 9
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		DebugExecutable|x64 = DebugExecutable|x64

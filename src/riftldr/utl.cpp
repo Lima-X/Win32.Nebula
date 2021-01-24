@@ -2,16 +2,7 @@
 #include "ldr.h"
 
 namespace utl {
-	// TODO: proper 2way function has to be implemented
-	DEPRECATED_STR("Old Pointer Encoding function (this one works both ways and is not optimal for the job)")
-	void* CodePointer(
-		_In_ void* Pointer
-	) {
-		return (void*)((ptr)Pointer ^ g_.ProcessCookie);
-	}
-
-
-	poly CryptPointer2(
+	poly CryptPointer(
 		_In_ poly x
 	) {
 		// encode 2.0:
@@ -22,92 +13,106 @@ namespace utl {
 		// we can also automatically detect if its encoded and therefore automatically select the operation
 
 		// encoded codestate format
-		// bbbbb - b           - bbbbb/bbbbb
-		// 57rot | encoded bit | 64rot
+		// bbbbb - b       - bbbbb/bbbbb - bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+		// 58rot | encoded | 32/32rot    | 48-Bit Pointer
 
 		dword RtlState;
 
-	#define MX ((x >> 59) & 0x1f) // The offset to rotate | 0xfc00000000000000
-	#define IX (59 - MX)          // Mathematical inverse MX
-		if (x >> 58 & 1) { // encoded pointer -> decode
-			x ^= g_.ProcessCookie;
+	#define SX(y) ((x >> y) & 0x1f) // Get 5bits of state on offset
+	#define MX    SX(59)            // The offset to rotate (58rot) | 0xfc00000000000000
+	#define IX    (58 - MX)         // Mathematical inverse MX (ignore encode bit)
+		if (x >> 58 & 1) {
+			x ^= g_.ProcessCookie & 0xffffull << 48;                        // Demutate 15bit state
+			u64 v1 = (x & 0x03ffffffffffffff) >> MX;                        // 58shift upper
+			u64 v2 = (x << IX) & ~(0xfcull << 56);                          // 58shift lower
+			x = (v1 | v2) | x & 0xfcull << 56;                              // 58rotr combine
+			x ^= g_.ProcessCookie & 0xffffffffffff;                         // Demutate 48bit pointer
+			x = (u64)_rotl(x >> 16, SX(48)) << 16 | x & 0xffff00000000ffff; // Untranslate upper 48ptr
+			x = (u64)_rotr(x, SX(53)) | x & 0xffffull << 32;                // Untranslate lower 48ptr
+		} else {
+			// Initial pointer translation and state introduction
+			x |= (u64)RtlRandomEx(&RtlState) << 48;                         // x[63:48] = Random
+			x = (u64)_rotl(x, SX(53)) | x & 0xffffffff00000000;             // 0x03e0000000000000 | 0x00000000><<<<<<<
+			x = (u64)_rotr(x >> 16, SX(48)) << 16 | x & 0xffff00000000ffff; // 0x001f000000000000 | 0x0000>>>>>>><0000
 
-			// rotate [57:0] left
-			u64 valp1 = (x << MX) & 0x3ffffffffffffff;
-			u64 valp2 = (x >> IX) & ((u64)1 << MX) - 1;
-			x = (valp1 | valp2) | x & 0xfc00000000000000;
+			// Mutate [47:0] (48bit pointer)
+			x ^= g_.ProcessCookie & 0x0000ffffffffffff;
 
-			// Translation and removal of state
-			x = (u64)_rotr(x, (x >> 53) & 0x1f) | x & 0xffffffff00000000;             // 0x03e0000000000000 | 0x00000000>>>>>>><
-			x = (u64)_rotl(x >> 16, (x >> 48) & 0x1f) << 16 | x & 0xffff00000000ffff; // 0x001f000000000000 | 0x0000><<<<<<<0000
-			x &= 0x0000ffffffffffff;
-		} else { // normal pointer -> encode
-			// Translation and state introduction
-			x |= (u64)RtlRandomEx(&RtlState) << 48;                                   // x[63:48] = Random
-			x = (u64)_rotr(x >> 16, (x >> 48) & 0x1f) << 16 | x & 0xffff00000000ffff; // 0x001f000000000000 | 0x0000>>>>>>><0000
-			x = (u64)_rotl(x, (x >> 53) & 0x1f) | x & 0xffffffff00000000;             // 0x03e0000000000000 | 0x00000000><<<<<<<
+			// translate 32/32rotlr state into pointer by 58rotl [57:0]
+			u64 v1 = (x << MX) & 0x03ffffffffffffff;
+			u64 v2 = (x >> IX) & (1ull << MX) - 1;
+			x = (v1 | v2) | x & 0xfc00000000000000; // 0x03ffffffffffffff | 0x03><<<<<<<<<<<<<
 
-			// rotate [57:0] right
-			u64 valp1 = (x >> MX) & 0x3ffffffffffffff;
-			u64 valp2 = (x << IX) & (((u64)1 << MX) - 1 << IX);
-			x = (valp1 | valp2) | x & 0xfc00000000000000;
-
-			// Finalize (enable encoded bit)
-			x |= (u64)1 << 58;
-			x ^= g_.ProcessCookie & ~((u64)1 << 58);
+			// Finalize by mutating state [63:48 & ^58] and enabling the encoded bitflag
+			x = x ^ g_.ProcessCookie & 0xffffull << 48 | 1ull << 58;
 		}
 	#undef IX
 	#undef MX
+	#undef SX
 
 		return x;
 	}
 
-	handle EncodePointer(
-		_In_ void* Pointer
-	) {
-
-
-
-	// handle = ptr ^ Cookie
-	// t = Cookie >> COffset & 0x3f
-	// rol(handle, t)
-	//	return (handle)_rotl64((u64)Pointer ^ g_.ProcessCookie,
-	//		g_.ProcessCookie >> g_.CookieOffset & 0x3f);
-		return 0;
-	}
-	void* DecodePointer(
-		_In_ handle Handle
-	) {
-		return (void*)(_rotr64((u64)Handle, g_.ProcessCookie)
-			^ g_.ProcessCookie >> g_.CookieOffset & 0x3f);
-	}
-
+	struct SYSTEM_FIRMWARE_TABLE_INFORMATION {
+		ULONG ProviderSignature;
+		ULONG Action;
+		ULONG TableID;
+		ULONG TableBufferLength;
+		UCHAR TableBuffer[];
+	};
 
 	status GenerateSessionId(
 		_Out_ u64& SessionId
 	) {
-		handle m_Heap = GetProcessHeap();
+		handle Heap = GetProcessHeap();
 		SessionId = Fnv64OffsetBasis;
 
 		const dword ProviderSignatures[] = { 'ACPI', 'FIRM', 'RSMB' };
 		for (auto i = 0; i < 3; i++) {
 			// Enumerate table entries
-			size_t TableIdSize = EnumSystemFirmwareTables(ProviderSignatures[i], nullptr, 0);
-			dword* TableId = (dword*)HeapAlloc(m_Heap, 0, TableIdSize);
-			EnumSystemFirmwareTables(ProviderSignatures[i], TableId, TableIdSize);
+			auto IdentifierTable = (SYSTEM_FIRMWARE_TABLE_INFORMATION*)HeapAlloc(Heap, 0, 16);
+			dword ReturnLength;
+			IdentifierTable->ProviderSignature = ProviderSignatures[i];
+			IdentifierTable->Action = 0;
+			IdentifierTable->TableID = 0;
+			IdentifierTable->TableBufferLength = 0;
+			auto NtStatus = NtQuerySystemInformation((SYSTEM_INFORMATION_CLASS)0x4c,
+				IdentifierTable, 16, &ReturnLength);
+			if (NtStatus == 0xc0000002) // Not implemented -> skip
+				continue;
+			if (NtStatus != 0xc0000023) // Buffer insufficient
+				return S_CREATE(SS_ERROR, SF_CORE, SC_UNKNOWN);
+			IdentifierTable = (SYSTEM_FIRMWARE_TABLE_INFORMATION*)HeapReAlloc(Heap,
+				0, IdentifierTable, IdentifierTable->TableBufferLength + 16);
+			NtStatus = NtQuerySystemInformation((SYSTEM_INFORMATION_CLASS)0x4c,
+				IdentifierTable, IdentifierTable->TableBufferLength + 16, &ReturnLength);
+			if (!NT_SUCCESS(NtStatus))
+				return S_CREATE(SS_ERROR, SF_CORE, SC_UNKNOWN);
 
-			for (auto j = 0; j < TableIdSize / sizeof(dword); j++) {
+			for (auto j = 0; j < IdentifierTable->TableBufferLength / sizeof(dword); j++) {
 				// Get firmware tables
-				size_t TableSize = GetSystemFirmwareTable(ProviderSignatures[i], TableId[j], nullptr, 0);
-				void* Table = HeapAlloc(m_Heap, 0, TableSize);
-				GetSystemFirmwareTable(ProviderSignatures[i], TableId[j], Table, TableSize);
+				auto FirmwareTable = (SYSTEM_FIRMWARE_TABLE_INFORMATION*)HeapAlloc(Heap, 0, 16);
+				FirmwareTable->ProviderSignature = ProviderSignatures[i];
+				FirmwareTable->Action = 1;
+				FirmwareTable->TableID = ((dword*)IdentifierTable->TableBuffer)[j];
+				FirmwareTable->TableBufferLength = 0;
+				NtStatus = NtQuerySystemInformation((SYSTEM_INFORMATION_CLASS)0x4c,
+					FirmwareTable, 16, &ReturnLength);
+				if (NtStatus != 0xc0000023)
+					return S_CREATE(SS_ERROR, SF_CORE, SC_UNKNOWN);
+				FirmwareTable = (SYSTEM_FIRMWARE_TABLE_INFORMATION*)HeapReAlloc(Heap,
+					0, FirmwareTable, FirmwareTable->TableBufferLength + 16);
+				NtStatus = NtQuerySystemInformation((SYSTEM_INFORMATION_CLASS)0x4c,
+					FirmwareTable, FirmwareTable->TableBufferLength + 16, &ReturnLength);
+				if (!NT_SUCCESS(NtStatus))
+					return S_CREATE(SS_ERROR, SF_CORE, SC_UNKNOWN);
 
 				// Hash Table
-				Fnv1a64Hash(Table, TableSize, SessionId);
-				HeapFree(m_Heap, 0, Table);
+				Fnv1a64Hash(FirmwareTable->TableBuffer, FirmwareTable->TableBufferLength, SessionId);
+				HeapFree(Heap, 0, FirmwareTable);
 			}
 
-			HeapFree(m_Heap, 0, TableId);
+			HeapFree(Heap, 0, IdentifierTable);
 		}
 
 		return SUCCESS;
@@ -118,13 +123,26 @@ namespace utl {
 	status GenerateHardwareId(
 		_Out_ u64& HardwareId
 	) {
-		handle m_Heap = GetProcessHeap();
+		handle Heap = GetProcessHeap();
 		HardwareId = Fnv64OffsetBasis;
 
 		// Get SMBios Table
-		size_t TableSize = GetSystemFirmwareTable('RSMB', 0x0000, nullptr, 0);
-		auto RawSmBiosTable = HeapAlloc(m_Heap, 0, TableSize);
-		GetSystemFirmwareTable('RSMB', 0x0000, RawSmBiosTable, TableSize);
+		auto FirmwareTable = (SYSTEM_FIRMWARE_TABLE_INFORMATION*)HeapAlloc(Heap, 0, 16);
+		FirmwareTable->ProviderSignature = 'RSMB';
+		FirmwareTable->Action = 1;
+		FirmwareTable->TableID = 0x0000;
+		FirmwareTable->TableBufferLength = 0;
+		dword ReturnLength;
+		auto NtStatus = NtQuerySystemInformation((SYSTEM_INFORMATION_CLASS)0x4c,
+			FirmwareTable, 16, &ReturnLength);
+		if (NtStatus != 0xc0000023)
+			return S_CREATE(SS_ERROR, SF_CORE, SC_UNKNOWN);
+		FirmwareTable = (SYSTEM_FIRMWARE_TABLE_INFORMATION*)HeapReAlloc(Heap,
+			0, FirmwareTable, FirmwareTable->TableBufferLength + 16);
+		NtStatus = NtQuerySystemInformation((SYSTEM_INFORMATION_CLASS)0x4c,
+			FirmwareTable, FirmwareTable->TableBufferLength + 16, &ReturnLength);
+		if (!NT_SUCCESS(NtStatus))
+			return S_CREATE(SS_ERROR, SF_CORE, SC_UNKNOWN);
 
 		// Get First Entry
 		typedef struct SmBiosTableHeader {
@@ -132,7 +150,7 @@ namespace utl {
 			byte nLength;
 			WORD wHandle;
 		};
-		auto Entry = (SmBiosTableHeader*)((ptr)RawSmBiosTable + 8);
+		auto Entry = (SmBiosTableHeader*)((ptr)FirmwareTable->TableBuffer + 8);
 
 		// Walk Entries
 		while (Entry->bType != 127) {
@@ -144,14 +162,14 @@ namespace utl {
 
 			// Test if Entry should be hashed
 			const byte DataEntryTypes[] = {
-				0x00, // BIOS            : O
-				0x04, // Processor       : S
-				0x07, // Cache           : O
-				0x08, // Ports           : O
-				0x09, // Slots           : O
-				0x10, // Physical Memory : O
-				0x11, // Memory Devices  : O
-				0x02  // Baseboard       : X
+				// 0x00, // BIOS            : O
+				   0x02, // Baseboard       : X
+				   0x04, // Processor       : S
+				   0x07, // Cache           : O
+				// 0x08, // Ports           : O
+				// 0x09, // Slots           : O
+				// 0x10, // Physical Memory : O
+				// 0x11  // Memory Devices  : O
 			};
 			for (auto i = 0; i < sizeof(DataEntryTypes); i++) {
 				if (Entry->bType == DataEntryTypes[i])
@@ -171,7 +189,7 @@ namespace utl {
 			(ptr&)Entry += EntrySize;
 		}
 
-		HeapFree(m_Heap, 0, RawSmBiosTable);
+		HeapFree(Heap, 0, FirmwareTable);
 		return SUCCESS;
 	}
 }

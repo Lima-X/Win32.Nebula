@@ -4,6 +4,7 @@
     <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     <HasSharedItems>true</HasSharedItems>
     <ItemsProjectGuid>{f510336d-e46a-4ea5-9517-6f97f1822457}</ItemsProjectGuid>
+    <ItemsProjectName>shr</ItemsProjectName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -14,10 +15,10 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)core.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)nbp.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)itl.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)core.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)shr.cpp" />
   </ItemGroup>
 </Project>

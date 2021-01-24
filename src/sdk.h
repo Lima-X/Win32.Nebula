@@ -2,17 +2,16 @@
    in order to code Plugins/Extensions and Payloads */
 #pragma once
 
-#ifndef _NSDK   // This block automatically activates the SDK
-#define _NSDK 1 // enabling certain features and providing delcarations
-#endif          // (disableing this field )
+#ifndef _NB_SDK   // This block automatically activates the SDK
+#define _NB_SDK 1 // enabling certain features and providing delcarations
+#endif            // ()
 
-#ifdef _NSDK_PROVIDE_DEBUG
+#ifdef _NB_SDK_PROVIDE_DEBUG
 #include "dbg.h"
 #endif
 #include "base.h"
 
-#ifdef __cplusplus
-#if _NSDK
+#if _NB_SDK
 typedef poly(__x64call*vServiceCall_t)(
 	_In_range_(0, 0xffff) u32     svcId,
 	_In_opt_              va_list val
@@ -27,7 +26,11 @@ inline vServiceCall_t vServiceCall;
 	status StatusCode = vServiceCall(SERVICE_ID, &ReturnValue, (poly)ParameterList);
 */
 #endif
-#endif
+
+typedef void(__x64call* tapc_t)(
+	_In_opt_ poly UserContext // Callback defined Context
+	);
+
 
 #pragma region ModuleEntry
 #define N_ONLOAD    1

@@ -36,11 +36,11 @@ typedef          wchar_t   wchar;
 // Integer Types
 typedef          char      i8;
 typedef          short     i16;
-typedef          int       i32;
+typedef          long      i32;
 typedef          long long i64;
 typedef unsigned char      u8;
 typedef unsigned short     u16;
-typedef unsigned int       u32;
+typedef unsigned long      u32;
 typedef unsigned long long u64;
 
 // CPU Types
@@ -69,8 +69,11 @@ typedef          void* handle;
 #define __x64call INVALID_CALLING_CONVENTION // This cause a compiler error
 #endif
 
+#define null                   0
+
 #define GENERIC_READWRITE      0xc0000000 // (GENERIC_READ | GENERIC_WRITE)
 #define MEM_ALLOC              0x00003000 // (MEM_RESERVE | MEM_COMMIT)
+#define PAGE_SIZE              0x00001000 // 4096 bytes
 
 #define DEPRECATED             __declspec(deprecated)
 #define DEPRECATED_STR(String) __declspec(deprecated(String))
@@ -161,6 +164,11 @@ typedef _Success_(!(return & (0b1 << 31))) signed long status;
 #define SC_NOT_FOUND          14 // The element searched for was not found
 #define SC_ALREADY_EXISTS     15 // Object already exists
 #define SC_INVALID_SIGNATURE  16 // A signature to validate an object did not match
+#define SC_UNKNOWN_DATA_FOUND 17 // Unexpected and unknown data was found
+#define SC_MISMATCH           18 // Data did not match with what was expected
+#define SC_CRITICAL_FAILURE   19 // Undefined critical error occured
+#define SC_FATAL_ERROR        20 // Programm state corrupted, can NOT continue
+#define SC_INSUFFICIENT       21 // Insufficient Privileges
 
 #define SC_CLIENT 65536 // Status Codes from 65536 (0x10000) - 16777216 (0xffffff) are reserved for the Client
 #pragma endregion

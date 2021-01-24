@@ -52,8 +52,11 @@ namespace utl {
 	}
 #pragma endregion
 
-	constexpr u32 RoundUpToMulOfPow2(u32 num, u32 mul) {
-		return (num + (mul - 1)) & (0 - mul);
+	constexpr u64 RoundUpToMulOfPow2(
+		_In_ u64 Number,
+		_In_ u64 Multiplier
+	) {
+		return (Number + (Multiplier - 1)) & -Multiplier;
 	}
 }
 #endif
