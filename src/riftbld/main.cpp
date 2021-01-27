@@ -1,28 +1,28 @@
 // NebulaBuilder - A commandline utility used to configure, patch/modify and build Nebula / the core
 #include "bld.h"
 
-
+// TODO: minor improvments and better error reporting (if im in the mood)
 struct Opr {
 	wchar* Comment;          // A string of the commandline from start til the OperatorTag
 
-	u64    OperatorTag;      // The operator name (Tag), e.g. "/*rc*"
+	u32    OperatorTag;      // The operator name (Tag), e.g. "/*rc*"
 	struct Parameter {
-		u64    ParameterTag; // The name of the Parameter (Tag), e.g. "-*fi*:"ply.dll""
+		u32    ParameterTag; // The name of the Parameter (Tag), e.g. "-*fi*:"ply.dll""
 		wchar* Argument;     // The argument string of the parameter, e.g. "-fi:*ply.dll*"
-	} *ParameterList;        // An array of Parameters
+	}     *ParameterList;    // An array of Parameters
 	u8     ParameterCount;   // The number of parameters that were parsed
 	u32    Flags;            // a-z Flags, letter is taken as a offset relatve to 'a' in the ascii table
 	                         // and is mapped onto the 32-Bit bitmap
 
-	Opr(
-		_In_z_ const wchar* CommandLine
+	Opr(                                // Initializes the commandline struct
+		_In_z_ const wchar* CommandLine // the string to be used as the commandline
 	) {
-		// Future proing for more extensive exceptionhandling
+		// Future proving for more extensive exceptionhandling
 		void* ExceptionParameterList[EXCEPTION_MAXIMUM_PARAMETERS];
 		ExceptionParameterList[0] = this;
 		memset(this, 0, sizeof(*this));
 
-		auto m_Heap = GetProcessHeap();
+		auto Heap = GetProcessHeap();
 		auto Iterator = CommandLine;
 		auto CmdlLength = wcslen(CommandLine);
 
@@ -31,7 +31,7 @@ struct Opr {
 			if (*Iterator == L'/') {
 				// Parse Comment
 				size_t CommentLength = (ptr)(Iterator - 1) - (ptr)CommandLine;
-				Comment = (wchar*)HeapAlloc(m_Heap, 0, CommentLength + sizeof(*Comment));
+				Comment = (wchar*)HeapAlloc(Heap, 0, CommentLength + sizeof(*Comment));
 				memcpy(Comment, CommandLine, CommentLength);
 				Comment[CommentLength / sizeof(*Comment)] = L'\0';
 
@@ -40,7 +40,9 @@ struct Opr {
 				size_t TagSize = (ptr)TagEnd - (ptr)Iterator;
 				if (TagSize > 8) // Check that tag is not longer than 4 chars
 					RaiseException((dword)S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_DATA), 0, 0, nullptr);
-				memcpy((void*)&OperatorTag, Iterator, TagSize);
+				for (auto i = 0; i < TagSize / 2; i++)
+					((char*)&OperatorTag)[(3 - TagSize / 2) - i] = (char)Iterator[i];
+				// memcpy((void*)&OperatorTag, Iterator, TagSize);
 				Iterator = TagEnd + 1;
 				break;
 			}
@@ -55,12 +57,7 @@ struct Opr {
 			auto Delimiter = FindDelimiter(Iterator);
 
 			if (*Iterator == L'-') {
-				if (ParameterList) {
-					ParameterList = (Parameter*)HeapReAlloc(m_Heap, 0, ParameterList, ++ParameterCount * sizeof(Parameter));
-				} else
-					ParameterList = (Parameter*)HeapAlloc(m_Heap, 0, ++ParameterCount * sizeof(Parameter));
-
-				// Find Colon Delimiter (Max at position 5 supported)
+				// Find Colon Delimiter (Max at position 5 supported (Tag size 4 chars))
 				const wchar* ColonDelimiter = nullptr;
 				for (auto i = ++Iterator; i < Delimiter; i++)
 					if (*i == L':') {
@@ -69,6 +66,11 @@ struct Opr {
 					}
 
 				if (ColonDelimiter) { // Parameter Argument Pair
+					if (ParameterList) {
+						ParameterList = (Parameter*)HeapReAlloc(Heap, 0, ParameterList, ++ParameterCount * sizeof(Parameter));
+					} else
+						ParameterList = (Parameter*)HeapAlloc(Heap, 0, ++ParameterCount * sizeof(Parameter));
+
 					// Validate Parameter Integrity
 					if (ColonDelimiter - Iterator > 4  || // Tag to big (tag longer than 4 chars)
 						ColonDelimiter == Iterator + 1 || // Colon follows parameter descriptor ("-:")
@@ -79,15 +81,21 @@ struct Opr {
 					size_t TagSize = (ptr)ColonDelimiter - (ptr)Iterator;
 					if (TagSize > 8) // Check that tag is not longer than 4 chars
 						RaiseException((dword)S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_DATA), 0, 0, nullptr);
-					memcpy(&(ParameterList[(ParameterCount - 1)].ParameterTag = 0), Iterator, TagSize);
+					auto& Tag = ParameterList[(ParameterCount - 1)].ParameterTag = 0;
+					for (auto i = 0; i < TagSize / 2; i++)
+						((char*)&Tag)[(3 - TagSize / 2) - i] = (char)Iterator[i];
+					// memcpy(&Tag, Iterator, TagSize);
 					Iterator = ColonDelimiter + 1;
 
 					size_t ArgumentLength = (ptr)Delimiter - (ptr)Iterator;
-					auto ParameterOffset = (ParameterCount - 1);
-					ParameterList[ParameterOffset].Argument = (wchar*)HeapAlloc(m_Heap, 0, ArgumentLength + 2);
-					memcpy(ParameterList[ParameterOffset].Argument, Iterator, ArgumentLength);
-					ParameterList[ParameterOffset].Argument[ArgumentLength / sizeof(wchar)] = L'\0';
-				} else // Flaglist
+					auto ParameterIndex = (ParameterCount - 1);
+					auto& Argument = ParameterList[ParameterIndex].Argument;
+					if (*Iterator == L'"')
+						Iterator++, ArgumentLength -= 4;
+					Argument = (wchar*)HeapAlloc(Heap, 0, ArgumentLength + 2);
+					memcpy(Argument, Iterator, ArgumentLength);
+					Argument[ArgumentLength / sizeof(wchar)] = L'\0';
+				} else // Initialize flag list
 					while (Iterator < Delimiter)
 						Flags |= 1 << (*Iterator++ - L'a');
 			} else
@@ -96,9 +104,8 @@ struct Opr {
 			if (!*(Iterator = Delimiter)++) // Set Iterator to next location, incase its the end of the string exit
 				break;
 		}
-
 	}
-	~Opr() {
+	~Opr() { // deconstructs the object
 		auto m_Heap = GetProcessHeap();
 		if (Comment)
 			HeapFree(m_Heap, 0, (void*)Comment);
@@ -123,7 +130,7 @@ private:
 					return SubString;
 				break;
 			case L'"':
-				ObjectFlag ^= true;
+				ObjectFlag = !ObjectFlag;
 			}
 
 			SubString++;
@@ -135,22 +142,20 @@ private:
 	}
 };
 
-long __stdcall UnhandleExceptionHandler(
-	_In_ EXCEPTION_POINTERS* ExceptionInfo
-) {
-	Con->PrintFEx(CON_ERROR, L"Unhandle exception occurred @ %#018llx !", ExceptionInfo->ExceptionRecord->ExceptionAddress);
-	if (S_SUCCESS(CreateDump(nullptr, ExceptionInfo))) {
-		Con->PrintFEx(CON_MESSAGE, L"Created minidumpfile in current directory.");
-		ExitProcess(ExceptionInfo->ExceptionRecord->ExceptionCode);
-	} else {
-		Con->PrintFEx(CON_ERROR, L"Failed to dump process, halting process for debugger.");
-		NtSuspendProcess(GetCurrentProcessId());
-	}
-
-	return EXCEPTION_CONTINUE_SEARCH;
-}
 i32 BuilderEntry() {
-	SetUnhandledExceptionFilter(UnhandleExceptionHandler);
+	SetUnhandledExceptionFilter([](_In_ EXCEPTION_POINTERS* ExceptionInfo) -> long {
+			Con->PrintFEx(CON_ERROR, L"Unhandle exception occurred @ %#018llx !", ExceptionInfo->ExceptionRecord->ExceptionAddress);
+			if (S_SUCCESS(CreateDump(nullptr, ExceptionInfo))) {
+				Con->PrintFEx(CON_MESSAGE, L"Created minidumpfile in current directory.");
+				ExitProcess(ExceptionInfo->ExceptionRecord->ExceptionCode);
+			} else {
+				Con->PrintFEx(CON_ERROR, L"Failed to dump process, halting process for debugger.");
+				NtSuspendProcess(GetCurrentProcessId());
+			}
+
+			return EXCEPTION_CONTINUE_SEARCH;
+		});
+
 	Con = new Console;
 	Opr* Op = nullptr;
 	__try {
@@ -164,8 +169,57 @@ i32 BuilderEntry() {
 
 	switch (Op->OperatorTag) {
 	case 0:
-
 		break;
+
+	case 'ps': // pack section
+		{
+			const wchar* FileName = nullptr;
+			for (auto i = 0; i < Op->ParameterCount; i++)
+				if (Op->ParameterList[i].ParameterTag = 'fi') {
+					FileName = Op->ParameterList[i].Argument; break;
+				}
+
+			// Load executable
+			FileMap Executable(FileName);
+			auto PeStream = Executable.Data();
+			auto NtHeader = utl::GetNtHeader(PeStream);
+
+			// Get section information
+			char SectionName[8] = { 0 };
+			for (auto i = 0; i < Op->ParameterCount; i++)
+				if (Op->ParameterList[i].ParameterTag = 'fi') {
+					auto x = Op->ParameterList[i].Argument; break;
+					auto y = wcslen(x);
+					if (y > 8) // Check that the section name is not to long
+						return S_CREATE(SS_ERROR, SF_BUILDER, SC_TOO_LONG);
+					for (auto j = 0; j < y; j++) // Copy section name to ascii buffer
+						SectionName[j] = (char)x[j];
+					memset(SectionName + y, 0, 8 - y);
+				}
+			auto SectionHeader = utl::FindSection(NtHeader, SectionName);
+
+			// Pack section
+			if (CHECK_BMPFLAG(Op->Flags, 'p')) {
+
+			}
+
+			// Crypt section
+			if (CHECK_BMPFLAG(Op->Flags, 'c')) {
+				// Initialize RC4
+				rc4 rc;
+				u32 RtlState;
+
+			#define KEY_SIZE 16
+				byte RandomKey[KEY_SIZE];
+				for (auto i = 0; i < KEY_SIZE / 4; i++)
+					((u32*)RandomKey)[i] = RtlRandomEx(&RtlState);
+				rc.ksa(RandomKey, KEY_SIZE);
+
+
+
+			}
+
+		} break;
 
 	default:
 		;

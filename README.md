@@ -16,11 +16,8 @@ In the future this could be build out into a fully fledged "basic"-protector.
 
 ## Components:
 Nebula is mainly split into 2 components, the base (loader) and its builder utility.\
-- The loader can/will be shiped in 2 forms,
-  either as a standalone executable which will be prepacked
-  and will require the payload to be in a dll like form specifically made to respond to the laoder.
-  The builder would be responsible to attach this payload to teh loader binary.\
-  Or as a static lib which could be linked into a payload executable by setting it up to be the entrypoint,
+- The loader will be shiped in the form of a static lib,
+  which would be linked into a payload executable by setting it up to be the entrypoint,
   the builder would later finalize the image by obfuscating the rest and properly linking up the functions.
 
 - The builder that is responsible for patching, crypting, packing and generally messing with binaries.\

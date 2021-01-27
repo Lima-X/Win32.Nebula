@@ -110,7 +110,7 @@
       <ShowProgress>LinkVerbose</ShowProgress>
       <MergeSections>
       </MergeSections>
-      <EntryPointSymbol>CoreMain</EntryPointSymbol>
+      <EntryPointSymbol>CoreEntry</EntryPointSymbol>
       <AdditionalOptions>/ignore:4254 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
@@ -181,7 +181,7 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <MergeSections>
       </MergeSections>
-      <EntryPointSymbol>CoreMain</EntryPointSymbol>
+      <EntryPointSymbol>CoreEntry</EntryPointSymbol>
       <AdditionalOptions>/ignore:4254 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
@@ -239,6 +239,9 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ldr.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="x64.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

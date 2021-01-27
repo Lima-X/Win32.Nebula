@@ -24,50 +24,14 @@ namespace utl {
 	) {
 		// Iterate over sections
 		IMAGE_SECTION_HEADER* SectionHeader = IMAGE_FIRST_SECTION(NtHeader);
-		for (u8 i = 0; i < NtHeader->FileHeader.NumberOfSections; i++) {
-			if (*(qword*)SectionHeader->Name == *(qword*)Name)
+		for (auto i = 0; i < NtHeader->FileHeader.NumberOfSections; i++) {
+			if (*(u64*)SectionHeader->Name == *(u64*)Name)
 				return SectionHeader;
 
 			SectionHeader++;
 		}
 
 		return nullptr;
-	}
-#pragma endregion
-
-#pragma region RC4Crypt
-	void rc4::ksa(                          // Key-Scheduling-Algorithm (KSA)
-		_In_               void* Key,       // The key used to initialize the state
-		_In_range_(1, 256) size_t KeyLength // The length of the key to use in bytes
-	) {
-		for (auto i = 0; i < 256; i++)
-			m_SBox[i] = i;
-		for (auto i = 0; i < 256; i++) {
-			m_j += m_SBox[i] + ((byte*)Key)[i % KeyLength];
-			{ auto T = m_SBox[i]; m_SBox[i] = m_SBox[m_j]; m_SBox[m_j] = T; }
-		}
-		m_i = 0; m_j = 0;
-	}
-	byte rc4::prg() { // Updates the current state and returns the next streambyte
-		m_j = (m_i += 15) + m_SBox[m_i]; // Modified SBox Translation
-		{ auto T = m_SBox[m_i]; m_SBox[m_i] = m_SBox[m_j]; m_SBox[m_j] = T; }
-		return m_SBox[(byte)(m_SBox[m_i] + m_SBox[m_j])];
-	}
-
-	void rc4::crypt(             // Crypts a buffer with RC4 cipher (RC4 modification)
-		_In_  void*  Buffer,     // The input data to be crypted
-		_In_  size_t BufferSize, // The length of the input in bytes
-		_Out_ void*  Output      // The output buffer to be filled (can be inplace)
-	) {
-		while (BufferSize--)
-			((byte*)Output)[BufferSize] = ((byte*)Buffer)[BufferSize] ^ prg();
-	}
-	void rc4::rc4random(        // generates a random datastream using rc4 scheduling
-		_Out_ void*  Buffer,    // The buffer to be filled
-		_In_  size_t BufferSize // The size of the buffer
-	) {
-		while (BufferSize--)
-			((byte*)Buffer)[BufferSize] = prg();
 	}
 #pragma endregion
 
@@ -79,6 +43,48 @@ namespace utl {
 		return SUCCESS;
 	}
 }
+
+#pragma region RC4Crypt
+rc4::~rc4() {
+	RtlSecureZeroMemory(m_SBox, 256);
+}
+
+
+void rc4::ksa(                           // KeyStream-Scheduling-Algorithm (KSA)
+	_In_               void*  KeyStream, // The key used to initialize the state
+	_In_range_(1, 256) size_t KeyLength  // The length of the key to use in bytes
+) {
+	for (auto i = 0; i < 256; i++)
+		m_SBox[i] = i;
+	m_j = 0;
+	for (auto i = 0; i < 256; i++) {
+		m_j += m_SBox[i] + ((byte*)KeyStream)[i % KeyLength];
+		{ auto T = m_SBox[i]; m_SBox[i] = m_SBox[m_j]; m_SBox[m_j] = T; }
+	}
+	m_i = m_j = 0;
+}
+byte rc4::prg() { // Updates the current state and returns the next streambyte
+	m_j = (m_i += 15) + m_SBox[m_i]; // Modified SBox Translation
+	{ auto T = m_SBox[m_i]; m_SBox[m_i] = m_SBox[m_j]; m_SBox[m_j] = T; }
+	return m_SBox[(byte)(m_SBox[m_i] + m_SBox[m_j])];
+}
+
+void rc4::crypt(             // Crypts a buffer with RC4 cipher (RC4 modification)
+	_In_  void*  Buffer,     // The input data to be crypted
+	_In_  size_t BufferSize, // The length of the input in bytes
+	_Out_ void*  Output      // The output buffer to be filled (can be inplace)
+) {
+	while (BufferSize--)
+		((byte*)Output)[BufferSize] = ((byte*)Buffer)[BufferSize] ^ prg();
+}
+void rc4::rc4random(        // generates a random datastream using rc4 scheduling
+	_Out_ void*  Buffer,    // The buffer to be filled
+	_In_  size_t BufferSize // The size of the buffer
+) {
+	while (BufferSize--)
+		((byte*)Buffer)[BufferSize] = prg();
+}
+#pragma endregion
 
 class XPress {
 	static constexpr USHORT COMPRESSOR_MODE = 0x0104;

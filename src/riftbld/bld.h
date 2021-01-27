@@ -47,7 +47,8 @@
 #define CON_ERROR    CON_CREATE(SS_ERROR,   false, COL_ERROR)
 #define CON_WARNING  CON_CREATE(SS_WARNING, false, COL_WARNING)
 
-#define CONVERT_ATOM(Char) (1 << Char - L'a')
+#define CONVERT_ATOM(Char) (1 << (Char - L'a'))
+#define CHECK_BMPFLAG(BitMap, Char) ((BitMap >> (Char - L'a')) & 1)
 
 class Console {
 public:
@@ -82,14 +83,15 @@ private:
 class FileMap {
 public:
 	// Add support for readonly Pages
+	FileMap() = delete;
 	FileMap(
 		_In_z_ const wchar* szFile,
 		_In_         dword  dwProtection = PAGE_READWRITE
 	);
 	~FileMap();
 
-	const void*  Data() const;
-	      size_t Size() const;
+	void*  Data() const;
+	size_t Size() const;
 
 private:
 	void*  m_Mapping;

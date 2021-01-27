@@ -29,4 +29,9 @@
       <Filter>hdr</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="x64.asm">
+      <Filter>src</Filter>
+    </MASM>
+  </ItemGroup>
 </Project>

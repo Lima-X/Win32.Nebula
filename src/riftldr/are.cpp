@@ -354,3 +354,74 @@ status ValidateImportAddressTable( // Validates that the functionpointer thunks 
 		return S_CREATEM(SuspicousImportCounter);
 	return SUCCESS;
 }
+
+class InSectionProtector {
+public:
+	InSectionProtector(                    // Sets up the IPS service
+		_In_ handle                Module, // The module that is associated to the section
+		_In_ IMAGE_SECTION_HEADER& Section // The intermediate protected section to be registered
+	) : m_Module(Module),
+		m_Section(m_Section) {
+		EncryptSection();
+	}
+	~InSectionProtector() { // Removes the IPS service
+		if (m_CryptoEngine)
+			delete m_CryptoEngine;
+	}
+
+	void DestroySection() { // Erases the section from memory permanently and destroyes
+		RtlSecureZeroMemory((void*)(m_Section.VirtualAddress + (ptr)m_Module), m_Section.Misc.VirtualSize);
+		if (m_CryptoEngine)
+			delete m_CryptoEngine;
+	}
+
+	status DecryptSection() {
+		AcquireSRWLockExclusive(&m_Lock);
+		auto Value = _InterlockedIncrement(&m_DecryptedCounter);
+		if (Value == 0) // Check for imporper usage (Lock will not be unlocked and API will therefore block on the next call)
+			return S_CREATE(SS_ERROR, SF_CORE, SC_COUNTER_CORRUPTED);
+
+		if (Value == 1) {
+			auto Section = (void*)(m_Section.VirtualAddress + (ptr)m_Module);
+			m_CryptoEngine->crypt(Section, m_Section.Misc.VirtualSize, Section);
+			delete m_CryptoEngine;
+			m_CryptoEngine = nullptr;
+		}
+
+		ReleaseSRWLockExclusive(&m_Lock);
+		return SUCCESS;
+	}
+	status EncryptSection() {
+		AcquireSRWLockExclusive(&m_Lock);
+		auto Value = _InterlockedDecrement(&m_DecryptedCounter);
+		if (Value == -1ul) // Check for imporper usage (same as above)
+			return S_CREATE(SS_ERROR, SF_CORE, SC_COUNTER_CORRUPTED);
+
+		if (!Value) {
+			// Create new provider with random key
+			m_CryptoEngine = new rc4;
+			u32 RtlState;
+			byte RandomKey[256];
+			for (auto i = 0; i < 256 / 4; i++)
+				((u32*)RandomKey)[i] = RtlRandomEx(&RtlState);
+			m_CryptoEngine->ksa(RandomKey, 256);
+
+			// Encrypt section and reschedule/reset key
+			auto Section = (void*)(m_Section.VirtualAddress + (ptr)m_Module);
+			m_CryptoEngine->crypt(Section, m_Section.Misc.VirtualSize, Section);
+			m_CryptoEngine->ksa(RandomKey, 256);
+		}
+
+		ReleaseSRWLockExclusive(&m_Lock);
+		return SUCCESS;
+	}
+
+private:
+	const    handle                m_Module;
+	const    IMAGE_SECTION_HEADER& m_Section;
+	volatile u32                   m_DecryptedCounter = 0; // tracks the amount of decryption requests,
+	                                                       // every decryption call must be matched by a encrypt call,
+	                                                       // failing to do so will result in an error or leave the section readable.
+	SRWLOCK m_Lock = SRWLOCK_INIT;                         // Cryptolock for thread safety
+	rc4*    m_CryptoEngine = nullptr;                      // rc4 crypto engine
+};

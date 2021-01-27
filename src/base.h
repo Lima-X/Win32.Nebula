@@ -169,6 +169,8 @@ typedef _Success_(!(return & (0b1 << 31))) signed long status;
 #define SC_CRITICAL_FAILURE   19 // Undefined critical error occured
 #define SC_FATAL_ERROR        20 // Programm state corrupted, can NOT continue
 #define SC_INSUFFICIENT       21 // Insufficient Privileges
+#define SC_COUNTER_CORRUPTED  22 // A counter was Over/Under -flown and is corrupted
+#define SC_TOO_LONG           23 // A object is to long to fit inside a buffer
 
 #define SC_CLIENT 65536 // Status Codes from 65536 (0x10000) - 16777216 (0xffffff) are reserved for the Client
 #pragma endregion

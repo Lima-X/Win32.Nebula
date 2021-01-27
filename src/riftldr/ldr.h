@@ -4,24 +4,23 @@
 #include "nbp.h"
 
 #pragma region Protected Sections
-#pragma warning(disable : 4330)
+// #pragma warning(disable : 4330)
 // Protected sections
-#pragma section(".nbr", read)  // Constsection
-#pragma section(".nbw", write) // Datasection
+#pragma section(N_PSR, read)  // Const-Section
+#pragma section(N_PSW, write) // Data-Section
 
 // Merge protected sections
 #pragma comment(linker, "/merge:.nbr=.nb0")
 #pragma comment(linker, "/merge:.nbw=.nb0")
-#pragma comment(linker, "/merge:.nbx=.nb0")
 // Merge loader code into a loader section
 #pragma comment(linker, "/merge:.text=.ldr")
 // #pragma comment(linker, "/merge:.data=.ldr")
 #pragma comment(linker, "/merge:.rdata=.ldr")
 
 // Declaration Protection Specification
-#define N_PROTECTEDR ALLOC_DATA(".nbr")
-#define N_PROTECTEDW ALLOC_DATA(".nbw")
-#define N_PROTECTEDX ALLOC_CODE(".nbx")
+#define N_PROTECTEDR ALLOC_DATA(N_PSR)
+#define N_PROTECTEDW ALLOC_DATA(N_PSW)
+#define N_PROTECTEDX ALLOC_CODE(N_PS0)
 #pragma endregion
 
 namespace ldr {
@@ -35,19 +34,14 @@ namespace ldr {
 
 status ValidateImportAddressTable(_In_ handle Module);
 
-namespace svc {
-	poly ServiceCall(_In_range_(0, 0xffff) u32 svcId, _In_opt_ ...);
-	poly ServiceDispatch(_In_range_(0, 0xffff) u32 svcId, _In_opt_ va_list val);
-}
-
 namespace utl {
-	poly CryptPointer(_In_ poly x);
+	poly   CryptPointer(_In_ poly x);
 	status GenerateSessionId(_Out_ u64& SessionId);
 	status GenerateHardwareId(_Out_ u64& HardwareId);
 }
 
 class svc2 {
-	typedef poly(__x64call* ServiceFunctionPointer)(poly VariableArgumentList);
+	typedef poly(__x64call* ServiceFunctionPointer)(poly FunctionContext);
 	struct FunctionDispatchEntry {
 		handle                 ModuleAssociation;
 		u64                    FunctionId;

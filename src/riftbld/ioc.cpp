@@ -135,6 +135,6 @@ FileMap::~FileMap() {
 	CloseHandle(m_hFile);
 }
 
-const void*  FileMap::Data() const { return m_Mapping; }
-      size_t FileMap::Size() const { return m_FileSize; }
+void*  FileMap::Data() const { return m_Mapping; }
+size_t FileMap::Size() const { return m_FileSize; }
 #pragma endregion

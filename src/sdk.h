@@ -2,14 +2,27 @@
    in order to code Plugins/Extensions and Payloads */
 #pragma once
 
-#ifndef _NB_SDK   // This block automatically activates the SDK
-#define _NB_SDK 1 // enabling certain features and providing delcarations
-#endif            // ()
+/* This block automatically activates the SDK
+   enabling certain features and providing delcarations
+   (do not manually disable the sdk for client code,
+   this feature is reserved for internal use) */
+#ifndef _NB_SDK
+#define _NB_SDK 1
+#endif
 
+// Enable SDK debug features (optional)
 #ifdef _NB_SDK_PROVIDE_DEBUG
 #include "dbg.h"
 #endif
 #include "base.h"
+
+#define N_PSR ".nbr" // Protected Sections (Read/Write/Execute rwx)
+#define	N_PSW ".nbw"
+#define N_PS0 ".nb0" // Core protected code and data (packed and encrypted)
+                     // will be decrypted and unpacked during TLS
+#define N_PS1 ".nb1" // Intermediate protected code (encrypted)
+                     // functions that should be unreadable for most of the time,
+                     // the section would be decrypted for a call and reencrypted again.
 
 #if _NB_SDK
 typedef poly(__x64call*vServiceCall_t)(
@@ -27,10 +40,10 @@ inline vServiceCall_t vServiceCall;
 */
 #endif
 
+// ThreadInterruptService
 typedef void(__x64call* tapc_t)(
 	_In_opt_ poly UserContext // Callback defined Context
 	);
-
 
 #pragma region ModuleEntry
 #define N_ONLOAD    1
@@ -40,3 +53,5 @@ typedef void(__x64call* tapc_t)(
 #define N_VIOLATION	5
 
 #pragma endregion
+
+#undef _NB_SDK

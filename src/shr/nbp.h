@@ -63,27 +63,24 @@ extern "C" {
 
 #ifdef __cplusplus
 namespace utl {
-	void                  rc4crypt(_In_ void* Buffer, _In_ size_t BufferSize, _In_ void* Key, _In_range_(5, 256) size_t KeyLength, _Out_ void* Output);
-
-
 	IMAGE_NT_HEADERS*     GetNtHeader(_In_ handle hMod);
 	IMAGE_SECTION_HEADER* FindSection(_In_ IMAGE_NT_HEADERS* NtHeader, _In_ const char Name[8]);
 
 	status                CreatePath(_In_z_ const wchar* Path);
-
-	class rc4 {
-	public:
-		void ksa(_In_ void* Key, _In_range_(1, 256) size_t KeyLength);
-		byte prg();
-
-		void crypt(_In_ void* Buffer, _In_ size_t BufferSize, _Out_ void* Output);
-		void rc4random(_Out_ void* Buffer, _In_ size_t BufferSize);
-
-	private:
-		// RC4-State
-		byte m_SBox[256];
-		u8 m_i = 0;
-		u8 m_j = 0;
-	};
 }
+
+class rc4 {
+public:
+	~rc4();
+
+	void ksa(_In_ void* Key, _In_range_(1, 256) size_t KeyLength);
+	byte prg();
+
+	void crypt(_In_ void* Buffer, _In_ size_t BufferSize, _Out_ void* Output);
+	void rc4random(_Out_ void* Buffer, _In_ size_t BufferSize);
+
+private:
+	byte m_SBox[256];      // Key'd state
+	u8   m_i = 0, m_j = 0; // SBox state
+};
 #endif
