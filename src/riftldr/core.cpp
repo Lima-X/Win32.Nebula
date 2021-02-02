@@ -84,13 +84,6 @@ status svc2::ServiceCall(            // Calls the requested servicefunction
 
 	return SUCCESS;
 }
-extern "C" status cCallService( // As in svc::ServiceCall
-	_In_  u64   ServiceId,
-	_Out_ poly* ReturnValue,
-	_In_  poly  ServiceParameters
-) {
-	return ServiceManager->ServiceCall(ServiceId, ReturnValue, ServiceParameters);
-}
 #pragma endregion
 
 #pragma region ThreadInterruptService
@@ -199,7 +192,7 @@ status AbortThreadInterrupt( // Will try to reset the thread and abort the sched
    This will start the Protection-Services,
    decrypt and unpack the actuall code
    and ensure code integrity. */
-void __stdcall TlsCoreLoader(
+void __stdcall NebulaTlsEntry(
 	_In_ void* DllHandle,
 	_In_ u32   dwReason,
 	_In_ void* Reserved
@@ -331,7 +324,7 @@ EXTERN_C EXPORT const byte  Nb0ProtectedSectionKey[8] = { 0 };
 extern "C" {
 	u32 _tls_index = 0;
 	const PIMAGE_TLS_CALLBACK _tls_callback[] = {
-		(PIMAGE_TLS_CALLBACK)TlsCoreLoader,
+		(PIMAGE_TLS_CALLBACK)NebulaTlsEntry,
 		(PIMAGE_TLS_CALLBACK)nullptr
 	};
 
@@ -356,7 +349,7 @@ N_PROTECTEDX status LoadPluginModule(
 	return 0;
 }
 
-N_PROTECTEDX i32 __cdecl CoreEntry() {
+N_PROTECTEDX i32 __cdecl NebulaCoreEntry() {
 
 
 	__try {

@@ -28,4 +28,27 @@ namespace img {
 		return SUCCESS;
 	}
 
+	u32 TranslateRvaToPa(   // Translates a RVA to a PA in the image
+		_In_ handle Module, // The module used for the translation
+		_In_ u32    Rva     // The address to be translated
+	) {
+		auto NtHeader = utl::GetNtHeader(Module);
+
+		// Check if rva is within headers
+		if (Rva <= NtHeader->OptionalHeader.SizeOfHeaders)
+			return Rva;
+
+		// Check if rva is within sections and translate
+		auto Section = IMAGE_FIRST_SECTION(NtHeader);
+		for (auto i = 0; i < NtHeader->FileHeader.NumberOfSections; i++) {
+			if (Rva >= Section->VirtualAddress &&
+				Rva <= Section->VirtualAddress + Section->SizeOfRawData)
+				return Rva - Section->VirtualAddress + Section->PointerToRawData;
+
+			Section++;
+		}
+
+		// not within the mapable image
+		return null;
+	}
 }

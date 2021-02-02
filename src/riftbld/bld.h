@@ -33,8 +33,8 @@
 */
 
 #define COL_SUCCESS  (FOREGROUND_GREEN)                                          // 0b0010 [S]
-#define COL_MESSAGE  (FOREGROUND_RED  | FOREGROUND_GREEN | FOREGROUND_BLUE)      // 0b0111 [+]
-#define COL_QUESTION (FOREGROUND_BLUE |                    FOREGROUND_INTENSITY) // 0b1001 [?] // Currently Unsuppported
+#define COL_INFO     (FOREGROUND_RED  | FOREGROUND_GREEN | FOREGROUND_BLUE)      // 0b0111 [+]
+#define COL_QUESTION (FOREGROUND_BLUE |                    FOREGROUND_INTENSITY) // 0b1001 [?]
 #define COL_WARNING  (FOREGROUND_RED  | FOREGROUND_GREEN                       ) // 0b1110 [!]
 #define COL_ERROR    (FOREGROUND_RED  |                    FOREGROUND_INTENSITY) // 0b1100 [X]
 
@@ -42,8 +42,8 @@
                                               ((Question & 1) << 5) |\
                                               (Color & 0xf)))
 #define CON_SUCCESS  CON_CREATE(SS_SUCCESS, false, COL_SUCCESS)
-#define CON_MESSAGE  CON_CREATE(SS_MESSAGE, false, COL_MESSAGE)
-#define CON_QUESTION CON_CREATE(SS_MESSAGE, true,  COL_QUESTION)
+#define CON_INFO     CON_CREATE(SS_MESSAGE, false, COL_INFO)
+#define CON_QUESTION CON_CREATE(SS_MESSAGE, true,  COL_QUESTION) // Currently Unsuppported
 #define CON_ERROR    CON_CREATE(SS_ERROR,   false, COL_ERROR)
 #define CON_WARNING  CON_CREATE(SS_WARNING, false, COL_WARNING)
 
@@ -99,5 +99,10 @@ private:
 	handle m_hMap;
 	handle m_hFile;
 };
+
+namespace img {
+	u32 TranslateRvaToPa(_In_ handle Module, _In_ u32 Rva);
+}
+
 
 inline Console* Con;

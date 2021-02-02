@@ -61,7 +61,7 @@ status Console::vPrintFormatW(_In_z_ const wchar* Text, _In_opt_ va_list Va) {
 	wchar Symbol[] = L"[ ] ";
 	switch (m_ErrorLevel) {
 	case CON_SUCCESS:  Symbol[1] = L'S'; break;
-	case CON_MESSAGE:  Symbol[1] = L'+'; break;
+	case CON_INFO:     Symbol[1] = L'+'; break;
 	case CON_QUESTION: Symbol[1] = L'?'; break;
 	case CON_WARNING:  Symbol[1] = L'!'; break;
 	case CON_ERROR:    Symbol[1] = L'X'; break;
@@ -95,7 +95,7 @@ status Console::PrintF(
 	_In_opt_ ...
 ) {
 	va_list Va; va_start(Va, Text);
-	m_ErrorLevel = CON_MESSAGE;
+	m_ErrorLevel = CON_INFO;
 	status Status = vPrintFormatW(Text, Va);
 	va_end(Va);
 	return Status;
@@ -106,7 +106,7 @@ status Console::PrintFEx(
 	_In_opt_              ...
 ) {
 	va_list Va; va_start(Va, Text);
-	m_ErrorLevel = ErrorLevel ? ErrorLevel : CON_MESSAGE;
+	m_ErrorLevel = ErrorLevel ? ErrorLevel : CON_INFO;
 	status Status = vPrintFormatW(Text, Va);
 	va_end(Va);
 	return Status;

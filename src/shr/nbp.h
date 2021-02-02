@@ -58,6 +58,9 @@ extern "C" {
 	IMPORT int __cdecl vswprintf_s(wchar_t* buffer, size_t numberOfElements, const wchar_t* format, va_list argptr);
 	IMPORT int __cdecl vsprintf_s(char* buffer, size_t numberOfElements, const char* format, va_list argptr);
 	// IMPORT wchar_t* __cdecl wcschr(const wchar_t* str, wchar_t c);
+
+	IMPORT int __cdecl _wtoi(_In_z_ wchar_t const* _String);
+
 }
 #pragma endregion
 

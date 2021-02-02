@@ -25,12 +25,6 @@
                      // the section would be decrypted for a call and reencrypted again.
 
 #if _NB_SDK
-typedef poly(__x64call*vServiceCall_t)(
-	_In_range_(0, 0xffff) u32     svcId,
-	_In_opt_              va_list val
-	);
-inline vServiceCall_t vServiceCall;
-
 /* Example: Call a servicefunction and pass 2 parameters
 	poly ParameterList[2];
 	ParameterList[0] = "String Part 1";
@@ -51,7 +45,13 @@ typedef void(__x64call* tapc_t)(
 #define N_UNLOAD    3
 #define N_FATAL     4
 #define N_VIOLATION	5
+#define N_DEFECT    6
+#define N_SHUTDOWN  7
 
+typedef status(__x64call* cec_t)(      // Client Entrypoint Callback (CEC)
+	_In_        i32    CallReason,     // The reason for the call
+	_Inout_opt_ void*  PointerTable[8] // Pointer table used to pass info to the core
+	);
 #pragma endregion
 
 #undef _NB_SDK
