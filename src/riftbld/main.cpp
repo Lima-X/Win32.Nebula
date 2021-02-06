@@ -207,14 +207,12 @@ i32 Builder(
 			// Crypt section
 			if (CHECK_BMPFLAG(Op->Flags, 'c')) {
 				// Initialize RC4
-				rc4 rc;
 				u32 RtlState;
 
 			#define KEY_SIZE 16
 				byte RandomKey[KEY_SIZE];
 				for (auto i = 0; i < KEY_SIZE / 4; i++)
 					((u32*)RandomKey)[i] = RtlRandomEx(&RtlState);
-				rc.ksa(RandomKey, KEY_SIZE);
 
 
 
@@ -304,6 +302,81 @@ i32 Builder(
 				Con->PrintFEx(CON_WARNING, L"Export not found");
 		} break;
 
+	case 'spp': // section page protection
+		{
+			// Load executable
+			Con->PrintFEx(CON_INFO, L"Loading executable");
+			FileMap Executable(Op->GetArgumentForTag('fi'));
+			auto PeStream = Executable.Data();
+			auto NtHeader = utl::GetNtHeader(PeStream);
+
+			// Get Argument
+			auto SectionName = Op->GetArgumentForTag('sec');
+			auto SectionNameLength = wcslen(SectionName);
+			if (SectionNameLength > 8) {
+				Con->PrintFEx(CON_ERROR, L"Section name specified invalid");
+				return S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_PARAMETER);
+			}
+
+			// Find Section
+			char SectionNameBuffer[8];
+			for (auto i = 0; i < SectionNameLength; i++)
+				SectionNameBuffer[i] = SectionName[i];
+			memset(SectionNameBuffer + SectionNameLength, 0, 8 - SectionNameLength);
+			auto SectionHeader = utl::FindSection(NtHeader, SectionNameBuffer);
+			if (!SectionHeader) {
+				Con->PrintFEx(CON_ERROR, L"Could not retrieve section");
+				return S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_POINTER);
+			}
+
+			auto Protection = Op->GetArgumentForTag('p');
+			SectionHeader->Characteristics = wcstol(Protection, nullptr, 0x10);
+		} break;
+
+	case 'ccsc': // code cipher shellcode
+		{
+			// Load executable
+			Con->PrintFEx(CON_INFO, L"Loading executable");
+			FileMap Executable(Op->GetArgumentForTag('fi'));
+			auto PeStream = Executable.Data();
+			auto NtHeader = utl::GetNtHeader(PeStream);
+
+			auto GetExportLocationByTag = [&](
+				_In_  u32    Tag,
+				_Out_ void*& Loc
+				) -> status {
+					// Get cipher shellcode location
+					auto ExportName = Op->GetArgumentForTag(Tag);
+					if (!ExportName)
+						return S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_POINTER);
+
+					// Convert Unicode to ascii string
+					auto ExportNameLength = wcslen(ExportName);
+					auto AnsiExportName = (char*)HeapAlloc(ProcessHeap, 0, ExportNameLength + 1);
+					WideCharToMultiByte(CP_ACP, 0, ExportName, -1, AnsiExportName, ExportNameLength + 1, 0, 0);
+
+					auto ReturnValue = img::GetExportImageAddress(PeStream, AnsiExportName, Loc);
+					HeapFree(ProcessHeap, 0, AnsiExportName);
+					return ReturnValue;
+			};
+
+			// Get xor code key location and set key
+			u64* XorKey;
+			auto Status = GetExportLocationByTag('xrk', (void*&)XorKey);
+			if (!S_SUCCESS(Status))
+				return Status;
+			u32 RtlState;
+			*XorKey = (u64)RtlRandomEx(&RtlState) << 32 | RtlRandomEx(&RtlState);
+
+			// Get cipher shellcode location and xor encode
+			u8* rc4modsc;
+			Status = GetExportLocationByTag('csc', (void*&)rc4modsc);
+			if (!S_SUCCESS(Status))
+				return Status;
+			for (auto i = 0; i < 0x1d4; i++)
+				rc4modsc[i] = _rotr8(rc4modsc[i] ^ ((u8*)XorKey)[i & 0x7], i & 0x3);
+		} break;
+
 	default:
 		Con->PrintF(L"Unrecognized Command/Operation\n"
 			L"A List of known operations is provided below,\n"
@@ -312,7 +385,6 @@ i32 Builder(
 
 	return SUCCESS;
 }
-
 
 i32 BuilderEntry() {
 	SetUnhandledExceptionFilter([](_In_ EXCEPTION_POINTERS* ExceptionInfo) -> long {

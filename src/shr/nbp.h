@@ -60,7 +60,8 @@ extern "C" {
 	// IMPORT wchar_t* __cdecl wcschr(const wchar_t* str, wchar_t c);
 
 	IMPORT int __cdecl _wtoi(_In_z_ wchar_t const* _String);
-
+	IMPORT int __cdecl atoi(_In_z_ char const* _String);
+	IMPORT long __cdecl wcstol(_In_z_ wchar_t const* _String, _Out_opt_ _Deref_post_z_ wchar_t** _EndPtr, _In_ int _Radix);
 }
 #pragma endregion
 
@@ -72,6 +73,7 @@ namespace utl {
 	status                CreatePath(_In_z_ const wchar* Path);
 }
 
+#if 0
 class rc4 {
 public:
 	~rc4();
@@ -86,4 +88,5 @@ private:
 	byte m_SBox[256];      // Key'd state
 	u8   m_i = 0, m_j = 0; // SBox state
 };
+#endif
 #endif

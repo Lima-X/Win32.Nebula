@@ -5,23 +5,25 @@
 
 #pragma region Protected Sections
 // #pragma warning(disable : 4330)
-// Protected sections
-#pragma section(N_PSR, read)  // Const-Section
-#pragma section(N_PSW, write) // Data-Section
+
+// Protected Data-Section
+#pragma section(N_PSRW1, read, write)
+#pragma section(N_PSRW2, read, write)
 
 // Merge protected sections
-#pragma comment(linker, "/merge:.nbr=.nb0")
-#pragma comment(linker, "/merge:.nbw=.nb0")
+#pragma comment(linker, "/merge:.nbrw1=.nb1")
+#pragma comment(linker, "/merge:.nbrw2=.nb2")
+
 // Merge loader code into a loader section
-#pragma comment(linker, "/merge:.text=.ldr")
-// #pragma comment(linker, "/merge:.data=.ldr")
-#pragma comment(linker, "/merge:.rdata=.ldr")
+#pragma comment(linker, "/merge:.text=.nb0")
+// #pragma comment(linker, "/merge:.data=.nb0")
+#pragma comment(linker, "/merge:.rdata=.nb0")
 
 // Declaration Protection Specification
-#define N_PROTECTEDR ALLOC_DATA(N_PSR)
-#define N_PROTECTEDW ALLOC_DATA(N_PSW)
-#define N_PROTECTEDX ALLOC_CODE(N_PS0)
+#define N_PROTECTEDD ALLOC_DATA(N_PSRW1)
+#define N_PROTECTEDX ALLOC_CODE(N_PS1)
 #pragma endregion
+
 
 namespace ldr {
 	LIST_ENTRY* GetModuleList();
@@ -33,9 +35,9 @@ namespace ldr {
 }
 
 status ValidateImportAddressTable(_In_ handle Module);
+poly CodePointer(_In_ poly x);
 
 namespace utl {
-	poly   CryptPointer(_In_ poly x);
 	status GenerateSessionId(_Out_ u64& SessionId);
 	status GenerateHardwareId(_Out_ u64& HardwareId);
 }

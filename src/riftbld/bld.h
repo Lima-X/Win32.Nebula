@@ -102,6 +102,11 @@ private:
 
 namespace img {
 	u32 TranslateRvaToPa(_In_ handle Module, _In_ u32 Rva);
+	status GetExportImageAddress(
+		_In_ handle PeStream,
+		_In_ const char* ExportName,
+		_Out_ void*& ExportAddress
+	);
 }
 
 

@@ -16,13 +16,15 @@
 #endif
 #include "base.h"
 
-#define N_PSR ".nbr" // Protected Sections (Read/Write/Execute rwx)
-#define	N_PSW ".nbw"
-#define N_PS0 ".nb0" // Core protected code and data (packed and encrypted)
-                     // will be decrypted and unpacked during TLS
-#define N_PS1 ".nb1" // Intermediate protected code (encrypted)
-                     // functions that should be unreadable for most of the time,
-                     // the section would be decrypted for a call and reencrypted again.
+#define N_PSRW1 ".nbrw1" // Protected Sections (Read/Write rwx)
+#define	N_PSRW2 ".nbrw2"
+
+#define N_PS0   ".nb0" // Unprotected default section
+                       // everything that is unspecified is put here
+#define N_PS1   ".nb1" // Core protected code and data (packed and encrypted)
+                       // will be decrypted and unpacked during TLS
+#define N_PS2   ".nb2" // Intermediate protected code and data (encrypted)
+                       // stuff that should be unreadable unless actively used,
 
 #if _NB_SDK
 /* Example: Call a servicefunction and pass 2 parameters

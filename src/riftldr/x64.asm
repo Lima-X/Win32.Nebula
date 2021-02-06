@@ -1,4 +1,4 @@
-; Thread-Interrupt-Dispatcher - START ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Thread-Interrupt-Dispatcher - START ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Offsets
 CONTEXT_RAX    equ 78h ; offset of Rax in CONTEXT
 
@@ -53,5 +53,5 @@ RestoreContext:
 	mov ecx, [rsp]                   ; ErrorCode
 	int 29h                          ; __fastfail
 ThreadInterruptDispatcher endp
-; Thread-Interrupt-Dispatcher - END ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Thread-Interrupt-Dispatcher - END ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 end

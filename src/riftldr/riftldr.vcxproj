@@ -75,6 +75,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugExecutable|x64'">
     <OutDir>$(SolutionDir)out\bin\</OutDir>
     <IntDir>$(SolutionDir).in\$(projectName)\$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugLibrary|x64'">
     <OutDir>$(SolutionDir)out\bin\</OutDir>
