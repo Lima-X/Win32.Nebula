@@ -2,6 +2,7 @@
 #include "bld.h"
 
 // TODO: minor improvments and better error reporting (if im in the mood)
+//       expand robustnest and maybe add support for nested operations
 struct Opr {
 #pragma region Structure
 	wchar* Comment;          // A string of the commandline from start til the OperatorTag
@@ -28,14 +29,19 @@ struct Opr {
 		auto Iterator = CommandLine;
 		auto CmdlLength = wcslen(CommandLine);
 
+		// Get actual Commandline end
+		while (Iterator[CmdlLength - 1] == ' ')
+			CmdlLength--;
+
 		// Find beginning of the operation and parse comment/operator
 		while (Iterator <= CommandLine + CmdlLength) {
 			if (*Iterator == L'/') {
-				// Parse Comment
-				size_t CommentLength = (ptr)(Iterator - 1) - (ptr)CommandLine;
-				Comment = (wchar*)HeapAlloc(Heap, 0, CommentLength + sizeof(*Comment));
-				memcpy(Comment, CommandLine, CommentLength);
-				Comment[CommentLength / sizeof(*Comment)] = L'\0';
+				if (Iterator - CommandLine > 1) { // Parse comment if available
+					size_t CommentLength = (ptr)(Iterator - 1) - (ptr)CommandLine;
+					Comment = (wchar*)HeapAlloc(Heap, 0, CommentLength + sizeof(*Comment));
+					memcpy(Comment, CommandLine, CommentLength);
+					Comment[CommentLength / sizeof(*Comment)] = L'\0';
+				}
 
 				// Parse Tag
 				auto TagEnd = FindDelimiter(++Iterator);
@@ -124,8 +130,8 @@ struct Opr {
 	) {
 		for (auto i = 0; i < ParameterCount; i++)
 			if (ParameterList[i].ParameterTag == ParameterTag)
-				return i;
-		return -1;
+				return (u16)i;
+		return (u16)-1;
 	}
 
 	const wchar* GetArgumentForTag(
@@ -162,34 +168,30 @@ private:
 			return SubString;
 		return nullptr; // Invalid data
 	}
-}* Op;
+};
 
-#define HelpDialoge(Text) if (Op->GetTagIndex('help') != (u16)-1) {\
+#define HelpDialogue(Text) if (Op.GetTagIndex('help') != (u16)-1) {\
                               Con->PrintF(Text);\
                               return SUCCESS;\
                           }
-
-i32 Builder(
-	// _In_ Opr* Op
+status NebulaBuilder( // The actual builder code repsonsible for recompiling and building the image
+	_In_ void* PeStream,
+	_In_ Opr& Op
 ) {
 	auto ProcessHeap = GetProcessHeap();
 
-	switch (Op->OperatorTag) {
+	switch (Op.OperatorTag) {
 	case 'ps': // pack section
 		{
-			HelpDialoge(L"Packs a section in the physical image:\n")
+			HelpDialogue(L"Packs a section in the physical image:\n")
 
-			// Load executable
-			Con->PrintFEx(CON_INFO, L"Loading executable");
-			FileMap Executable(Op->GetArgumentForTag('fi'));
-			auto PeStream = Executable.Data();
 			auto NtHeader = utl::GetNtHeader(PeStream);
 
 			// Get section information
 			Con->PrintFEx(CON_INFO, L"Retrieving section information");
 			char SectionName[8] = { 0 };
 			{
-				auto SectionParameter = Op->GetArgumentForTag('sec');
+				auto SectionParameter = Op.GetArgumentForTag('sec');
 				auto y = wcslen(SectionParameter);
 				if (y > 8) // Check that the section name is not to long
 					return S_CREATE(SS_ERROR, SF_BUILDER, SC_TOO_LONG);
@@ -200,12 +202,12 @@ i32 Builder(
 			auto SectionHeader = utl::FindSection(NtHeader, SectionName);
 
 			// Pack section
-			if (CHECK_BMPFLAG(Op->Flags, 'p')) {
+			if (CHECK_BMPFLAG(Op.Flags, 'p')) {
 
 			}
 
 			// Crypt section
-			if (CHECK_BMPFLAG(Op->Flags, 'c')) {
+			if (CHECK_BMPFLAG(Op.Flags, 'c')) {
 				// Initialize RC4
 				u32 RtlState;
 
@@ -222,7 +224,7 @@ i32 Builder(
 
 	case 'ree': // remove export entry
 		{
-			HelpDialoge(L"Removes an export entry from the export section,\n"
+			HelpDialogue(L"Removes an export entry from the export section,\n"
 				L"All links to the Data are purged form the image, the data is left intact."
 				L"\"fi\" : Executable to modify\n"
 				L"\"en\" : ExportName to be destroyed\n"
@@ -230,19 +232,16 @@ i32 Builder(
 				L"    e.g. -en:NbConfig or -en:@13 (ordinals are unbiased)\n"
 				L"    BY ORDINAL IS CURRENTLY NOT FULLY SUPPORTED, ONLY REMOVES ADDRESS ENTRY!")
 
-			// Load executable
-			Con->PrintFEx(CON_INFO, L"Loading executable");
-			FileMap Executable(Op->GetArgumentForTag('fi'));
-			auto PeStream = Executable.Data();
+			// Get ExportDirectory
 			auto NtHeader = utl::GetNtHeader(PeStream);
 			auto ExportDirectory = (IMAGE_EXPORT_DIRECTORY*)((ptr)img::TranslateRvaToPa(PeStream,
 				NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress) + (ptr)PeStream);
 			Con->PrintFEx(CON_INFO, L"ExportDirectory at 0x%08x", (ptr)ExportDirectory - (ptr)PeStream);
 
-			auto ExportName = Op->GetArgumentForTag('en');
+			auto ExportName = Op.GetArgumentForTag('en');
 			if (!ExportName)
 				return S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_POINTER);
-			u16 Ordinal = -1; // Set to invalid ordinal by default
+			auto Ordinal = (u16)-1; // Set to invalid ordinal by default
 
 			if (*ExportName != L'@') { // Find ordinal of export
 				// Enumerate ExportNameTable and find matching entry
@@ -282,7 +281,7 @@ i32 Builder(
 
 				HeapFree(ProcessHeap, 0, AnsiExportName);
 			} else // directly use ordinal
-				Ordinal = _wtoi(ExportName + 1);
+				Ordinal = (u16)_wtoi(ExportName + 1);
 
 			if (Ordinal != (u16)-1) {
 				if (Ordinal > ExportDirectory->NumberOfFunctions) {
@@ -304,14 +303,15 @@ i32 Builder(
 
 	case 'spp': // section page protection
 		{
-			// Load executable
-			Con->PrintFEx(CON_INFO, L"Loading executable");
-			FileMap Executable(Op->GetArgumentForTag('fi'));
-			auto PeStream = Executable.Data();
+			HelpDialogue(L"Sets the section characteristics of the spefied section\n"
+				L"\"fi\" : the executable to patch\n"
+				L"\"sc\" : teh sectionname of the header to patch\n"
+				L"\"ch\" : the protection / characteristics to use in hex")
+
 			auto NtHeader = utl::GetNtHeader(PeStream);
 
 			// Get Argument
-			auto SectionName = Op->GetArgumentForTag('sec');
+			auto SectionName = Op.GetArgumentForTag('sc');
 			auto SectionNameLength = wcslen(SectionName);
 			if (SectionNameLength > 8) {
 				Con->PrintFEx(CON_ERROR, L"Section name specified invalid");
@@ -321,60 +321,61 @@ i32 Builder(
 			// Find Section
 			char SectionNameBuffer[8];
 			for (auto i = 0; i < SectionNameLength; i++)
-				SectionNameBuffer[i] = SectionName[i];
+				SectionNameBuffer[i] = (char)SectionName[i];
 			memset(SectionNameBuffer + SectionNameLength, 0, 8 - SectionNameLength);
 			auto SectionHeader = utl::FindSection(NtHeader, SectionNameBuffer);
 			if (!SectionHeader) {
 				Con->PrintFEx(CON_ERROR, L"Could not retrieve section");
 				return S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_POINTER);
 			}
+			Con->PrintFEx(CON_INFO, L"Sectionheader located at 0x%08x", (ptr)SectionHeader - (ptr)PeStream);
 
-			auto Protection = Op->GetArgumentForTag('p');
-			SectionHeader->Characteristics = wcstol(Protection, nullptr, 0x10);
+			auto Protection = Op.GetArgumentForTag('ch');
+			u32 ProtectionVar;
+			if (swscanf_s(Protection, L"%lx", &ProtectionVar) != 1) {
+				Con->PrintFEx(CON_ERROR, L"Invalid characteristic !");
+				return S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_PARAMETER);
+			}
+			SectionHeader->Characteristics = ProtectionVar;
+			Con->PrintFEx(CON_SUCCESS, L"Sectioncharacteristics set at location 0x%08x",
+				(ptr)&SectionHeader->Characteristics - (ptr)PeStream);
 		} break;
 
 	case 'ccsc': // code cipher shellcode
 		{
-			// Load executable
-			Con->PrintFEx(CON_INFO, L"Loading executable");
-			FileMap Executable(Op->GetArgumentForTag('fi'));
-			auto PeStream = Executable.Data();
-			auto NtHeader = utl::GetNtHeader(PeStream);
+			HelpDialogue(L"encodes the shellcode rc4 cipher used for the .nb2 section\n"
+				L"\"fi\" : the executable used for the ciphering")
 
-			auto GetExportLocationByTag = [&](
-				_In_  u32    Tag,
-				_Out_ void*& Loc
-				) -> status {
-					// Get cipher shellcode location
-					auto ExportName = Op->GetArgumentForTag(Tag);
-					if (!ExportName)
-						return S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_POINTER);
-
-					// Convert Unicode to ascii string
-					auto ExportNameLength = wcslen(ExportName);
-					auto AnsiExportName = (char*)HeapAlloc(ProcessHeap, 0, ExportNameLength + 1);
-					WideCharToMultiByte(CP_ACP, 0, ExportName, -1, AnsiExportName, ExportNameLength + 1, 0, 0);
-
-					auto ReturnValue = img::GetExportImageAddress(PeStream, AnsiExportName, Loc);
-					HeapFree(ProcessHeap, 0, AnsiExportName);
-					return ReturnValue;
-			};
+			auto TargetFile = Op.GetArgumentForTag('fi');
 
 			// Get xor code key location and set key
 			u64* XorKey;
-			auto Status = GetExportLocationByTag('xrk', (void*&)XorKey);
+			auto Status = img::GetExportImageAddress(PeStream, "NbRc4ModShellCodeKey", (void*&)XorKey);
 			if (!S_SUCCESS(Status))
 				return Status;
 			u32 RtlState;
 			*XorKey = (u64)RtlRandomEx(&RtlState) << 32 | RtlRandomEx(&RtlState);
+			Con->PrintFEx(CON_INFO, L"NbRc4ModShellCodeKey at 0x%08x set to 0x%016llx", (ptr)XorKey - (ptr)PeStream, *XorKey);
+
+			// Remove ShellCodeKey export
+			Status = RunChildService(PeStream, L"/ree -fi:%s -en:%s", TargetFile, L"NbRc4ModShellCodeKey");
+			if (!S_SUCCESS(Status))
+				return Status;
 
 			// Get cipher shellcode location and xor encode
 			u8* rc4modsc;
-			Status = GetExportLocationByTag('csc', (void*&)rc4modsc);
+			Status = img::GetExportImageAddress(PeStream, "NbRc4ModShellCode", (void*&)rc4modsc);
 			if (!S_SUCCESS(Status))
 				return Status;
+			Con->PrintFEx(CON_INFO, L"Ciphering Rc4ModShellCode at 0x%08x", (ptr)rc4modsc - (ptr)PeStream);
 			for (auto i = 0; i < 0x1d4; i++)
 				rc4modsc[i] = _rotr8(rc4modsc[i] ^ ((u8*)XorKey)[i & 0x7], i & 0x3);
+
+			// Remove ShellCode export
+			Status = RunChildService(PeStream, L"/ree -fi:%s -en:%s", TargetFile, L"NbRc4ModShellCode");
+			if (!S_SUCCESS(Status))
+				return Status;
+			Con->PrintFEx(CON_SUCCESS, L"Successfully crypted shellcode and removed entries.");
 		} break;
 
 	default:
@@ -385,11 +386,37 @@ i32 Builder(
 
 	return SUCCESS;
 }
+#undef HelpDialogue
 
+status RunChildService(                // Runs a sub service Builder instance
+	_In_           void*  Buffer,      // The buffer to work on
+	_In_z_   const wchar* CommandLine, // Commandline template used for the builder
+	_In_opt_                      ...  // arguments used for commandline template
+) {
+	Con->m_BaseIndent += 4;
+
+	// Create commandline from template
+	auto CommandLineBuffer = (wchar*)VirtualAlloc(nullptr, PAGE_SIZE, MEM_ALLOC, PAGE_READWRITE);
+	va_list VariableArgumentList;
+	va_start(VariableArgumentList, CommandLine);
+	vswprintf_s(CommandLineBuffer, PAGE_SIZE / sizeof(wchar), CommandLine, VariableArgumentList);
+	va_end(VariableArgumentList);
+
+	// Create Commandline and run Builder
+	Opr Op(CommandLineBuffer);
+	auto Status = NebulaBuilder(Buffer, Op);
+
+	VirtualFree(CommandLineBuffer, 0, MEM_RELEASE);
+
+	Con->m_BaseIndent -= 4;
+	return Status;
+}
+
+// This Entrypoint needs some serious rework :flushed:
 i32 BuilderEntry() {
 	SetUnhandledExceptionFilter([](_In_ EXCEPTION_POINTERS* ExceptionInfo) -> long {
-			Con->PrintFEx(CON_ERROR, L"Unhandle exception occurred @ %#018llx !", ExceptionInfo->ExceptionRecord->ExceptionAddress);
-			if (S_SUCCESS(CreateDump(nullptr, ExceptionInfo))) {
+			Con->PrintFEx(CON_ERROR, L"Unhandle exception occurred @ 0x%016llx !", ExceptionInfo->ExceptionRecord->ExceptionAddress);
+			if (S_SUCCESS(DbgCreateDump(nullptr, ExceptionInfo))) {
 				Con->PrintFEx(CON_WARNING, L"Created minidumpfile in current directory.");
 				ExitProcess(ExceptionInfo->ExceptionRecord->ExceptionCode);
 			} else {
@@ -399,8 +426,10 @@ i32 BuilderEntry() {
 
 			return EXCEPTION_CONTINUE_SEARCH;
 		});
-
 	Con = new Console;
+
+	// Create Commandline
+	Opr* Op = nullptr;
 	__try {
 		Op = new Opr(GetCommandLineW());
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -410,9 +439,24 @@ i32 BuilderEntry() {
 	}
 	// Prolouge End
 
-	auto Status = Builder();
+
+	// Load executable
+	auto TargetFile = Op->GetArgumentForTag('fi');
+	void* PeStream = nullptr;
+
+	FileMap* File = nullptr;
+	if (TargetFile) {
+		File = new FileMap(TargetFile);
+		PeStream = File->Data();
+		if (!PeStream)
+			return S_CREATE(SS_ERROR, SF_BUILDER, SC_INVALID_POINTER);
+		Con->PrintFEx(CON_INFO, L"Loaded executable");
+	}
+
+	auto Status = NebulaBuilder(PeStream, *Op);
 	if (!S_SUCCESS(Status))
-		Con->PrintFEx(S_SEVERITY(Status), L"Status: 0x%08x", Status);
+		Con->PrintFEx(CON_ERROR, L"Last status code: 0x%08x", Status);
+	delete File;
 
 	// Epiloge Start
 	delete Op;

@@ -45,9 +45,11 @@ status Console::Cls() {
 	return Status ? S_CREATE(SS_WARNING, SF_NULL, SC_INCOMPLETE) : Status;
 }
 
-status Console::vPrintFormatW(_In_z_ const wchar* Text, _In_opt_ va_list Va) {
+// TODO: Add more modes like raw print and headlines
+// IMPROVEMENT: rewrite to formatter for new systems
+status Console::vPrintFormatW(_In_z_ const wchar* Text, _In_opt_ va_list VariableArgumentList) {
 	// Format Message
-	vswprintf_s((wchar*)m_Buffer, 0x1000, Text, Va);
+	vswprintf_s((wchar*)m_Buffer, 0x1000, Text, VariableArgumentList);
 	m_BufferSize = wcslen((wchar*)m_Buffer) * sizeof(wchar);
 
 	// Print Message
@@ -57,7 +59,7 @@ status Console::vPrintFormatW(_In_z_ const wchar* Text, _In_opt_ va_list Va) {
 		Attributes |= m_ErrorLevel & 0xf;
 	SetConsoleTextAttribute(m_ConsoleOutput, Attributes);
 
-	SetConsoleCursorPosition(m_ConsoleOutput, { 0, csbi.dwCursorPosition.Y });
+	SetConsoleCursorPosition(m_ConsoleOutput, { 0 + m_BaseIndent, csbi.dwCursorPosition.Y });
 	wchar Symbol[] = L"[ ] ";
 	switch (m_ErrorLevel) {
 	case CON_SUCCESS:  Symbol[1] = L'S'; break;
@@ -66,7 +68,7 @@ status Console::vPrintFormatW(_In_z_ const wchar* Text, _In_opt_ va_list Va) {
 	case CON_WARNING:  Symbol[1] = L'!'; break;
 	case CON_ERROR:    Symbol[1] = L'X'; break;
 	}
-	dword v0;
+	u32 v0;
 	WriteConsoleW(m_ConsoleOutput, Symbol, 4, &v0, nullptr);
 
 	auto BufferOffset = (const wchar*)m_Buffer;
@@ -77,7 +79,7 @@ status Console::vPrintFormatW(_In_z_ const wchar* Text, _In_opt_ va_list Va) {
 			WriteConsoleW(m_ConsoleOutput, BufferOffset, (u32)(Delimiter - BufferOffset), &v0, nullptr);
 			m_BufferSize -= (ptr)Delimiter - (ptr)BufferOffset + 2;
 			BufferOffset = Delimiter + 1;
-			SetConsoleCursorPosition(m_ConsoleOutput, { 4, csbi.dwCursorPosition.Y + linecounter });
+			SetConsoleCursorPosition(m_ConsoleOutput, { 4 + m_BaseIndent, csbi.dwCursorPosition.Y + linecounter });
 			linecounter++;
 		} else {
 			WriteConsoleW(m_ConsoleOutput, BufferOffset, m_BufferSize / sizeof(wchar), &v0, nullptr);
@@ -85,7 +87,7 @@ status Console::vPrintFormatW(_In_z_ const wchar* Text, _In_opt_ va_list Va) {
 		}
 	}
 
-	SetConsoleCursorPosition(m_ConsoleOutput, { 0, csbi.dwCursorPosition.Y + linecounter });
+	SetConsoleCursorPosition(m_ConsoleOutput, { 0 , csbi.dwCursorPosition.Y + linecounter });
 	SetConsoleTextAttribute(m_ConsoleOutput, csbi.wAttributes); // Reset Attributes after printing
 	return SUCCESS;
 }

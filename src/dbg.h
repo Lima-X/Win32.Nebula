@@ -34,6 +34,9 @@ inline long DbgCreateDump(                             // Generates a MiniDumpFi
 
 	// Create Dumpfile
 	auto TargetFile = (wchar_t*)HeapAlloc(Heap, 0, MAX_PATH);
+	if (!TargetFile)
+		return -5;
+
 	auto AppandingOffset = 0;
 	if (Path) {
 		wcscpy(TargetFile, Path);
@@ -64,13 +67,15 @@ inline long DbgCreateDump(                             // Generates a MiniDumpFi
 #define DBG_ERROR   0 //
 #define DBG_WARNING 1 //
 #define DBG_SUCCESS 2 //
-#define DBG_MESSAGE 3 //
+#define DBG_INFO 3 //
 inline void DbgTracePoint(
 	_In_opt_ u32         ErrorLevel,
 	_In_z_   const char* FormatString,
 	_In_opt_             ...
 ) {
 	auto Buffer = (char*)VirtualAlloc(nullptr, 0x1000, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	if (!Buffer)
+		__debugbreak();
 	auto Iterator = Buffer;
 
 	// Print errorlevel symbol
@@ -79,7 +84,7 @@ inline void DbgTracePoint(
 	case DBG_ERROR:   *Iterator++ = 'X'; break;
 	case DBG_WARNING: *Iterator++ = '!'; break;
 	case DBG_SUCCESS: *Iterator++ = 'S'; break;
-	case DBG_MESSAGE: *Iterator++ = '+';
+	case DBG_INFO: *Iterator++ = '+';
 	}
 	*Iterator++ = ']'; *Iterator++ = ' ';
 
@@ -184,7 +189,7 @@ namespace dbg {
 					nLen = strlen(psz);
 
 				if (psz[nLen] != '\n')
-					*(word*)&psz[nLen] = '\0\n';
+					*(u16*)&psz[nLen] = '\0\n';
 				WriteToLog(psz, nLen + 1);
 				VirtualFree((void*)psz, NULL, MEM_RELEASE);
 			} __except (RecursiveException(GetExceptionInformation())) {}
@@ -222,7 +227,7 @@ namespace dbg {
 			_In_ void* pBuf,
 			_In_ size_t nBuf
 		) {
-			dword dw;
+			u32 dw;
 			if (WriteFile(h, pBuf, nBuf, &dw, nullptr))
 				return dw;
 			return -1;
@@ -253,7 +258,7 @@ namespace dbg {
 	// Temporery DllInjector, this allows for JIT debugging which manualmapping can't really do
 	inline status InjectDllW(
 		_In_z_ const wchar* szDll,
-		_In_         dword  dwPid
+		_In_         u32    dwPid
 	) {
 		handle hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPid);
 		if (!hProc)
@@ -273,7 +278,7 @@ namespace dbg {
 			return -5; // Failed to create remote Thread
 
 		WaitForSingleObject(hRemoteThread, INFINITE);
-		dword dwRemote;
+		u32 dwRemote;
 		GetExitCodeThread(hRemoteThread, &dwRemote);
 
 		CloseHandle(hRemoteThread);

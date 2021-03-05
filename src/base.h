@@ -49,6 +49,10 @@ typedef unsigned short     word;
 typedef unsigned long      dword;
 typedef unsigned long long qword;
 
+#define _M_X64 1
+#define _M_AMD64 1
+#define __ia64__ 1
+
 // Pointer Types
 #ifdef _M_X64
 typedef unsigned long long ptr;    // A pointer as a raw value used for pointer arithmetic (prefered over "void*")
@@ -70,7 +74,6 @@ typedef          void* handle;
 #endif
 
 #define null                   0
-
 #define GENERIC_READWRITE      0xc0000000 // (GENERIC_READ | GENERIC_WRITE)
 #define MEM_ALLOC              0x00003000 // (MEM_RESERVE | MEM_COMMIT)
 #define PAGE_SIZE              0x00001000 // 4096 bytes
@@ -185,7 +188,7 @@ typedef _Success_(!(return & (0b1 << 31))) signed long status;
 #define S_WARNING(s)   ((s >> 30) == 0b11) // Checks if status idicates an Warning
 #define S_ERROR(s)     ((s >> 30) == 0b10) // Checks if status idicates an Error
 #define S_ISMESSAGE(s) ((s >> 30) == 0b01) // Checks if status is a function specific message
-#define S_ISSUE(s)     (s >> 31)           // Checks if status Idicates an Issue (this includes Errors)
+// #define S_ISSUE(s)     (s >> 31)           // Checks if status Idicates an Issue (this includes Errors)
 
 // Used to generate a Status
 #define S_CREATE(Severity, Facility, Code) ((Severity << 30) |\

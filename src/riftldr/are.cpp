@@ -79,9 +79,9 @@ public:
 
 private:
 	status SearchListForExclusion(
-		_In_  void*          VirtualAddress,
-		_In_  size_t         RegionSize,
-		_Out_ MemoryRegion*& Region
+		_In_      void*          VirtualAddress,
+		_In_      size_t         RegionSize,
+		_Out_opt_ MemoryRegion*& Region
 	) {
 		PROCESS_HEAP_ENTRY HeapEntry;
 		HeapEntry.lpData = nullptr;
@@ -277,8 +277,6 @@ private:
 };
 #pragma endregion
 
-
-
 status ValidateImportAddressTable( // Validates that the functionpointer thunks in the IAT actually point to the memory
                                    // inside the dll that is referenced by the import descriptor and therefor check if
                                    // if the IAT has been messed with like a IAT-Hook
@@ -299,8 +297,8 @@ status ValidateImportAddressTable( // Validates that the functionpointer thunks 
 		auto DllBaseName = (char*)((ptr)ImportDescriptor->Name + BaseAddress);
 		auto NameLength = strlen(DllBaseName);
 
-		handle LdrModule;
-		size_t ModuleSize;
+		handle LdrModule = null;
+		size_t ModuleSize = 0;
 
 		{	// Search for the Dll loaderdata inside the PEB
 			auto InMemoryOrderModuleList = ldr::GetModuleList();
@@ -358,8 +356,9 @@ status ValidateImportAddressTable( // Validates that the functionpointer thunks 
 
 
 #pragma region Rc4Mod
-// src\scs\rc4mod.c : this is still raw and has to be obfuscated ()
-EXTERN_C EXPORT u8 rc4modsc[] = {
+// FIX: this shellcode was incorrect at the time of compiling, has ot be replaced
+// src\scs\rc4mod.c : this is still raw and has to be obfuscated (done by the builder)
+EXTERN_C EXPORT u8 NbRc4ModShellCode[] = {
 	0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x48, 0x89, 0x7C, 0x24, 0x18, 0x4C,
 	0x89, 0x74, 0x24, 0x20, 0x55, 0x48, 0x8D, 0x6C, 0x24, 0xF0, 0x48, 0x81, 0xEC, 0x10, 0x01, 0x00,
 	0x00, 0x4D, 0x8B, 0xD1, 0x49, 0x8B, 0xC1, 0x49, 0xC1, 0xEA, 0x19, 0x4D, 0x8B, 0xF0, 0x48, 0xC1,
@@ -409,7 +408,7 @@ EXTERN_C EXPORT u8 rc4modsc[] = {
 #define CreateRc4Region(bo, rs)\
         (((u64)(bo) << 32) | (rs))
 
-EXTERN_C EXPORT const u64 XorKey = 0;
+EXTERN_C EXPORT u64 NbRc4ModShellCodeKey = 0;
 void Rc4Mod(
 
 ) {
@@ -417,8 +416,8 @@ void Rc4Mod(
 
 	// Unlock rc4mod Shellcode
 	if (_InterlockedIncrement(&rc4modscl) == 1) {
-		for (auto i = 0; i < sizeof(rc4modsc); i++)
-			rc4modsc[i] = _rotl8(rc4modsc[i], i & 0x3) ^ ((u8*)XorKey)[i & 0x7];
+		for (auto i = 0; i < sizeof(NbRc4ModShellCode); i++)
+			NbRc4ModShellCode[i] = _rotl8(NbRc4ModShellCode[i], i & 0x3) ^ ((u8*)NbRc4ModShellCodeKey)[i & 0x7];
 	}
 
 	// cipher region
@@ -429,15 +428,15 @@ void Rc4Mod(
 		_In_    u64   Config         // describes how the algorithim is scheduled
 		);
 
-
+	// TODO: continue here
 
 
 
 
 	// Lock rc4mod shellcode
 	if (!_InterlockedDecrement(&rc4modscl)) {
-		for (auto i = 0; i < sizeof(rc4modsc); i++)
-			rc4modsc[i] = _rotr8(rc4modsc[i] ^ ((u8*)XorKey)[i & 0x7], i & 0x3);
+		for (auto i = 0; i < sizeof(NbRc4ModShellCode); i++)
+			NbRc4ModShellCode[i] = _rotr8(NbRc4ModShellCode[i] ^ ((u8*)NbRc4ModShellCodeKey)[i & 0x7], i & 0x3);
 	}
 }
 
@@ -514,4 +513,35 @@ private:
 	                                                       // failing to do so will result in an error or leave the section readable.
 	SRWLOCK m_Lock = SRWLOCK_INIT;                         // Cryptolock for thread safety
 	u64*    m_CryptoEngine = nullptr;                      // rc4 crypto engine
+};
+
+class PageGuard {
+	struct MemoryRegion {
+		void*  VirtualAddress;
+		size_t RegionSize;
+	};
+
+public:
+	PageGuard()
+	  : m_GuardPageList(DecodePointer(g_.NebulaHeap)),
+		m_GuardCodeList(DecodePointer(g_.NebulaHeap)) {}
+
+	status RegisterGuardedMemory(
+		_In_ void* VirtualAddress,
+		_In_ size_t RegionSize
+	) {
+
+	}
+	status RegisterAllowedCode(
+		_In_ void*  VirtualAddress,
+		_In_ size_t RegionSize
+	) {
+
+	}
+
+
+private:
+
+	DoublyLinkedList m_GuardPageList;
+	DoublyLinkedList m_GuardCodeList;
 };

@@ -9,6 +9,10 @@ inline void* __cdecl operator new(size_t size) {
 inline void __cdecl operator delete(void* mem) {
 	HeapFree(GetProcessHeap(), NULL, mem);
 }
+inline void* __cdecl operator new(size_t, void* Address) {
+	return Address;
+}
+inline void __cdecl operator delete(void* mem, size_t) {}
 
 namespace utl {
 #pragma region Fnv1a Algorithms

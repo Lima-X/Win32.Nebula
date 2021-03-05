@@ -53,16 +53,16 @@ namespace img {
 	}
 
 	status GetExportImageAddress(
-		_In_  handle      Module,
-		_In_  const char* ExportName,
-		_Out_ void*&      ExportAddress
+		_In_      handle      Module,
+		_In_      const char* ExportName,
+		_Out_opt_ void*&      ExportAddress
 	) {
 		auto NtHeader = utl::GetNtHeader(Module);
 		auto ExportDirectory = (IMAGE_EXPORT_DIRECTORY*)((ptr)img::TranslateRvaToPa(Module,
 			NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress) + (ptr)Module);
 		Con->PrintFEx(CON_INFO, L"ExportDirectory at 0x%08x", (ptr)ExportDirectory - (ptr)Module);
 
-		u16 Ordinal = -1; // Set to invalid ordinal by default
+		auto Ordinal = (u16)-1; // Set to invalid ordinal by default
 
 		if (*ExportName != '@') { // Find ordinal of export
 			// Enumerate ExportNameTable and find matching entry
@@ -83,7 +83,7 @@ namespace img {
 				}
 			}
 		} else // directly use ordinal
-			Ordinal = atoi(ExportName + 1);
+			Ordinal = (u16)atoi(ExportName + 1);
 
 		if (Ordinal != (u16)-1) {
 			if (Ordinal > ExportDirectory->NumberOfFunctions) {
@@ -97,7 +97,7 @@ namespace img {
 			Con->PrintFEx(CON_INFO, L"ExportAddressTable at 0x%08x", (ptr)ExportAddressTable - (ptr)Module);
 
 			ExportAddress = (void*)((ptr)img::TranslateRvaToPa(Module, ExportAddressTable[Ordinal]) + (ptr)Module);
-			Con->PrintFEx(CON_SUCCESS, L"Removed Export @%d, at 0x%08x", Ordinal, (ptr)(ExportAddress) - (ptr)Module);
+			Con->PrintFEx(CON_SUCCESS, L"Export found @%d, at 0x%08x", Ordinal, (ptr)(ExportAddress) - (ptr)Module);
 		} else {
 			Con->PrintFEx(CON_WARNING, L"Export not found");
 			return S_CREATE(SS_WARNING, SF_BUILDER, SC_INVALID_POINTER);

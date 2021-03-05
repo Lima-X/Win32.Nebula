@@ -10,7 +10,6 @@
 
 #pragma region Runtime Library
 // No Runtime Library: Provides subroutines for the compiler/dev that emulate the CRT
-#pragma comment(lib, "ntdllp.lib") // Link against ntdll (Full link through private lib)
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,6 +61,7 @@ extern "C" {
 	IMPORT int __cdecl _wtoi(_In_z_ wchar_t const* _String);
 	IMPORT int __cdecl atoi(_In_z_ char const* _String);
 	IMPORT long __cdecl wcstol(_In_z_ wchar_t const* _String, _Out_opt_ _Deref_post_z_ wchar_t** _EndPtr, _In_ int _Radix);
+	IMPORT int __cdecl swscanf_s(_In_z_ wchar_t const* const _Buffer, _In_z_ _Scanf_s_format_string_ wchar_t const* const _Format, ...);
 }
 #pragma endregion
 

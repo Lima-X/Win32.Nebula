@@ -65,6 +65,10 @@ public:
 	status PrintF(_In_z_ const wchar* Text, _In_opt_ ...);
 	status PrintFEx(_In_opt_ err ErrorLevel, _In_z_ const wchar* Text, _In_opt_ ...);
 
+	// Public Configuration members
+	u8     m_BaseIndent = 0; // describes how far to indent a print (tree's)
+	err    m_ErrorLevel;     // The currently used ErrorLevel
+
 protected:
 	// Console Input/Output(/Error) Handle
 	handle m_ConsoleInput;
@@ -77,7 +81,6 @@ private:
 	static u32    m_nRefCounter; // Class Reference Counter
 	       void*  m_Buffer;      // Temporery Buffer (Pool) that will be used to Format, Get Text and more (multiple of Pagesize)
 	       size_t m_BufferSize;  // The size of data inside the temporery Buffer (Pool)
-	       err    m_ErrorLevel;  // The currently used ErrorLevel
 };
 
 class FileMap {
@@ -103,11 +106,17 @@ private:
 namespace img {
 	u32 TranslateRvaToPa(_In_ handle Module, _In_ u32 Rva);
 	status GetExportImageAddress(
-		_In_ handle PeStream,
-		_In_ const char* ExportName,
-		_Out_ void*& ExportAddress
+		_In_      handle      PeStream,
+		_In_      const char* ExportName,
+		_Out_opt_ void*&      ExportAddress
 	);
 }
+
+status RunChildService(
+	_In_           void*  Buffer,
+	_In_z_   const wchar* CommandLine,
+	_In_opt_              ...
+);
 
 
 inline Console* Con;

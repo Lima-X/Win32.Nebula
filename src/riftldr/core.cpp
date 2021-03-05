@@ -68,14 +68,14 @@ status svc2::RegisterServiceFunction(
 }
 
 status svc2::ServiceCall(            // Calls the requested servicefunction
-	_In_     u64   ServiceId,        // identifier for the servicefunction
-	_Out_    poly* ReturnValue,      // the result returned by the servicefunction
-	_In_opt_ poly  ServiceParameters // A polymorpthic value to be passed throuh
+	_In_      u64   ServiceId,        // identifier for the servicefunction
+	_Out_opt_ poly* ReturnValue,      // the result returned by the servicefunction
+	_In_opt_  poly  ServiceParameters // A polymorpthic value to be passed throuh
 ) {
 	// Search for Servicefunction and get its entry
 	FunctionDispatchEntry* Entry;
 	auto Status = SearchListForEntry(ServiceId, Entry);
-	if (S_ISSUE(Status))
+	if (!S_SUCCESS(Status))
 		return Status;
 
 	// Call servicefunction and mutate pointer
@@ -88,7 +88,6 @@ status svc2::ServiceCall(            // Calls the requested servicefunction
 #pragma endregion
 
 #pragma region ThreadInterruptService
-// IMPROVEMENT: Build Anti - Disassembly into Dispatcher (because i can)
 extern "C" void ThreadInterruptDispatcher();
 // rsp -> Stack layout:
 //  | [16-Byte Free]
@@ -99,13 +98,14 @@ extern "C" void ThreadInterruptDispatcher();
 //  | ----------------
 //  V [RestoreContext]
 
-// As this function/feature is not perfect you shoudl think about how and where you use it
+// As this function/feature is not perfect you should think about how and where you use it
 // the reason for this is because of how syscalls work and you cant exactly hijack control of a context,
 // that is currently in kernel mode, the behaviour of how SetThreadContext works gets really quirky here.
 // This functions partially gets around that by saving the returnvalue in the context to restore,
 // this may not work perfectly tho, but should be fine as long as everything sticks to the x64 calling convention,
 // which all Windows API's and specifically in this case, all syscall's do. I might be wrong tho...
 
+// IMPROVMMENT: provide all thread interrupts and single thread interrupts
 // IMPROVEMENT: Use Event Objects instead for Waitfunctions to allow for timeouts
 status InterruptThread(                // Interrupts the execution flow of a thread and runs a callback on it by hijacking control
 	_In_     HANDLE       Thread,      // Thread to interrupt
@@ -204,22 +204,11 @@ void __stdcall NebulaTlsEntry(
 	switch (dwReason) {
 	case DLL_PROCESS_ATTACH:
 		{
+			// TODO: Read Baseaddress from Peb Directly
 			auto BaseAddress = (handle)GetModuleHandleW(nullptr);
-			auto* NtHeader = utl::GetNtHeader(BaseAddress);
-			const char ProtectedSections[4][8] = { ".nb0", ".nbr", ".nbw", ".nbx" };
-		#ifdef _DEBUG
-			// Simulate Inaccessable protected Sections by setting Pageprotections to NoAccess
-			IMAGE_SECTION_HEADER* SectionPointers[4];
-			dword OldSectionProtections[4];
-			for (u8 i = 0; i < 4; i++) {
-				SectionPointers[i] = utl::FindSection(NtHeader, ProtectedSections[i]);
-				if (SectionPointers[i])
-					VirtualProtect((void*)((ptr)SectionPointers[i]->VirtualAddress + (ptr)BaseAddress), SectionPointers[i]->Misc.VirtualSize,
-						PAGE_NOACCESS, OldSectionProtections + i);
-			}
-		#endif
 
 			auto Status = ValidateImportAddressTable(BaseAddress);
+			auto* NtHeader = utl::GetNtHeader(BaseAddress);
 
 		#ifndef _DEBUG
 			// Prevent rrror popups, we dont wanna let the user know if we crashed
@@ -228,11 +217,11 @@ void __stdcall NebulaTlsEntry(
 
 			// Setup ProcessCookie (required for CodePointer)
 			dword RtlState;
-			g_.ProcessCookie = (u64)RtlRandomEx(&RtlState) << 32 | RtlRandomEx(&RtlState);
-			g_.CookieOffset = RtlRandomEx(&RtlState) & 0x1f;
+			_InterlockedExchange64((i64*)&g_.ProcessCookie, (u64)RtlRandomEx(&RtlState) << 32 | RtlRandomEx(&RtlState));
+			_InterlockedExchange8((i8*)&g_.CookieOffset, RtlRandomEx(&RtlState) & 0x1f);
 
 			// Initializing ServiceManager
-			ServiceManager = new svc2;
+			_InterlockedExchange64((i64*)&ServiceManager, (i64)new svc2);
 
 			void SetupMemoryScanner();
 			SetupMemoryScanner();
@@ -278,7 +267,7 @@ void __stdcall NebulaTlsEntry(
 
 			i64 BaseDelta = (i64)BaseAddress - 0x140000000;
 			for (u8 i = 0; i < 4; i++) {
-				auto Section = utl::FindSection(NtHeader, ProtectedSections[i]);
+				IMAGE_SECTION_HEADER* Section = nullptr; //  utl::FindSection(NtHeader, ProtectedSections[i]);
 				if (!Section)
 					continue;
 
@@ -297,31 +286,16 @@ void __stdcall NebulaTlsEntry(
 				// Reapply BaseRelocations
 				ldr::ApplyBaseRelocationsOnSection(BaseAddress, Section, nullptr, BaseDelta);
 			}
-
-		#ifdef _DEBUG
-			// Revert Pageprotections on Blocked Sections (this simulates a Successful decryption)
-			for (u8 i = 0; i < 4; i++)
-				if (SectionPointers[i]) {
-					ptr address = ((ptr)SectionPointers[i]->VirtualAddress + (ptr)BaseAddress);
-					size_t size = SectionPointers[i]->Misc.VirtualSize;
-
-					dword OldProtection;
-					VirtualProtect((void*)address, size, OldSectionProtections[i], &OldProtection);
-
-					// VirtualProtect((void*)((ptr)SectionPointers[i]->VirtualAddress + BaseAddress), SectionPointers[i]->Misc.VirtualSize,
-					//	OldSectionProtections[i], &OldProtection);
-				}
-		#endif
-		} return;
+		} break;
 	case DLL_PROCESS_DETACH:
 		{
 
-		} return;
+		} break;
 	}
 }
 // ThreadLocalStorage datatemplate and reference table
-EXTERN_C EXPORT const dword TlsLoaderConfiguation     = 0;
-EXTERN_C EXPORT const byte  Nb0ProtectedSectionKey[8] = { 0 };
+EXTERN_C EXPORT u32 TlsLoaderConfiguation     = 0;
+EXTERN_C EXPORT u8  Nb0ProtectedSectionKey[8] = { 0 };
 extern "C" {
 	u32 _tls_index = 0;
 	const PIMAGE_TLS_CALLBACK _tls_callback[] = {
@@ -361,18 +335,18 @@ poly CodePointer(
 #define MX    SX(59)            // The offset to rotate (58rot) | 0xfc00000000000000
 #define IX    (58 - MX)         // Mathematical inverse MX (ignore encode bit)
 	if (x >> 58 & 1) {
-		x ^= g_.ProcessCookie & 0xffffull << 48;                        // Demutate 15bit state
-		u64 v1 = (x & 0x03ffffffffffffff) >> MX;                        // 58shift upper
-		u64 v2 = (x << IX) & ~(0xfcull << 56);                          // 58shift lower
-		x = (v1 | v2) | x & 0xfcull << 56;                              // 58rotr combine
-		x ^= g_.ProcessCookie & 0xffffffffffff;                         // Demutate 48bit pointer
-		x = (u64)_rotl(x >> 16, SX(48)) << 16 | x & 0xffff00000000ffff; // Untranslate upper 48ptr
-		x = (u64)_rotr(x, SX(53)) | x & 0xffffull << 32;                // Untranslate lower 48ptr
+		x ^= g_.ProcessCookie & 0xffffull << 48;                               // Demutate 15bit state
+		u64 v1 = (x & 0x03ffffffffffffff) >> MX;                               // 58shift upper
+		u64 v2 = (x << IX) & ~(0xfcull << 56);                                 // 58shift lower
+		x = (v1 | v2) | x & 0xfcull << 56;                                     // 58rotr combine
+		x ^= g_.ProcessCookie & 0xffffffffffff;                                // Demutate 48bit pointer
+		x = (u64)_rotl((u32)(x >> 16), SX(48)) << 16 | x & 0xffff00000000ffff; // Untranslate upper 48ptr
+		x = (u64)_rotr((u32)x, SX(53)) | x & 0xffffull << 32;                  // Untranslate lower 48ptr
 	} else {
 		// Initial pointer translation and state introduction
-		x |= (u64)RtlRandomEx(&RtlState) << 48;                         // x[63:48] = Random
-		x = (u64)_rotl(x, SX(53)) | x & 0xffffffff00000000;             // 0x03e0000000000000 | 0x00000000><<<<<<<
-		x = (u64)_rotr(x >> 16, SX(48)) << 16 | x & 0xffff00000000ffff; // 0x001f000000000000 | 0x0000>>>>>>><0000
+		x |= (u64)RtlRandomEx(&RtlState) << 48;                                // x[63:48] = Random
+		x = (u64)_rotl((u32)x, SX(53)) | x & 0xffffffff00000000;               // 0x03e0000000000000 | 0x00000000><<<<<<<
+		x = (u64)_rotr((u32)(x >> 16), SX(48)) << 16 | x & 0xffff00000000ffff; // 0x001f000000000000 | 0x0000>>>>>>><0000
 
 		// Mutate [47:0] (48bit pointer)
 		x ^= g_.ProcessCookie & 0x0000ffffffffffff;
@@ -393,6 +367,190 @@ poly CodePointer(
 }
 #pragma endregion
 
+RUNTIME_FUNCTION* GetRuntimeFunctionEntry( // Retrieves the rtf entry in the .pdata exception table
+	_In_ handle Module,                    // The module from which to retrive the rtf table
+	_In_ void*  VirtualAddress             // The virtual address of the function
+) {
+	IMAGE_NT_HEADERS* NtHeader = utl::GetNtHeader(Module);
+	IMAGE_DATA_DIRECTORY* Directory = &NtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION];
+	RUNTIME_FUNCTION* RtfTable = (RUNTIME_FUNCTION*)((ptr)Directory->VirtualAddress + (ptr)Module);
+
+	auto FunctionRva = (u32)((ptr)VirtualAddress - (ptr)Module);
+	for (auto i = 0; i < Directory->Size / sizeof(RUNTIME_FUNCTION); i++){
+		if (RtfTable[i].BeginAddress == FunctionRva)
+			return &RtfTable[i];
+	}
+
+	return nullptr;
+}
+
+NbTableEntry* NbGetCryptDataTableEntry( // Retrieves the crypt table entry from ".nb$ft::"
+	_In_ handle Module,                 // The module containing the cdt
+	_In_ void*  VirtualAddress          // The absolute address of the function to search for
+) {
+	auto CdTable = (NbTableEntry*)&FirstNbEntry;
+
+	while (CdTable.AbsoluteAddress) {
+		if (CdTable.AbsoluteAddress == VirtualAddress) // the virtaddr field is a absoluet value included in the base relocations
+			return CdTable;
+		CdTable++;
+	}
+
+	return nullptr;
+}
+
+
+class NbCrypt {
+	struct VisiEntry {
+		void*             VirtualAddress;       // The address passed to the decipher function
+		u32               ReferenceCounter;     // The number of times this object has been referenced
+		NbTableEntry*     VirtualOfTableEntry;  // The address of the entry in the ctable (.nbft)
+		RUNTIME_FUNCTION* OptionalFunctionLink; // The address of the runtime fucntion entry in pdata
+	};
+	struct PageGuardEntry {
+		void*             VirtualAddress; // The absolute address of the function to automatically service
+		u32               SizeOfFunction; // The length of the function (used to check if the trap is within bounds)
+		handle            VisiListObject; // A link to a object in the visi list used by the trap handler
+	};
+
+public:
+	static handle DecipherEntry(
+		_In_ void* VirtualAddress
+	) {
+		VisiList.LockListExclusive();
+		auto Object = VisiList.GetFirstObject();
+		if (Object) { // Search list if object already exists
+			do {
+				auto Entry = (VisiEntry*)VisiList.GetObjectAddress(Object);
+				if (Entry->VirtualAddress == VirtualAddress) {
+					// if entry already has been decrypted increase its reference counthas
+					Entry->ReferenceCounter++;
+					VisiList.UnlockList();
+					return Object;
+				}
+			} while (Object = VisiList.GetNextObject(Object));
+		}
+
+		// Object doesnt exist yet, so lets create it
+		Object = VisiList.AllocateObject(sizeof(VisiEntry));
+		auto Entry = (VisiEntry*)VisiList.GetObjectAddress(Object);
+
+		// Initialize Object
+		Entry->VirtualAddress = VirtualAddress;
+		Entry->ReferenceCounter = 1;
+		Entry->VirtualOfTableEntry = NbGetCryptDataTableEntry(g_.ModuleBase, VirtualAddress);
+		Entry->OptionalFunctionLink = GetRuntimeFunctionEntry(g_.ModuleBase, VirtualAddress);
+
+		// Decrypt Function
+
+
+		VisiList.UnlockList();
+		return Object;
+	}
+
+	static handle FreeObject(
+		_In_ handle Object
+	) {
+		VisiList.LockListExclusive();
+		auto Entry = (VisiEntry*)VisiList.GetObjectAddress(Object);
+
+		if (Entry->ReferenceCounter-- == 0) {
+			// reencrypt the function
+
+
+
+			VisiList.DestroyObject(Object);
+		}
+
+		VisiList.UnlockList();
+	}
+
+	static handle RegisterPageGuardFunction( // Registers a function for automatic ciphering mode
+	                                         // Functions registered as automatic are to be considered as single threaded
+	                                         // and cannot be called by multiple threads at the same time due to how pageguards work
+	                                         // Failure to ensure concurrency can result in deadlocks, exceptions and other #UB
+		_In_ void* VirtualAddress            // The virtual address of the function to register
+	) {
+		AutoFList.LockListExclusive();
+
+		// Allocate page guard entry in auto list
+		auto RtfEntry = GetRuntimeFunctionEntry(g_.ModuleBase, VirtualAddress);
+		auto PgObject = AutoFList.AllocateObject(sizeof(PageGuardEntry));
+		auto PgEntry = (PageGuardEntry*)AutoFList.GetObjectAddress(PgObject);
+		PgEntry->VirtualAddress = VirtualAddress;
+		PgEntry->SizeOfFunction = RtfEntry->EndAddress - RtfEntry->BeginAddress;
+
+		// Set PageGuard
+		MEMORY_BASIC_INFORMATION FunctionMemoryInformation;
+		VirtualQuery(VirtualAddress, &FunctionMemoryInformation, sizeof(FunctionMemoryInformation));
+		u32 OldProtection;
+		VirtualProtect(VirtualAddress, PgEntry->SizeOfFunction,
+			FunctionMemoryInformation.Protect | PAGE_GUARD, &OldProtection);
+
+		AutoFList.UnlockList();
+		return PgObject;
+	}
+
+private:
+	static i32 TrapExcpetionHandler(
+		_In_ EXCEPTION_POINTERS* ExceptionInfo
+	) {
+		static PageGuardEntry* CachedPgEntry;
+		auto ExceptionCode = ExceptionInfo->ExceptionRecord->ExceptionCode;
+		auto ExceptionAddress = ExceptionInfo->ExceptionRecord->ExceptionAddress;
+
+		// Only handle
+		if (ExceptionCode != STATUS_GUARD_PAGE_VIOLATION &&
+			ExceptionCode != STATUS_SINGLE_STEP)
+			return EXCEPTION_CONTINUE_SEARCH;
+
+		// Get The pageguard entry
+		AutoFList.LockListShared();
+		auto PgEnumerator = AutoFList.GetFirstObject();
+		PageGuardEntry* PgEntry;
+		do {
+			PgEntry = (PageGuardEntry*)AutoFList.GetObjectAddress(PgEnumerator);
+			if (PgEntry->VirtualAddress <= ExceptionAddress &&
+				(ptr)PgEntry->VirtualAddress + PgEntry->SizeOfFunction >= (ptr)ExceptionAddress)
+
+				break;
+		} while (PgEnumerator = AutoFList.GetNextObject(PgEnumerator));
+		VisiList.UnlockList();
+
+		if (PgEntry) {
+			// Chache PgEntry
+			CachedPgEntry = PgEntry;
+
+			// Found the fitting entry, check if the function is currently being used
+			if (!PgEntry->VisiListObject)
+				PgEntry->VisiListObject = DecipherEntry(PgEntry->VirtualAddress);
+
+			// now let the function execute byste
+			// TODO: continue coding here
+
+			return EXCEPTION_CONTINUE_EXECUTION;
+		}
+
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
+	static handle InitializeNbCryptService() {
+		return AddVectoredExceptionHandler(null, TrapExcpetionHandler);
+	}
+
+	static DoublyLinkedList VisiList;
+	static DoublyLinkedList AutoFList;
+};
+
+// To be implemented
+class Nanomite {
+public:
+
+private:
+
+};
+
+
 N_PROTECTEDX status LoadPluginModule(
 	_In_ const void* Module
 ) {
@@ -405,6 +563,10 @@ N_PROTECTEDX status LoadPluginModule(
 }
 
 N_PROTECTEDX i32 __cdecl NebulaCoreEntry() {
+#ifdef _DEBUG
+	__debugbreak();
+#endif
+
 	__try {
 		*(char*)0x0 = 0;
 	} __except (EXCEPTION_EXECUTE_HANDLER) {

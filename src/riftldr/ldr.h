@@ -16,7 +16,7 @@
 
 // Merge loader code into a loader section
 #pragma comment(linker, "/merge:.text=.nb0")
-// #pragma comment(linker, "/merge:.data=.nb0")
+#pragma comment(linker, "/merge:.data=.nb0")
 #pragma comment(linker, "/merge:.rdata=.nb0")
 
 // Declaration Protection Specification
@@ -36,6 +36,8 @@ namespace ldr {
 
 status ValidateImportAddressTable(_In_ handle Module);
 poly CodePointer(_In_ poly x);
+#define EncodePointer(ptr) (handle)CodePointer((poly)(ptr))
+#define DecodePointer(ptr) (void*)CodePointer((poly)(ptr))
 
 namespace utl {
 	status GenerateSessionId(_Out_ u64& SessionId);
@@ -64,6 +66,60 @@ private:
 };
 inline svc2* ServiceManager;
 
+class DoublyLinkedList {           // Doubly Linked list that supports object allocation and object referencing
+	struct ListEntry {             // Nodeobject allcoated and linked into the list
+		ListEntry* NextEntry;      // A Pointerpair to tne next and previous entry in the list
+		ListEntry* PreviousEntry;
+
+		union {                   // this field contains either
+			void* VirtualAddress; // The Address of the Buffer that stores the actual data
+			i64   EntrySize;      // The size of the Object (if non reference object signbit is set)
+		} Misc;
+	};
+
+public:
+	// Constructors
+	DoublyLinkedList(_In_ handle Heap);
+
+	// Allocators
+	handle AllocateObject(_In_ size_t ObjectSize);
+	handle ReferenceObject(_In_ void* VirtualAddress);
+	void   DestroyObject(_In_ handle Object);
+
+	// Information translators
+	void*  GetObjectAddress(_In_ handle Object);
+	size_t GetObjectSize(_In_ handle Object);
+
+	// Enumerators
+	handle GetFirstObject();
+	handle GetLastObject();
+	handle GetNextObject(_In_ handle Object);
+	handle GetPreviousObject(_In_ handle Object);
+
+	void LockListExclusive();
+	void LockListShared();
+	void UnlockList();
+
+private:
+	ListEntry* AllocateEntryInternal(_In_ size_t ObjectSize);
+
+	const handle m_MemoryContainer;            // The heap used to allocate elements
+
+	struct _ListLock {
+		SRWLOCK  SrwLockInternal;              // The internal SRWLOCK
+		u32      OwningThread;                 // The Thread that owns the exclusive lock
+		struct {
+			u32  ExclusiveRecursionCount : 28; // The count of times the owning thread owns this lock
+			u32  ExclusiveModeEnabled    :  1; // Marks if the Lock is in exclusive mode
+		};
+	}            m_ListLock;
+
+	ListEntry*   m_FirstEntry;                 // A pointerpair pointing ot the first and last entry in the list
+	ListEntry*   m_LastEntry;
+};
+
+
+
 // Global Managment Information
 // has to be named because of a stupid compiler bug lol, bug report at:
 // https://developercommunity.visualstudio.com/content/problem/1312147/c17-global-unnamed-inline-struct-may-not-be-the-sa.html
@@ -77,4 +133,6 @@ struct _NebulaInternalGlobalData {
 
 	u64 HardwareId;
 	u64 SessionId;
+
+	handle NebulaHeap; // Encoded with CodePointer
 } volatile inline g_;

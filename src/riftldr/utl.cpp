@@ -142,3 +142,140 @@ namespace utl {
 		return SUCCESS;
 	}
 }
+
+#pragma region Fast DoublyLinkedList Implmentation
+DoublyLinkedList::DoublyLinkedList(
+	_In_ handle Heap
+) : m_MemoryContainer(Heap),
+	m_LastEntry(nullptr) {}
+
+handle DoublyLinkedList::AllocateObject( // Allocates an object and links it into the list (can NOT be locked in shared mode)
+	_In_ size_t ObjectSize               // The amount of memory to allocate for the object
+) {
+	LockListExclusive();
+	auto Object = AllocateEntryInternal(ObjectSize);
+	Object->Misc.EntrySize = ObjectSize | 1ull << 63;
+	UnlockList();
+	return EncodePointer((void*)Object);
+}
+handle DoublyLinkedList::ReferenceObject( // References an object and links it into the list (can NOT be locked in shared mode)
+	_In_ void* VirtualAddress             // The absolute address of the existing object
+) {
+	LockListExclusive();
+	auto Object = AllocateEntryInternal(0);
+	Object->Misc.VirtualAddress = VirtualAddress;
+	UnlockList();
+	return EncodePointer((void*)Object);
+}
+
+void DoublyLinkedList::DestroyObject(
+	_In_ handle Object
+) {
+	LockListExclusive();
+	auto CurrentEntry = (ListEntry*)DecodePointer(Object);
+
+	if (CurrentEntry->NextEntry && CurrentEntry->PreviousEntry) {
+		// Fix up links (link previous and next entry to each other)
+		CurrentEntry->PreviousEntry->NextEntry = CurrentEntry->NextEntry;
+		CurrentEntry->NextEntry->PreviousEntry = CurrentEntry->PreviousEntry;
+	} else {                                                  // Special Handling incase it is first or last entry
+		if (CurrentEntry->NextEntry) {                        // Remove first entry
+			CurrentEntry->NextEntry->PreviousEntry = nullptr;
+			m_FirstEntry = CurrentEntry->NextEntry;
+		} else if (CurrentEntry->PreviousEntry) {             // Remove last entry
+			CurrentEntry->PreviousEntry->NextEntry = nullptr;
+			m_LastEntry = CurrentEntry->PreviousEntry;
+		} else                                                // Remove last existing entry
+			m_LastEntry = nullptr;
+	}
+
+	HeapFree(m_MemoryContainer, 0, CurrentEntry);
+	UnlockList();
+}
+
+void* DoublyLinkedList::GetObjectAddress(
+	_In_ handle Object
+) {
+	auto CurrentEntry = (ListEntry*)DecodePointer(Object); // Get real object
+	if (CurrentEntry->Misc.EntrySize < 0)                  // Check if local object
+		return CurrentEntry + 1;                           // is local object
+	return CurrentEntry->Misc.VirtualAddress;              // is referenced object
+}
+size_t DoublyLinkedList::GetObjectSize(
+	_In_ handle Object
+) {
+	auto CurrentEntry = (ListEntry*)DecodePointer(Object);  // Get real object
+	if (CurrentEntry->Misc.EntrySize < 0)                   // Check if local object
+		return CurrentEntry->Misc.EntrySize & (~0ull >> 1); // is local object
+	return null;                                            // is referenced object
+}
+
+handle DoublyLinkedList::GetFirstObject() {
+	return m_FirstEntry ? EncodePointer(m_FirstEntry) : null;
+}
+handle DoublyLinkedList::GetLastObject() {
+	return m_LastEntry ? EncodePointer(m_LastEntry) : null;
+}
+handle DoublyLinkedList::GetNextObject(
+	_In_ handle Object
+) {
+	auto CurrentEntry = (ListEntry*)DecodePointer(Object);
+	return CurrentEntry->NextEntry ? EncodePointer(CurrentEntry->NextEntry) : null;
+}
+handle DoublyLinkedList::GetPreviousObject(
+	_In_ handle Object
+) {
+	auto CurrentEntry = (ListEntry*)DecodePointer(Object);
+	return CurrentEntry->PreviousEntry ? EncodePointer(CurrentEntry->PreviousEntry) : null;
+}
+
+void DoublyLinkedList::LockListExclusive() {
+	if (!TryAcquireSRWLockExclusive(&m_ListLock.SrwLockInternal)) {
+		if (m_ListLock.OwningThread == GetCurrentThreadId())
+			m_ListLock.ExclusiveRecursionCount++;
+		else
+			m_ListLock.OwningThread = GetCurrentThreadId();
+	}
+
+	m_ListLock.OwningThread = GetCurrentThreadId();
+	m_ListLock.ExclusiveModeEnabled = true;
+}
+void DoublyLinkedList::LockListShared() {
+	if (m_ListLock.ExclusiveModeEnabled && m_ListLock.OwningThread == GetCurrentProcessId())
+		m_ListLock.ExclusiveRecursionCount++;
+	else
+		AcquireSRWLockShared(&m_ListLock.SrwLockInternal);
+}
+void DoublyLinkedList::UnlockList() {
+	if (m_ListLock.ExclusiveModeEnabled) {
+ 		if (m_ListLock.OwningThread == GetCurrentThreadId()) {
+			if (m_ListLock.ExclusiveRecursionCount)
+				m_ListLock.ExclusiveRecursionCount--;
+			else {
+				ReleaseSRWLockExclusive(&m_ListLock.SrwLockInternal);
+				m_ListLock.ExclusiveModeEnabled = false;
+			}
+		}
+	} else
+		ReleaseSRWLockShared(&m_ListLock.SrwLockInternal);
+}
+
+DoublyLinkedList::ListEntry* DoublyLinkedList::AllocateEntryInternal( // Allocates an Object an
+	_In_ size_t ObjectSize
+) {
+	// Allocate the Object
+	auto Object = (ListEntry*)HeapAlloc(m_MemoryContainer, 0, ObjectSize + sizeof(ListEntry));
+	if (!Object)
+		return nullptr;
+
+	// Link object into list (instert after last object)
+	if (m_LastEntry) {
+		m_LastEntry->NextEntry = Object;
+		Object->PreviousEntry = m_LastEntry;
+		Object->NextEntry = nullptr;
+		m_LastEntry = Object;
+	} else
+		m_FirstEntry = m_LastEntry = Object;
+	return Object;
+}
+#pragma endregion

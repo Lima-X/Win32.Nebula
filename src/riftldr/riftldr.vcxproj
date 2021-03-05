@@ -104,6 +104,8 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -115,10 +117,12 @@
       <AdditionalOptions>/ignore:4254 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)src\sdk.h" "$(SolutionDir)out\sdk"
+      <Command>"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb0 -ch:e00000e0
+"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb1 -ch:000000e0
+"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb2 -ch:000000e0
+copy "$(SolutionDir)src\sdk.h" "$(SolutionDir)out\sdk"
 copy "$(SolutionDir)src\dbg.h" "$(SolutionDir)out\sdk"
-copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
-</Command>
+copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugLibrary|x64'">
@@ -147,10 +151,12 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
     </Link>
     <Lib />
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)src\sdk.h" "$(SolutionDir)out\sdk"
+      <Command>"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb0 -ch:e00000e0
+"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb1 -ch:000000e0
+"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb2 -ch:000000e0
+copy "$(SolutionDir)src\sdk.h" "$(SolutionDir)out\sdk"
 copy "$(SolutionDir)src\dbg.h" "$(SolutionDir)out\sdk"
-copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
-</Command>
+copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseExecutable|x64'">
@@ -186,10 +192,12 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
       <AdditionalOptions>/ignore:4254 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)src\sdk.h" "$(SolutionDir)out\sdk"
+      <Command>"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb0 -ch:e00000e0
+"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb1 -ch:000000e0
+"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb2 -ch:000000e0
+copy "$(SolutionDir)src\sdk.h" "$(SolutionDir)out\sdk"
 copy "$(SolutionDir)src\dbg.h" "$(SolutionDir)out\sdk"
-copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
-</Command>
+copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLibrary|x64'">
@@ -226,10 +234,12 @@ copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
       <AdditionalOptions>/ignore:4254 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)src\sdk.h" "$(SolutionDir)out\sdk"
+      <Command>"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb0 -ch:e00000e0
+"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb1 -ch:000000e0
+"$(OutDir)riftbld.exe" /spp -fi:"$(TargetPath)" -sc:.nb2 -ch:000000e0
+copy "$(SolutionDir)src\sdk.h" "$(SolutionDir)out\sdk"
 copy "$(SolutionDir)src\dbg.h" "$(SolutionDir)out\sdk"
-copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"
-</Command>
+copy "$(SolutionDir)src\base.h" "$(SolutionDir)out\sdk"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

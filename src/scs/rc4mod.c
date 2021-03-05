@@ -3,7 +3,7 @@
 
 // Integer Types
 typedef unsigned char      u8;
-typedef unsigned short     u32;
+typedef unsigned long      u32;
 typedef unsigned long long u64;
 
 /* Config Format:
@@ -21,11 +21,6 @@ typedef unsigned long long u64;
 
 
 
-typedef struct _rc4ctx { // RC4 Context
-	u8 SBox[256];        // The Substitution-Box
-	u8 i, j;             // RC4 SBox-State
-} rc4ctx;
-
 __forceinline void swap8( // Swaps 2 bytes
 	_In_ u8* x,           // byte 1
 	_In_ u8* y            // byte 2
@@ -35,6 +30,13 @@ __forceinline void swap8( // Swaps 2 bytes
 	*x = *y;
 	*y = k;
 }
+
+
+
+typedef struct _rc4ctx { // RC4 Context
+	u8 SBox[256];        // The Substitution-Box
+	u8 i, j;             // RC4 SBox-State
+} rc4ctx;
 
 __forceinline void ksa(                   // KeyStream-Scheduling-Algorithm (KSA)
 	_In_               rc4ctx* ctx,       // RC4 internal context
